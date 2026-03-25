@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "p2-next",
+  "version": "0.1.0",
+  "description": "Modern P2/o2 replacement using the Block Editor and REST API.",
+  "scripts": {
+    "build": "WP_BLOCKS_MANIFEST=true wp-scripts build --output-path=build",
+    "start": "WP_BLOCKS_MANIFEST=true wp-scripts start --output-path=build",
+    "lint:js": "wp-scripts lint-js src",
+    "lint:php": "vendor/bin/phpcs"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  },
+  "license": "GPL-2.0-or-later"
+}

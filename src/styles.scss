@@ -1,0 +1,212 @@
+/**
+ * P2 Next frontend styles
+ */
+
+// Editor containers
+.p2-next-editor-canvas {
+	background-color: #fafafa;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	padding: 16px;
+	margin: 12px 0;
+	min-height: 120px;
+
+	&:focus {
+		outline: none;
+		border-color: #0073aa;
+		box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+	}
+}
+
+// Post Editor (inline editing)
+.p2-next-post-editor {
+	margin-top: 12px;
+
+	.p2-next-editor-canvas {
+		margin: 12px 0;
+	}
+
+	.p2-next-editor-toolbar {
+		display: flex;
+		gap: 8px;
+		margin-top: 12px;
+		padding: 12px;
+		background-color: #f9f9f9;
+		border: 1px solid #e5e5e5;
+		border-radius: 3px;
+	}
+}
+
+// New Post Editor (new-post block)
+.p2-next-new-post-editor {
+	margin: 16px 0;
+	background-color: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 16px;
+
+	&[data-expanded="true"] {
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.p2-next-editor-canvas {
+		background-color: #fafafa;
+		border: 1px solid #e0e0e0;
+		margin: 0;
+		min-height: 100px;
+	}
+
+	.p2-next-editor-toolbar {
+		display: flex;
+		gap: 8px;
+		margin-top: 12px;
+	}
+}
+
+// Post enhancement (comment/edit controls)
+.p2-next-post-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+	padding: 8px 0;
+	flex-wrap: wrap;
+}
+
+// Comments section
+.p2-next-comments {
+	background-color: #f5f5f5;
+	border-left: 4px solid #0073aa;
+	padding: 12px;
+	margin-top: 12px;
+	border-radius: 3px;
+
+	.p2-next-comment {
+		background-color: #fff;
+		border: 1px solid #e5e5e5;
+		border-radius: 3px;
+		padding: 12px;
+		margin-bottom: 12px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.p2-next-comment-header {
+		display: flex;
+		gap: 8px;
+		align-items: flex-start;
+		margin-bottom: 8px;
+	}
+
+	.p2-next-avatar {
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.p2-next-comment-meta {
+		display: flex;
+		gap: 8px;
+		font-size: 0.85em;
+		color: #666;
+		align-items: center;
+	}
+
+	.p2-next-author {
+		font-weight: 600;
+		color: #333;
+	}
+
+	.p2-next-date {
+		color: #999;
+	}
+
+	.p2-next-comment-content {
+		margin: 8px 0;
+		line-height: 1.5;
+	}
+
+	.p2-next-comment-footer {
+		margin-top: 8px;
+		padding-top: 8px;
+		border-top: 1px solid #eee;
+	}
+
+	.p2-next-reply-form {
+		background-color: #f9f9f9;
+		border: 1px solid #e5e5e5;
+		border-radius: 3px;
+		padding: 12px;
+		margin-top: 8px;
+	}
+
+	.p2-next-reply-actions {
+		display: flex;
+		gap: 8px;
+		margin-top: 8px;
+	}
+}
+
+// New posts banner
+.p2-next-new-posts-banner {
+	background-color: #fff;
+	border: 1px solid #0073aa;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin: 16px 0;
+	text-align: center;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+// Comment thread nesting
+.p2-next-comment-thread {
+	&.depth-0 {
+		margin-left: 0;
+	}
+
+	&.depth-1,
+	&.depth-2,
+	&.depth-3 {
+		margin-left: 16px;
+	}
+
+	.p2-next-comment-children {
+		margin-top: 8px;
+	}
+}
+
+// Posts feed
+.p2-next-posts-feed {
+	.p2-next-no-posts {
+		text-align: center;
+		color: #999;
+		padding: 32px 16px;
+		font-style: italic;
+	}
+}
+
+// Block Editor styles (frontend)
+.p2-next-editor-canvas {
+	// Core block styles for frontend display
+	.wp-block-paragraph {
+		margin: 0 0 1em 0;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.wp-block-list {
+		margin-left: 20px;
+
+		li {
+			margin-bottom: 0.5em;
+		}
+	}
+
+	.wp-block-separator {
+		border: none;
+		border-top: 2px solid #e0e0e0;
+		margin: 1.5em 0;
+	}
+}
