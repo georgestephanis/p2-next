@@ -70,8 +70,10 @@ function p2next_enqueue_frontend() {
 		array( 'strategy' => 'defer' )
 	);
 
-	$current_user = wp_get_current_user();
-	$user_data    = null;
+	$current_user       = wp_get_current_user();
+	$user_data          = null;
+	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
+	$require_name_email = get_option( 'require_name_email' ) === '1';
 
 	if ( $current_user->ID ) {
 		$user_data = array(
@@ -79,7 +81,7 @@ function p2next_enqueue_frontend() {
 			'name'       => $current_user->display_name,
 			'avatar'     => get_avatar_url( $current_user->ID, array( 'size' => 48 ) ),
 			'canPublish' => current_user_can( 'publish_posts' ),
-			'canComment' => current_user_can( 'edit_posts' ) || get_option( 'comment_registration' ) === '0',
+			'canComment' => $can_comment,
 		);
 	}
 
@@ -87,11 +89,13 @@ function p2next_enqueue_frontend() {
 		'p2-next-frontend',
 		'window.p2NextConfig = ' . wp_json_encode(
 			array(
-				'nonce'       => wp_create_nonce( 'wp_rest' ),
-				'restUrl'     => esc_url_raw( rest_url() ),
-				'siteTitle'   => get_bloginfo( 'name' ),
-				'currentUser' => $user_data,
-				'threadDepth' => (int) get_option( 'thread_comments_depth', 5 ),
+				'nonce'            => wp_create_nonce( 'wp_rest' ),
+				'restUrl'          => esc_url_raw( rest_url() ),
+				'siteTitle'        => get_bloginfo( 'name' ),
+				'currentUser'      => $user_data,
+				'canComment'       => $can_comment,
+				'requireNameEmail' => $require_name_email,
+				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
 			)
 		) . ';',
 		'before'

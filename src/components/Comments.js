@@ -1,7 +1,9 @@
 /**
  * Comments — threaded comment list for a single post.
  */
-import { useSelect } from '@wordpress/data';
+import { useState, useCallback } from '@wordpress/element';
+import { useDispatch, useSelect } from '@wordpress/data';
+import { Button, TextareaControl, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comment from './Comment';
@@ -44,9 +46,62 @@ function CommentTree( { comments, postId, depth = 0 } ) {
 }
 
 export default function Comments( { postId } ) {
+	const { createComment } = useDispatch( STORE_NAME );
 	const comments = useSelect( ( select ) =>
 		select( STORE_NAME ).getComments( postId )
 	);
+	const isSaving = useSelect( ( select ) =>
+		select( STORE_NAME ).isSavingComment()
+	);
+
+	const [ content, setContent ] = useState( '' );
+	const [ guestName, setGuestName ] = useState( '' );
+	const [ guestEmail, setGuestEmail ] = useState( '' );
+	const [ guestUrl, setGuestUrl ] = useState( '' );
+
+	const currentUser = window.p2NextConfig?.currentUser;
+	const canComment = window.p2NextConfig?.canComment ?? !! currentUser;
+	const requireNameEmail =
+		! currentUser && !! window.p2NextConfig?.requireNameEmail;
+	const missingGuestIdentity =
+		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
+
+	const onCommentSubmit = useCallback( async () => {
+		if ( ! canComment || ! content.trim() || missingGuestIdentity ) {
+			return;
+		}
+
+		const authorData = ! currentUser
+			? {
+					author_name: guestName.trim(),
+					author_email: guestEmail.trim(),
+					author_url: guestUrl.trim(),
+			  }
+			: {};
+
+		await createComment( {
+			postId,
+			content,
+			authorData,
+		} );
+
+		setContent( '' );
+		if ( ! currentUser ) {
+			setGuestName( '' );
+			setGuestEmail( '' );
+			setGuestUrl( '' );
+		}
+	}, [
+		canComment,
+		content,
+		missingGuestIdentity,
+		currentUser,
+		guestName,
+		guestEmail,
+		guestUrl,
+		createComment,
+		postId,
+	] );
 
 	const tree = buildTree( comments );
 
@@ -55,6 +110,58 @@ export default function Comments( { postId } ) {
 			className="p2-next-comments"
 			aria-label={ __( 'Comments', 'p2-next' ) }
 		>
+			{ canComment && (
+				<div className="p2-next-new-comment-form p2-next-reply-form">
+					{ ! currentUser && (
+						<>
+							<TextControl
+								label={ __( 'Name', 'p2-next' ) }
+								value={ guestName }
+								onChange={ setGuestName }
+								required={ requireNameEmail }
+							/>
+							<TextControl
+								label={ __( 'Email', 'p2-next' ) }
+								type="email"
+								value={ guestEmail }
+								onChange={ setGuestEmail }
+								required={ requireNameEmail }
+							/>
+							<TextControl
+								label={ __( 'Website (optional)', 'p2-next' ) }
+								type="url"
+								value={ guestUrl }
+								onChange={ setGuestUrl }
+							/>
+						</>
+					) }
+					<TextareaControl
+						label={ __( 'Add a comment', 'p2-next' ) }
+						hideLabelFromVision
+						placeholder={ __( 'Write a comment…', 'p2-next' ) }
+						value={ content }
+						onChange={ setContent }
+						rows={ 4 }
+					/>
+					<div className="p2-next-reply-actions">
+						<Button
+							variant="primary"
+							onClick={ onCommentSubmit }
+							disabled={
+								isSaving ||
+								! content.trim() ||
+								missingGuestIdentity
+							}
+							isBusy={ isSaving }
+						>
+							{ isSaving
+								? __( 'Posting…', 'p2-next' )
+								: __( 'Post comment', 'p2-next' ) }
+						</Button>
+					</div>
+				</div>
+			) }
+
 			{ tree.length === 0 && (
 				<p className="p2-next-no-comments">
 					{ __( 'No comments yet.', 'p2-next' ) }

@@ -3,13 +3,16 @@
  */
 import { useState, useCallback } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
-import { Button, TextareaControl } from '@wordpress/components';
+import { Button, TextareaControl, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 
 export default function Comment( { comment, postId } ) {
 	const [ replying, setReplying ] = useState( false );
 	const [ replyContent, setReplyContent ] = useState( '' );
+	const [ guestName, setGuestName ] = useState( '' );
+	const [ guestEmail, setGuestEmail ] = useState( '' );
+	const [ guestUrl, setGuestUrl ] = useState( '' );
 
 	const { createComment } = useDispatch( STORE_NAME );
 	const isSaving = useSelect( ( select ) =>
@@ -17,20 +20,49 @@ export default function Comment( { comment, postId } ) {
 	);
 
 	const currentUser = window.p2NextConfig?.currentUser;
-	const canComment = !! currentUser;
+	const canComment = window.p2NextConfig?.canComment ?? !! currentUser;
+	const requireNameEmail =
+		! currentUser && !! window.p2NextConfig?.requireNameEmail;
+	const missingGuestIdentity =
+		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 
 	const onReplySubmit = useCallback( async () => {
-		if ( ! replyContent.trim() ) {
+		if ( ! replyContent.trim() || missingGuestIdentity ) {
 			return;
 		}
+
+		const authorData = ! currentUser
+			? {
+					author_name: guestName.trim(),
+					author_email: guestEmail.trim(),
+					author_url: guestUrl.trim(),
+			  }
+			: {};
+
 		await createComment( {
 			postId,
 			parentId: comment.id,
 			content: replyContent,
+			authorData,
 		} );
 		setReplyContent( '' );
+		if ( ! currentUser ) {
+			setGuestName( '' );
+			setGuestEmail( '' );
+			setGuestUrl( '' );
+		}
 		setReplying( false );
-	}, [ postId, comment.id, replyContent, createComment ] );
+	}, [
+		postId,
+		comment.id,
+		replyContent,
+		missingGuestIdentity,
+		currentUser,
+		guestName,
+		guestEmail,
+		guestUrl,
+		createComment,
+	] );
 
 	const avatarUrl =
 		comment.author_avatar_urls?.[ '48' ] ??
@@ -82,6 +114,32 @@ export default function Comment( { comment, postId } ) {
 
 					{ replying && (
 						<div className="p2-next-reply-form">
+							{ ! currentUser && (
+								<>
+									<TextControl
+										label={ __( 'Name', 'p2-next' ) }
+										value={ guestName }
+										onChange={ setGuestName }
+										required={ requireNameEmail }
+									/>
+									<TextControl
+										label={ __( 'Email', 'p2-next' ) }
+										type="email"
+										value={ guestEmail }
+										onChange={ setGuestEmail }
+										required={ requireNameEmail }
+									/>
+									<TextControl
+										label={ __(
+											'Website (optional)',
+											'p2-next'
+										) }
+										type="url"
+										value={ guestUrl }
+										onChange={ setGuestUrl }
+									/>
+								</>
+							) }
 							<TextareaControl
 								label={ __( 'Your reply', 'p2-next' ) }
 								hideLabelFromVision
@@ -98,7 +156,9 @@ export default function Comment( { comment, postId } ) {
 									variant="primary"
 									onClick={ onReplySubmit }
 									disabled={
-										isSaving || ! replyContent.trim()
+										isSaving ||
+										! replyContent.trim() ||
+										missingGuestIdentity
 									}
 									isBusy={ isSaving }
 								>

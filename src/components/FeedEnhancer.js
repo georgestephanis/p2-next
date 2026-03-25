@@ -23,15 +23,20 @@ import PostEnhancement from './PostEnhancement';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
 const POLL_INTERVAL = window.p2NextConfig?.pollInterval ?? 15;
+const COMMENT_REFRESH_BASE_INTERVAL = 20;
+const COMMENT_REFRESH_JITTER = 8;
 
 export default function FeedEnhancer( { feedContainer, postElements } ) {
-	const { fetchPosts, pollForNewPosts, revealPendingPosts } =
+	const { fetchPosts, pollForNewPosts, revealPendingPosts, fetchComments } =
 		useDispatch( STORE_NAME );
 	const pendingCount = useSelect( ( select ) =>
 		select( STORE_NAME ).getPendingCount()
 	);
 	const pendingPosts = useSelect( ( select ) =>
 		select( STORE_NAME ).getPendingPosts()
+	);
+	const expandedPostIds = useSelect( ( select ) =>
+		select( STORE_NAME ).getExpandedPosts()
 	);
 
 	// Container for the "new posts" banner — injected before the post list.
@@ -85,6 +90,54 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		const stop = startPolling( () => pollForNewPosts(), POLL_INTERVAL );
 		return stop;
 	}, [ pollForNewPosts ] );
+
+	// Refresh only expanded comment threads on a jittered timer so clients do
+	// not all re-fetch comments at the same moment.
+	useEffect( () => {
+		let timeoutId;
+		let cancelled = false;
+
+		const scheduleNext = () => {
+			if ( cancelled ) {
+				return;
+			}
+			const jitter =
+				Math.floor( Math.random() * ( COMMENT_REFRESH_JITTER + 1 ) ) *
+				1000;
+			timeoutId = window.setTimeout(
+				runRefresh,
+				COMMENT_REFRESH_BASE_INTERVAL * 1000 + jitter
+			);
+		};
+
+		const runRefresh = async () => {
+			if ( cancelled ) {
+				return;
+			}
+
+			if (
+				document.visibilityState === 'visible' &&
+				expandedPostIds.length > 0
+			) {
+				await Promise.all(
+					expandedPostIds.map( ( postId ) =>
+						fetchComments( postId ).catch( () => undefined )
+					)
+				);
+			}
+
+			scheduleNext();
+		};
+
+		scheduleNext();
+
+		return () => {
+			cancelled = true;
+			if ( timeoutId ) {
+				window.clearTimeout( timeoutId );
+			}
+		};
+	}, [ expandedPostIds, fetchComments ] );
 
 	const onReveal = useCallback( () => {
 		revealPendingPosts();

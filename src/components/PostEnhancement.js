@@ -50,7 +50,6 @@ export default function PostEnhancement( { postId, postElement } ) {
 
 	const currentUser = window.p2NextConfig?.currentUser;
 	const canEdit = currentUser?.canPublish;
-	const canComment = !! currentUser;
 
 	// Derive comment count: prefer the number already in the DOM to avoid
 	// a flash of "0 comments" before the REST response arrives.
@@ -90,16 +89,14 @@ export default function PostEnhancement( { postId, postElement } ) {
 
 	return createPortal(
 		<div className="p2-next-post-actions">
-			{ canComment && (
-				<Button
-					variant="link"
-					className="p2-next-comments-toggle"
-					onClick={ onToggleComments }
-					aria-expanded={ isExpanded }
-				>
-					{ commentLabel }
-				</Button>
-			) }
+			<Button
+				variant="link"
+				className="p2-next-comments-toggle"
+				onClick={ onToggleComments }
+				aria-expanded={ isExpanded }
+			>
+				{ commentLabel }
+			</Button>
 
 			{ canEdit && ! isEditing && (
 				<Button

@@ -170,7 +170,7 @@ export const actions = {
 		};
 	},
 
-	createComment( { postId, parentId = 0, content } ) {
+	createComment( { postId, parentId = 0, content, authorData = {} } ) {
 		return async ( { dispatch } ) => {
 			dispatch( actions.setSavingComment( true ) );
 			try {
@@ -181,6 +181,7 @@ export const actions = {
 						post: postId,
 						parent: parentId,
 						content,
+						...authorData,
 					},
 				} );
 				dispatch( actions.createCommentSuccess( postId, comment ) );
@@ -318,6 +319,7 @@ export const selectors = {
 	getLastFetched: ( state ) => state.lastFetched,
 	getPendingCount: ( state ) => state.pendingCount,
 	getPendingPosts: ( state ) => state.pendingPosts,
+	getExpandedPosts: ( state ) => state.ui.expandedPosts,
 	isPostExpanded: ( state, postId ) =>
 		state.ui.expandedPosts.includes( postId ),
 	getEditingPost: ( state ) => state.ui.editingPost,
