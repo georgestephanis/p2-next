@@ -28,6 +28,17 @@
 		min-height: inherit;
 	}
 
+	// Block appender ("+" button) — always rendered but hidden until hover/focus.
+	.block-list-appender {
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	&:hover .block-list-appender,
+	&:focus-within .block-list-appender {
+		opacity: 1;
+	}
+
 	// Show subtle block boundaries while editing.
 	&:focus-within .wp-block {
 		outline: 1px dashed transparent;
@@ -75,6 +86,7 @@
 	.p2-next-editor-toolbar {
 		display: flex;
 		gap: 8px;
+		justify-content: flex-end;
 		margin-top: 12px;
 		padding: 12px;
 		background-color: #f9f9f9;
@@ -120,6 +132,7 @@
 	.p2-next-editor-toolbar {
 		display: flex;
 		gap: 8px;
+		justify-content: flex-end;
 		margin-top: 12px;
 	}
 }

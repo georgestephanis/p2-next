@@ -7,6 +7,7 @@
 import { createElement, createRoot } from '@wordpress/element';
 import { registerCoreBlocks } from '@wordpress/block-library';
 import { setDefaultBlockName } from '@wordpress/blocks';
+import '@wordpress/format-library';
 import { initApiFetch } from '../../api';
 import NewPostEditor from '../../components/NewPostEditor';
 

@@ -21,7 +21,7 @@ import { STORE_NAME } from '../store';
 
 // Minimal editor settings — disable features not needed on the frontend.
 const EDITOR_SETTINGS = {
-	hasFixedToolbar: true,
+	hasFixedToolbar: false,
 	focusMode: false,
 	isRTL: document.documentElement.dir === 'rtl',
 	__experimentalFeatures: {
@@ -68,7 +68,7 @@ export default function NewPostEditor() {
 									'p2-next'
 								) }
 							>
-								<BlockList />
+								<BlockList renderAppender={ BlockList.ButtonBlockAppender } />
 							</div>
 						</ObserveTyping>
 					</WritingFlow>
@@ -76,6 +76,15 @@ export default function NewPostEditor() {
 			</BlockEditorProvider>
 
 			<div className="p2-next-editor-toolbar">
+				<Button
+					variant="tertiary"
+					onClick={ () =>
+						setBlocks( [ createBlock( 'core/paragraph' ) ] )
+					}
+					disabled={ isSaving }
+				>
+					{ __( 'Cancel', 'p2-next' ) }
+				</Button>
 				<Button
 					variant="primary"
 					onClick={ onPublish }
@@ -85,15 +94,6 @@ export default function NewPostEditor() {
 					{ isSaving
 						? __( 'Publishing…', 'p2-next' )
 						: __( 'Publish', 'p2-next' ) }
-				</Button>
-				<Button
-					variant="tertiary"
-					onClick={ () =>
-						setBlocks( [ createBlock( 'core/paragraph' ) ] )
-					}
-					disabled={ isSaving }
-				>
-					{ __( 'Cancel', 'p2-next' ) }
 				</Button>
 			</div>
 		</div>

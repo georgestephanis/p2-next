@@ -22,7 +22,7 @@ import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 
 const EDITOR_SETTINGS = {
-	hasFixedToolbar: true,
+	hasFixedToolbar: false,
 	focusMode: false,
 	isRTL: document.documentElement.dir === 'rtl',
 };
@@ -87,7 +87,7 @@ export default function PostEditor( { postId } ) {
 									'p2-next'
 								) }
 							>
-								<BlockList />
+								<BlockList renderAppender={ BlockList.ButtonBlockAppender } />
 							</div>
 						</ObserveTyping>
 					</WritingFlow>
@@ -95,6 +95,13 @@ export default function PostEditor( { postId } ) {
 			</BlockEditorProvider>
 
 			<div className="p2-next-editor-toolbar">
+				<Button
+					variant="tertiary"
+					onClick={ onCancel }
+					disabled={ isSaving }
+				>
+					{ __( 'Cancel', 'p2-next' ) }
+				</Button>
 				<Button
 					variant="primary"
 					onClick={ onSave }
@@ -104,13 +111,6 @@ export default function PostEditor( { postId } ) {
 					{ isSaving
 						? __( 'Saving…', 'p2-next' )
 						: __( 'Update', 'p2-next' ) }
-				</Button>
-				<Button
-					variant="tertiary"
-					onClick={ onCancel }
-					disabled={ isSaving }
-				>
-					{ __( 'Cancel', 'p2-next' ) }
 				</Button>
 			</div>
 		</div>

@@ -13,6 +13,7 @@
 import { createRoot, createElement } from '@wordpress/element';
 import { registerCoreBlocks } from '@wordpress/block-library';
 import { setDefaultBlockName } from '@wordpress/blocks';
+import '@wordpress/format-library';
 import { initApiFetch } from './api';
 import FeedEnhancer from './components/FeedEnhancer';
 import './styles.scss';
