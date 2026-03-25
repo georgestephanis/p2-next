@@ -80,3 +80,26 @@ Manual smoke checks expected after behavior changes:
 - src/store/index.js action signatures: createComment authorData support must be preserved.
 - src/components/Comments.js and src/components/Comment.js: keep top-level/reply forms behavior aligned.
 - src/components/FeedEnhancer.js timers: avoid introducing synchronized polling bursts.
+
+## Performance Guardrails
+
+- Treat polling and refresh cadence as part of public behavior; do not tighten intervals casually.
+- Preserve jitter on periodic timers.
+- Keep document.visibilityState checks around background network work.
+- Avoid fanout bursts: do not issue unbounded parallel comment refresh requests when many posts are expanded.
+- Keep request payloads minimal where possible; _embed and per_page=100 are expensive defaults.
+- Prefer additive optimizations over architectural rewrites.
+
+When editing polling or refresh logic, explicitly consider:
+
+1. Request rate impact: active_clients / interval.
+2. Burst behavior on tab focus/visibility restore.
+3. Failure behavior: backoff vs immediate repeated retries.
+4. Timer lifecycle correctness on rerender/unmount.
+
+## Optional Optimization Backlog
+
+- Add backoff/cooldown for repeated poll failures.
+- Add max-concurrency limit for expanded-thread refresh loops.
+- Add lightweight feed heartbeat mode before full post hydration.
+- Add incremental comment refresh mode when backend supports cursor/timestamp filters.

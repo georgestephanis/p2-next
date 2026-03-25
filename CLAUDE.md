@@ -115,3 +115,43 @@ Validation expectations after functional changes:
 - Keep i18n text domain as p2-next.
 - Keep build output generated only.
 - Prefer capability checks through centralized helpers in p2-next.php.
+
+## Performance and Scale Notes
+
+This section captures current hotspots and preferred mitigations.
+
+### Current Request Profile
+
+- Post polling: one GET /wp/v2/posts per client every POLL_INTERVAL seconds (default 15).
+- Expanded-thread refresh: one GET /wp/v2/comments per expanded post on a jittered timer (20s + up to 8s).
+- Comment expand action: one GET /wp/v2/comments?post={id}&per_page=100 per toggle-open.
+
+Rough request-rate model:
+
+- Post polling RPS ~= active_clients / poll_interval_seconds.
+- Expanded comment refresh RPS ~= (active_clients_with_open_threads * average_open_threads) / average_refresh_seconds.
+
+### Hotspots in Current Implementation
+
+- Posts polling always requests _embed; payload size can be high at scale.
+- Comments fetch uses per_page=100 and full-thread replacement on every refresh.
+- Expanded-thread refresh runs all open post IDs in parallel for each cycle.
+- No client-side backoff on repeated endpoint failures.
+
+### Preferred Mitigations for Future Changes
+
+- Keep jitter on all periodic timers; never introduce lockstep intervals.
+- Add exponential backoff for pollForNewPosts and comment refresh after transient failures.
+- Consider splitting feed polling into lighter payload mode for heartbeat checks, then hydrate on reveal.
+- Cap concurrently refreshed expanded threads per cycle when many are open.
+- Favor incremental comment fetch patterns when backend support exists (for example, after=<timestamp> or modified-since).
+- Keep visibility-state checks for all interval work.
+
+### Profiling and Validation Expectations
+
+When touching polling/comment refresh logic:
+
+1. Measure request counts in browser devtools over 60s with 1, 5, and 10 expanded threads.
+2. Confirm timers stop on unmount and do not duplicate after rerenders.
+3. Verify failure paths do not spin retry loops.
+4. Smoke-test with a large thread (100 comments) to observe render and network behavior.
