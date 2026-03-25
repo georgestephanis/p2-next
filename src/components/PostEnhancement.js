@@ -1,17 +1,15 @@
 /**
- * PostEnhancement — per-post interactive layer mounted via a React portal.
+ * PostEnhancement — React content for the active post's toolbar slot.
  *
- * Injects a small container at the end of each theme-rendered post element,
- * then renders:
- *   • A "Comments (N)" toggle that expands the inline comment thread
- *   • An "Edit" button (for users with permission) that opens the inline editor
+ * Rendered on demand by enhancer.js into the `.p2-next-post-react` slot
+ * when the user interacts with a post's plain-DOM toolbar. Renders the
+ * reactive versions of the action buttons plus any expanded content
+ * (block editor or comment thread).
+ *
+ * Calls onDeactivate() once the user has closed everything, so enhancer.js
+ * can unmount this root and restore the plain-DOM toolbar.
  */
-import {
-	useEffect,
-	useRef,
-	useCallback,
-	createPortal,
-} from '@wordpress/element';
+import { useEffect, useRef, useCallback } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
@@ -19,23 +17,7 @@ import { STORE_NAME } from '../store';
 import Comments from './Comments';
 import PostEditor from './PostEditor';
 
-export default function PostEnhancement( { postId, postElement } ) {
-	const mountRef = useRef( null );
-
-	// Create a mount point inside the post element once.
-	useEffect( () => {
-		if ( ! postElement ) {
-			return;
-		}
-
-		const el = document.createElement( 'div' );
-		el.className = 'p2-next-post-enhancement';
-		postElement.appendChild( el );
-		mountRef.current = el;
-
-		return () => el.remove();
-	}, [ postElement ] );
-
+export default function PostEnhancement( { postId, onDeactivate } ) {
 	const { expandPost, collapsePost, setEditingPost, fetchComments } =
 		useDispatch( STORE_NAME );
 
@@ -51,17 +33,24 @@ export default function PostEnhancement( { postId, postElement } ) {
 	const currentUser = window.p2NextConfig?.currentUser;
 	const canEdit = currentUser?.canUpdatePosts ?? currentUser?.canPublish;
 
-	// Derive comment count: prefer the number already in the DOM to avoid
-	// a flash of "0 comments" before the REST response arrives.
-	const commentCount = isExpanded
-		? comments.length
-		: ( () => {
-				const link = postElement.querySelector(
-					'.comments-link, a[href*="#comments"]'
-				);
-				const match = link?.textContent?.match( /\d+/ );
-				return match ? parseInt( match[ 0 ], 10 ) : 0;
-		  } )();
+	// Track whether the user has actually opened anything. Once they have,
+	// closing everything signals that React is done here.
+	const wasActive = useRef( false );
+	useEffect( () => {
+		if ( isExpanded || isEditing ) {
+			wasActive.current = true;
+		} else if ( wasActive.current ) {
+			onDeactivate?.();
+		}
+	}, [ isExpanded, isEditing, onDeactivate ] );
+
+	const commentCount = isExpanded ? comments.length : 0;
+	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2-next' ) }`;
+	if ( isExpanded ) {
+		commentLabel = __( 'Hide comments', 'p2-next' );
+	} else if ( commentCount === 1 ) {
+		commentLabel = __( '1 comment', 'p2-next' );
+	}
 
 	const onToggleComments = useCallback( () => {
 		if ( isExpanded ) {
@@ -76,18 +65,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 		setEditingPost( postId );
 	}, [ postId, setEditingPost ] );
 
-	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2-next' ) }`;
-	if ( isExpanded ) {
-		commentLabel = __( 'Hide comments', 'p2-next' );
-	} else if ( commentCount === 1 ) {
-		commentLabel = __( '1 comment', 'p2-next' );
-	}
-
-	if ( ! mountRef.current ) {
-		return null;
-	}
-
-	return createPortal(
+	return (
 		<div className="p2-next-post-actions">
 			<Button
 				variant="link"
@@ -108,11 +86,8 @@ export default function PostEnhancement( { postId, postElement } ) {
 				</Button>
 			) }
 
-			{ isEditing && (
-				<PostEditor postId={ postId } postElement={ postElement } />
-			) }
+			{ isEditing && <PostEditor postId={ postId } /> }
 			{ isExpanded && ! isEditing && <Comments postId={ postId } /> }
-		</div>,
-		mountRef.current
+		</div>
 	);
 }

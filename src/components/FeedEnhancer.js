@@ -17,7 +17,6 @@
 import {
 	useEffect,
 	useRef,
-	useState,
 	useCallback,
 	createPortal,
 	useMemo,
@@ -27,7 +26,7 @@ import { Button } from '@wordpress/components';
 import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
-import PostEnhancement from './PostEnhancement';
+import { setupPostToolbar } from '../enhancer';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
 const POLL_INTERVAL = window.p2NextConfig?.pollInterval ?? 15;
@@ -68,9 +67,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 	}, [ feedContainer ] );
 
 	// Tracks injected <li> elements by post ID.
-	// The ref holds the DOM nodes; state triggers portal re-renders.
 	const newPostElsRef = useRef( {} );
-	const [ newPostEls, setNewPostEls ] = useState( {} );
 
 	// Seed lastFetched from the most recent post on the page so polling only
 	// fetches posts newer than what's already visible.
@@ -246,9 +243,10 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 							);
 						}
 					}
+
+					setupPostToolbar( post.id, li );
 				} );
-					setNewPostEls( { ...newPostElsRef.current } );
-				} )
+			} )
 			.catch( () => {
 				// Fetch failed — silently skip. The post is saved; a page
 				// reload or the next poll cycle will surface it.
@@ -292,23 +290,6 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 					bannerContainerRef.current
 				) }
 
-			{ /* Per-post enhancement portals for theme-rendered posts */ }
-			{ postElements.map( ( { id, element } ) => (
-				<PostEnhancement
-					key={ id }
-					postId={ id }
-					postElement={ element }
-				/>
-			) ) }
-
-			{ /* Per-post enhancement portals for injected posts */ }
-			{ Object.entries( newPostEls ).map( ( [ id, element ] ) => (
-				<PostEnhancement
-					key={ id }
-					postId={ Number( id ) }
-					postElement={ element }
-				/>
-			) ) }
-		</>
+			</>
 	);
 }

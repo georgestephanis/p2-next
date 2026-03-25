@@ -15,6 +15,7 @@ import { registerCoreBlocks } from '@wordpress/block-library';
 import { setDefaultBlockName } from '@wordpress/blocks';
 import '@wordpress/format-library';
 import { initApiFetch } from './api';
+import { setupPostToolbar, observePosts } from './enhancer';
 import FeedEnhancer from './components/FeedEnhancer';
 import './styles.scss';
 
@@ -82,14 +83,29 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	const feedContainer = findFeedContainer();
 	const postElements = collectPostElements();
 
+	// eslint-disable-next-line no-console
+	console.log( '[p2-next] DOMContentLoaded', {
+		feedContainer,
+		postCount: postElements.length,
+		postIds: postElements.map( ( p ) => p.id ),
+	} );
+
 	if ( ! feedContainer && ! postElements.length ) {
+		// eslint-disable-next-line no-console
+		console.warn( '[p2-next] No feed container or posts found — bailing.' );
 		return; // Not a page with a post list — nothing to enhance.
 	}
 
-	// Create a single React root outside the post list to host all portals.
+	// Append a plain-DOM toolbar to every post and start observing for
+	// scroll-based cleanup.
+	postElements.forEach( ( { id, element } ) =>
+		setupPostToolbar( id, element )
+	);
+	observePosts( postElements );
+
+	// Single React root for polling state and the new-posts banner.
 	const mountPoint = document.createElement( 'div' );
 	mountPoint.id = 'p2-next-enhancer-root';
-	// Hidden from layout; all visible output is via portals into the real DOM.
 	mountPoint.style.display = 'none';
 	document.body.appendChild( mountPoint );
 
