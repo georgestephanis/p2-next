@@ -7,7 +7,7 @@
  * @package P2Next
  */
 
-if ( ! is_user_logged_in() || ! current_user_can( 'publish_posts' ) ) {
+if ( ! is_user_logged_in() || ! p2next_can_create_posts() ) {
 	return;
 }
 ?>

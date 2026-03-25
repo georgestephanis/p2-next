@@ -49,7 +49,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 	const isEditing = editingPost === postId;
 
 	const currentUser = window.p2NextConfig?.currentUser;
-	const canEdit = currentUser?.canPublish;
+	const canEdit = currentUser?.canUpdatePosts ?? currentUser?.canPublish;
 
 	// Derive comment count: prefer the number already in the DOM to avoid
 	// a flash of "0 comments" before the REST response arrives.

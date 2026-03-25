@@ -1,106 +1,117 @@
 # CLAUDE.md
 
-This file documents the architecture and working conventions for the `p2-next` plugin.
+This file documents the current architecture and contribution conventions for the p2-next plugin.
 
-## What This Is
+## What This Plugin Is
 
-`p2-next` is a WordPress plugin that modernizes P2/o2-style collaboration using:
+p2-next modernizes P2/o2-style collaboration by layering React and Block Editor UX on top of theme-rendered loops.
 
-- Block Editor components on the frontend
-- WordPress REST API for posts/comments
-- Progressive enhancement over theme-rendered post lists
+Core design principles:
 
-It is not a full SPA replacement for the theme loop.
+- Progressive enhancement over existing theme markup.
+- WordPress REST API as the data boundary.
+- Shared store state for feed, comments, and editor UI.
+- Capability-aware UX driven by runtime config from PHP.
+
+It is intentionally not a complete SPA replacement.
 
 ## Top-Level Layout
 
-- `p2-next.php` - plugin bootstrap and WordPress hooks.
-- `src/` - JavaScript source for frontend behavior, block setup, API helpers, and state.
-- `src/blocks/new-post/` - dynamic block definition and frontend mount logic.
-- `src/components/` - React UI for feed enhancements, comments, and inline editing.
-- `src/store/` - centralized `@wordpress/data` store.
-- `src/api/` - `apiFetch` middleware setup and polling helper.
-- `build/` - compiled output from `@wordpress/scripts` (generated).
-- `webpack.config.js` - extends WordPress scripts config with `frontend` entry.
-- `package.json` - JS build/lint scripts.
-- `composer.json` + `phpcs.xml.dist` - PHP linting/tooling.
+- p2-next.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration.
+- src/frontend.js: enhancement bootstrap for existing loop pages.
+- src/blocks/new-post/: dynamic block server render + frontend mount.
+- src/components/: feed controls, comments UI, post editor/new post editor.
+- src/store/index.js: shared @wordpress/data store and async thunks.
+- src/api/index.js: apiFetch middleware and polling helper.
+- src/styles.scss: frontend styling for editor/comment/feed enhancements.
+- build/: generated artifacts from @wordpress/scripts (do not hand-edit).
 
 ## Runtime Flow
 
-1. `p2-next.php` registers dynamic block metadata from `build/blocks-manifest.php`.
-2. Public pages enqueue `build/frontend.js` when `build/frontend.asset.php` exists.
-3. PHP injects `window.p2NextConfig` (nonce, restUrl, currentUser, site metadata).
-4. `src/frontend.js` finds loop containers and current post nodes, then mounts `FeedEnhancer` via a hidden root and portals.
-5. `FeedEnhancer` seeds `lastFetched`, starts polling, and reveals pending posts using a banner.
-6. `PostEnhancement` injects per-post controls for comments and inline editing.
-7. `PostEditor` and `NewPostEditor` use frontend block editor primitives for content editing/creation.
+1. PHP registers block metadata from build output and enqueues frontend assets.
+2. PHP injects window.p2NextConfig before frontend script execution.
+3. frontend.js discovers rendered posts in block or classic themes.
+4. FeedEnhancer mounts once and portals controls into existing post markup.
+5. Posts poll on a fixed cadence and buffer new content behind a reveal banner.
+6. Expanded comment threads fetch and render inline.
+7. Inline editing and new-post creation use Block Editor primitives on frontend.
 
-## State and Data
+## Permission Model
 
-All interactive behavior flows through `src/store/index.js` (`STORE_NAME = 'p2-next'`).
+p2-next now uses an abilities-first model with fallback:
 
-State shape includes:
+- If Abilities API is present, plugin registers:
+  - p2-next/post-create
+  - p2-next/post-update
+- Permission checks use ability.check_permissions() when available.
+- If abilities are not available, checks fall back to core capability checks.
 
-- `posts`
-- `comments` keyed by `postId`
-- `lastFetched`
-- `pendingCount` and `pendingPosts`
-- UI state for expanded posts, active editor, and saving flags
+Runtime config includes:
 
-REST usage:
+- canCreatePosts
+- canUpdatePosts
+- canComment
+- requireNameEmail
+- currentUser (logged-in metadata when available)
 
-- `GET /wp/v2/posts` for feed and polling (`after=`)
-- `POST /wp/v2/posts` for create/update
-- `GET /wp/v2/comments` for per-post threads
-- `POST /wp/v2/comments` for replies
+New post mount rendering in src/blocks/new-post/render.php is gated by p2next_can_create_posts().
 
-## Build and Tooling
+## Commenting Behavior
+
+- Logged-in and logged-out users can both view comment threads.
+- Top-level comment form is rendered inline when canComment is true.
+- Reply forms support anonymous commenters.
+- Anonymous submissions send author_name, author_email, and author_url.
+- Name/email requirements follow WordPress require_name_email.
+- Expanded threads refresh on a jittered interval to reduce synchronized polling.
+
+## Store and REST Boundaries
+
+Store name: p2-next.
+
+Key state:
+
+- posts
+- comments by post ID
+- pendingPosts and pendingCount
+- expandedPosts / editingPost
+- savingPost / savingComment
+
+REST endpoints in use:
+
+- GET /wp/v2/posts (initial + polling)
+- POST /wp/v2/posts (create/update)
+- GET /wp/v2/comments (thread fetch)
+- POST /wp/v2/comments (top-level + reply)
+
+## Build and Validation
 
 From plugin root:
 
 ```bash
 npm install
-npm run build
-npm run start
-npm run lint:js
 composer install
+npm run build
+npm run lint:js
 npm run lint:php
 ```
 
-Notes:
+Validation expectations after functional changes:
 
-- `WP_BLOCKS_MANIFEST=true` is used in build scripts for block manifest generation.
-- Do not edit `build/` directly.
+1. Build passes.
+2. JS lint passes.
+3. PHP lint passes.
+4. Manual smoke test confirms:
+   - controls attach to theme-rendered posts,
+   - top-level comments and replies work for expected user states,
+   - inline post editing respects permissions,
+   - new-post block visibility matches capabilities,
+   - new-post banner and comment refresh behavior are sane.
 
-## Important Conventions
+## Working Conventions
 
-- Keep enhancement non-destructive: theme output remains primary.
-- Prefer portals into existing DOM over replacing loop markup.
-- Reuse `window.__p2NextStore` pattern to avoid duplicate store registration across bundles.
-- Keep i18n text domain as `p2-next`.
-- Keep capability-sensitive UI gated by current user capabilities from config and REST permissions.
-
-## Quick File Guide
-
-- `src/frontend.js` - enhancement bootstrap and page discovery.
-- `src/components/FeedEnhancer.js` - polling orchestration, banner, and per-post enhancement mounts.
-- `src/components/PostEnhancement.js` - controls injected into each post element.
-- `src/components/Comments.js` and `src/components/Comment.js` - threaded comment rendering and replies.
-- `src/components/PostEditor.js` - inline edit existing posts.
-- `src/components/NewPostEditor.js` - create new posts from frontend block.
-- `src/blocks/new-post/view.js` - block-specific frontend mount.
-- `src/blocks/new-post/render.php` - capability-gated mount markup.
-
-## Validation Expectations
-
-After functional changes:
-
-1. Build passes (`npm run build`).
-2. JS lint passes (`npm run lint:js`).
-3. PHP lint passes (`npm run lint:php`).
-4. Manual checks on a page with posts confirm:
-   - enhancement controls attach correctly,
-   - comments and replies work,
-   - inline editing works,
-   - new-post block works,
-   - polling banner behavior is correct.
+- Keep enhancement additive; do not replace the theme loop rendering.
+- Reuse existing store selectors/actions before introducing new state paths.
+- Keep i18n text domain as p2-next.
+- Keep build output generated only.
+- Prefer capability checks through centralized helpers in p2-next.php.

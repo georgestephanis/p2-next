@@ -24,7 +24,9 @@ export default function Post( { post } ) {
 	const currentUser = window.p2NextConfig?.currentUser;
 	const canEdit =
 		currentUser &&
-		( currentUser.id === post.author || currentUser.canPublish );
+		( currentUser.id === post.author ||
+			currentUser.canUpdatePosts ||
+			currentUser.canPublish );
 
 	const onToggleComments = useCallback( () => {
 		if ( isExpanded ) {

@@ -20,6 +20,191 @@ define( 'P2NEXT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'P2NEXT_URL', plugin_dir_url( __FILE__ ) );
 
 /**
+ * Register a dedicated abilities category for p2-next, when the API is available.
+ */
+function p2next_register_ability_categories() {
+	if ( ! function_exists( 'wp_register_ability_category' ) ) {
+		return;
+	}
+
+	wp_register_ability_category(
+		'p2-next',
+		array(
+			'label'       => __( 'P2 Next', 'p2-next' ),
+			'description' => __( 'Abilities exposed by the P2 Next plugin.', 'p2-next' ),
+		)
+	);
+}
+add_action( 'wp_abilities_api_categories_init', 'p2next_register_ability_categories' );
+
+/**
+ * Permission callback for creating posts.
+ *
+ * @return bool
+ */
+function p2next_ability_can_create_post() {
+	return current_user_can( 'publish_posts' );
+}
+
+/**
+ * Permission callback for updating posts.
+ *
+ * @param array|null $input Optional input payload.
+ * @return bool
+ */
+function p2next_ability_can_update_post( $input = null ) {
+	$post_id = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+
+	if ( $post_id > 0 ) {
+		return current_user_can( 'edit_post', $post_id );
+	}
+
+	return current_user_can( 'edit_posts' );
+}
+
+/**
+ * Register p2-next abilities, if the Abilities API is available.
+ */
+function p2next_register_abilities() {
+	if ( ! function_exists( 'wp_register_ability' ) ) {
+		return;
+	}
+
+	wp_register_ability(
+		'p2-next/post-create',
+		array(
+			'label'               => __( 'Create Post', 'p2-next' ),
+			'description'         => __( 'Checks whether the current user can create and publish posts via P2 Next.', 'p2-next' ),
+			'category'            => 'p2-next',
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'allowed' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether post creation is allowed.', 'p2-next' ),
+					),
+				),
+			),
+			'execute_callback'    => static function () {
+				return array( 'allowed' => true );
+			},
+			'permission_callback' => 'p2next_ability_can_create_post',
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'p2-next/post-update',
+		array(
+			'label'               => __( 'Update Post', 'p2-next' ),
+			'description'         => __( 'Checks whether the current user can update posts via P2 Next.', 'p2-next' ),
+			'category'            => 'p2-next',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'post_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional post ID to check edit permission against.', 'p2-next' ),
+						'minimum'     => 1,
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'allowed' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether post updates are allowed.', 'p2-next' ),
+					),
+				),
+			),
+			'execute_callback'    => static function () {
+				return array( 'allowed' => true );
+			},
+			'permission_callback' => 'p2next_ability_can_update_post',
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+}
+add_action( 'wp_abilities_api_init', 'p2next_register_abilities' );
+
+/**
+ * Resolve a permission check via Abilities API when available, otherwise fallback.
+ *
+ * @param string   $ability_name      Ability identifier.
+ * @param callable $fallback_callback Legacy capability callback.
+ * @param array    $input             Optional ability input.
+ * @return bool
+ */
+function p2next_check_permission( $ability_name, $fallback_callback, $input = array() ) {
+	if ( function_exists( 'wp_has_ability' ) && function_exists( 'wp_get_ability' ) && wp_has_ability( $ability_name ) ) {
+		$ability = wp_get_ability( $ability_name );
+		if ( $ability && method_exists( $ability, 'check_permissions' ) ) {
+			$allowed = $ability->check_permissions( $input );
+			if ( true === $allowed ) {
+				return true;
+			}
+			if ( false === $allowed ) {
+				return false;
+			}
+			if ( is_wp_error( $allowed ) ) {
+				return false;
+			}
+		}
+	}
+
+	return (bool) call_user_func( $fallback_callback );
+}
+
+/**
+ * Whether current user can create posts.
+ *
+ * @return bool
+ */
+function p2next_can_create_posts() {
+	return p2next_check_permission(
+		'p2-next/post-create',
+		static function () {
+			return current_user_can( 'publish_posts' );
+		}
+	);
+}
+
+/**
+ * Whether current user can update posts.
+ *
+ * @param int $post_id Optional post ID for object-level checks.
+ * @return bool
+ */
+function p2next_can_update_posts( $post_id = 0 ) {
+	$input = $post_id > 0 ? array( 'post_id' => (int) $post_id ) : array();
+
+	return p2next_check_permission(
+		'p2-next/post-update',
+		static function () use ( $post_id ) {
+			if ( $post_id > 0 ) {
+				return current_user_can( 'edit_post', $post_id );
+			}
+			return current_user_can( 'edit_posts' );
+		},
+		$input
+	);
+}
+
+/**
  * Register the new-post FSE block.
  *
  * Uses the block manifest generated by @wordpress/scripts for efficient
@@ -72,16 +257,19 @@ function p2next_enqueue_frontend() {
 
 	$current_user       = wp_get_current_user();
 	$user_data          = null;
+	$can_publish        = p2next_can_create_posts();
+	$can_update_posts   = p2next_can_update_posts();
 	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
 	$require_name_email = get_option( 'require_name_email' ) === '1';
 
 	if ( $current_user->ID ) {
 		$user_data = array(
-			'id'         => $current_user->ID,
-			'name'       => $current_user->display_name,
-			'avatar'     => get_avatar_url( $current_user->ID, array( 'size' => 48 ) ),
-			'canPublish' => current_user_can( 'publish_posts' ),
-			'canComment' => $can_comment,
+			'id'             => $current_user->ID,
+			'name'           => $current_user->display_name,
+			'avatar'         => get_avatar_url( $current_user->ID, array( 'size' => 48 ) ),
+			'canPublish'     => $can_publish,
+			'canUpdatePosts' => $can_update_posts,
+			'canComment'     => $can_comment,
 		);
 	}
 
@@ -93,6 +281,8 @@ function p2next_enqueue_frontend() {
 				'restUrl'          => esc_url_raw( rest_url() ),
 				'siteTitle'        => get_bloginfo( 'name' ),
 				'currentUser'      => $user_data,
+				'canCreatePosts'   => $can_publish,
+				'canUpdatePosts'   => $can_update_posts,
 				'canComment'       => $can_comment,
 				'requireNameEmail' => $require_name_email,
 				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
