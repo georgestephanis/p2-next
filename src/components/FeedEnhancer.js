@@ -25,6 +25,9 @@ import PostEnhancement from './PostEnhancement';
 const POLL_INTERVAL = window.p2NextConfig?.pollInterval ?? 15;
 const COMMENT_REFRESH_BASE_INTERVAL = 20;
 const COMMENT_REFRESH_JITTER = 8;
+const COMMENT_REFRESH_MAX_BACKOFF = 8;
+const COMMENT_REFRESH_BACKOFF_FACTOR = 2;
+const COMMENT_REFRESH_CONCURRENCY = 3;
 
 export default function FeedEnhancer( { feedContainer, postElements } ) {
 	const { fetchPosts, pollForNewPosts, revealPendingPosts, fetchComments } =
@@ -87,7 +90,11 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 
 	// Start polling.
 	useEffect( () => {
-		const stop = startPolling( () => pollForNewPosts(), POLL_INTERVAL );
+		const stop = startPolling( () => pollForNewPosts(), POLL_INTERVAL, {
+			minBackoffMultiplier: 1,
+			maxBackoffMultiplier: 8,
+			backoffFactor: 2,
+		} );
 		return stop;
 	}, [ pollForNewPosts ] );
 
@@ -96,6 +103,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 	useEffect( () => {
 		let timeoutId;
 		let cancelled = false;
+		let backoffMultiplier = 1;
 
 		const scheduleNext = () => {
 			if ( cancelled ) {
@@ -104,10 +112,32 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 			const jitter =
 				Math.floor( Math.random() * ( COMMENT_REFRESH_JITTER + 1 ) ) *
 				1000;
-			timeoutId = window.setTimeout(
-				runRefresh,
-				COMMENT_REFRESH_BASE_INTERVAL * 1000 + jitter
-			);
+			const backoffDelay =
+				COMMENT_REFRESH_BASE_INTERVAL * 1000 * backoffMultiplier;
+			timeoutId = window.setTimeout( runRefresh, backoffDelay + jitter );
+		};
+
+		const refreshInBatches = async ( postIds ) => {
+			let hadError = false;
+			for (
+				let index = 0;
+				index < postIds.length;
+				index += COMMENT_REFRESH_CONCURRENCY
+			) {
+				const batch = postIds.slice(
+					index,
+					index + COMMENT_REFRESH_CONCURRENCY
+				);
+				const results = await Promise.allSettled(
+					batch.map( ( postId ) => fetchComments( postId ) )
+				);
+				if (
+					results.some( ( result ) => result.status === 'rejected' )
+				) {
+					hadError = true;
+				}
+			}
+			return ! hadError;
 		};
 
 		const runRefresh = async () => {
@@ -115,14 +145,20 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 				return;
 			}
 
+			let succeeded = true;
 			if (
 				document.visibilityState === 'visible' &&
 				expandedPostIds.length > 0
 			) {
-				await Promise.all(
-					expandedPostIds.map( ( postId ) =>
-						fetchComments( postId ).catch( () => undefined )
-					)
+				succeeded = await refreshInBatches( expandedPostIds );
+			}
+
+			if ( succeeded ) {
+				backoffMultiplier = 1;
+			} else {
+				backoffMultiplier = Math.min(
+					COMMENT_REFRESH_MAX_BACKOFF,
+					backoffMultiplier * COMMENT_REFRESH_BACKOFF_FACTOR
 				);
 			}
 

@@ -30,21 +30,71 @@ export function initApiFetch() {
  *
  * @param {Function} pollFn       Thunk dispatch call (e.g. dispatch( actions.pollForNewPosts() ))
  * @param {number}   intervalSecs Polling cadence in seconds.
+ * @param {Object}   options      Backoff tuning options.
  * @return {Function} Cleanup function — call to stop polling.
  */
-export function startPolling( pollFn, intervalSecs = 15 ) {
+export function startPolling( pollFn, intervalSecs = 15, options = {} ) {
+	const {
+		minBackoffMultiplier = 1,
+		maxBackoffMultiplier = 8,
+		backoffFactor = 2,
+	} = options;
+
+	let timeoutId;
+	let stopped = false;
+	let backoffMultiplier = minBackoffMultiplier;
+
+	const scheduleNext = () => {
+		if ( stopped ) {
+			return;
+		}
+
+		timeoutId = window.setTimeout(
+			runPoll,
+			intervalSecs * 1000 * backoffMultiplier
+		);
+	};
+
+	const runPoll = async () => {
+		if ( stopped || document.visibilityState !== 'visible' ) {
+			scheduleNext();
+			return;
+		}
+
+		try {
+			await Promise.resolve( pollFn() );
+			backoffMultiplier = minBackoffMultiplier;
+		} catch ( error ) {
+			backoffMultiplier = Math.min(
+				maxBackoffMultiplier,
+				Math.max(
+					minBackoffMultiplier,
+					backoffMultiplier * backoffFactor
+				)
+			);
+		}
+
+		scheduleNext();
+	};
+
 	// Poll immediately on visibility restore.
 	const onVisible = () => {
 		if ( document.visibilityState === 'visible' ) {
-			pollFn();
+			if ( timeoutId ) {
+				window.clearTimeout( timeoutId );
+			}
+			runPoll();
 		}
 	};
-	document.addEventListener( 'visibilitychange', onVisible );
 
-	const id = setInterval( pollFn, intervalSecs * 1000 );
+	document.addEventListener( 'visibilitychange', onVisible );
+	scheduleNext();
 
 	return () => {
-		clearInterval( id );
+		stopped = true;
+		if ( timeoutId ) {
+			window.clearTimeout( timeoutId );
+		}
 		document.removeEventListener( 'visibilitychange', onVisible );
 	};
 }
