@@ -7,13 +7,20 @@
  *
  * New posts from polling are buffered and revealed on banner click, keeping
  * the theme in control of the initial server-rendered post display.
+ *
+ * When new posts arrive (via createPost or banner reveal), the current page
+ * HTML is fetched and the server-rendered <li> for each post is extracted and
+ * prepended directly into feedContainer. This keeps injected markup identical
+ * to what the theme renders for existing posts. A fresh React root is then
+ * mounted into each injected element to provide edit/comment controls.
  */
 import {
 	useEffect,
 	useRef,
-	useState,
 	useCallback,
 	createPortal,
+	createElement,
+	createRoot,
 	useMemo,
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
@@ -21,7 +28,6 @@ import { Button } from '@wordpress/components';
 import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
-import Post from './Post';
 import PostEnhancement from './PostEnhancement';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
@@ -62,10 +68,9 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		return () => banner.remove();
 	}, [ feedContainer ] );
 
-	// Map of postId → <li> element prepended into feedContainer.
-	// Using a ref for the DOM nodes and state to trigger portal re-renders.
-	const newPostElsRef = useRef( {} );
-	const [ newPostEls, setNewPostEls ] = useState( {} );
+	// Tracks injected <li> elements and their React roots by post ID.
+	const newPostElsRef = useRef( {} ); // { [postId]: liElement }
+	const newPostRootsRef = useRef( {} ); // { [postId]: ReactRoot }
 
 	// Seed lastFetched from the most recent post on the page so polling only
 	// fetches posts newer than what's already visible.
@@ -172,46 +177,101 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		};
 	}, [ expandedPostIds, fetchComments ] );
 
-	// IDs of posts the theme already rendered — we enhance those via portals
-	// but never duplicate them in the new-posts container.
+	// IDs of posts the theme already rendered — never duplicate these.
 	const staticIds = useMemo(
 		() => new Set( postElements.map( ( { id } ) => id ) ),
 		[ postElements ]
 	);
 
-	// Posts that arrived via createPost or revealed polling — need full render.
+	// Posts that arrived via createPost or revealed polling — not yet in the DOM.
 	const newPosts = useMemo(
 		() => storePosts.filter( ( p ) => ! staticIds.has( p.id ) ),
 		[ storePosts, staticIds ]
 	);
 
-	// Create <li> elements inside feedContainer for each new post.
-	// Prepend in reverse order so newPosts[0] (newest) ends up at the top.
+	// When new posts arrive, fetch the current page HTML and extract the
+	// server-rendered <li> for each. Prepend into feedContainer so injected
+	// markup is identical to what the theme renders. Mount a PostEnhancement
+	// React root into each element for edit/comment controls.
 	useEffect( () => {
-		if ( ! feedContainer ) {
+		if ( ! newPosts.length || ! feedContainer ) {
 			return;
 		}
-		const prevIds = new Set(
-			Object.keys( newPostElsRef.current ).map( Number )
+
+		const toInject = newPosts.filter(
+			( p ) => ! newPostElsRef.current[ p.id ]
 		);
-		const toAdd = newPosts.filter( ( p ) => ! prevIds.has( p.id ) );
-		if ( ! toAdd.length ) {
+		if ( ! toInject.length ) {
 			return;
 		}
-		const added = {};
-		[ ...toAdd ].reverse().forEach( ( post ) => {
-			const li = document.createElement( 'li' );
-			li.className = `wp-block-post post-${ post.id } post type-post status-publish format-standard hentry`;
-			feedContainer.prepend( li );
-			added[ post.id ] = li;
-		} );
-		newPostElsRef.current = { ...newPostElsRef.current, ...added };
-		setNewPostEls( { ...newPostElsRef.current } );
+
+		fetch( window.location.href )
+			.then( ( r ) => r.text() )
+			.then( ( html ) => {
+				const doc = new DOMParser().parseFromString(
+					html,
+					'text/html'
+				);
+
+				// Prepend in reverse order so toInject[0] (newest) ends up first.
+				[ ...toInject ].reverse().forEach( ( post ) => {
+					if ( newPostElsRef.current[ post.id ] ) {
+						return; // guard against concurrent fetches
+					}
+
+					const li = doc.querySelector(
+						`.wp-block-post.post-${ post.id }`
+					);
+					if ( ! li ) {
+						return; // post not found in rendered page (e.g. not published yet)
+					}
+
+					// Capture a reference group block from the live feed
+					// before prepending, so we can sync layout classes
+					// (e.g. has-global-padding) that may differ between
+					// the initial PHP render and the re-fetched HTML.
+					const referenceGroup = feedContainer.querySelector(
+						'.wp-block-post > .wp-block-group'
+					);
+
+					feedContainer.prepend( li );
+					newPostElsRef.current[ post.id ] = li;
+
+					if ( referenceGroup ) {
+						const injectedGroup =
+							li.querySelector( ':scope > .wp-block-group' );
+						if ( injectedGroup ) {
+							referenceGroup.classList.forEach( ( cls ) =>
+								injectedGroup.classList.add( cls )
+							);
+						}
+					}
+
+					// Mount enhancement controls into the injected element.
+					const mountPoint = document.createElement( 'div' );
+					li.appendChild( mountPoint );
+					const root = createRoot( mountPoint );
+					root.render(
+						createElement( PostEnhancement, {
+							postId: post.id,
+							postElement: li,
+						} )
+					);
+					newPostRootsRef.current[ post.id ] = root;
+				} );
+			} )
+			.catch( () => {
+				// Fetch failed — silently skip. The post is saved; a page
+				// reload or the next poll cycle will surface it.
+			} );
 	}, [ newPosts, feedContainer ] );
 
-	// Remove all injected <li> elements on unmount.
+	// Unmount React roots and remove injected elements on teardown.
 	useEffect( () => {
 		return () => {
+			Object.values( newPostRootsRef.current ).forEach( ( root ) =>
+				root.unmount()
+			);
 			Object.values( newPostElsRef.current ).forEach( ( el ) =>
 				el.remove()
 			);
@@ -246,15 +306,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 					bannerContainerRef.current
 				) }
 
-			{ /* New posts — each portaled into its own <li> inside feedContainer */ }
-			{ newPosts.map( ( post ) => {
-				const el = newPostEls[ post.id ];
-				return el
-					? createPortal( <Post post={ post } />, el )
-					: null;
-			} ) }
-
-			{ /* Per-post enhancement portals */ }
+			{ /* Per-post enhancement portals for theme-rendered posts */ }
 			{ postElements.map( ( { id, element } ) => (
 				<PostEnhancement
 					key={ id }

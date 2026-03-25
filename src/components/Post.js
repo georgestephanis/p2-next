@@ -46,43 +46,29 @@ export default function Post( { post } ) {
 	const commentCount = post.comment_count ?? 0;
 
 	return (
-		<div
-			className="wp-block-group alignfull"
-			style={ {
-				paddingTop: 'var(--wp--preset--spacing--60)',
-				paddingBottom: 'var(--wp--preset--spacing--60)',
-			} }
-		>
-			{ post.title?.rendered && (
-				<h2
-					className="wp-block-post-title has-x-large-font-size"
-					dangerouslySetInnerHTML={ { __html: post.title.rendered } }
-				/>
-			) }
-
-			{ isEditing ? (
-				<PostEditor postId={ post.id } />
-			) : (
-				<div
-					className="entry-content wp-block-post-content alignfull has-medium-font-size"
-					dangerouslySetInnerHTML={ {
-						__html: post.content?.rendered ?? '',
-					} }
-				/>
-			) }
-
-			<div className="p2-next-post-actions">
-				<time
-					className="wp-block-post-date has-small-font-size p2-next-date"
-					dateTime={ post.date_gmt + 'Z' }
-				>
-					{ author && (
-						<span className="p2-next-author">
-							{ author.name }{ ' ' }
-						</span>
-					) }
-					{ new Date( post.date_gmt + 'Z' ).toLocaleString() }
-				</time>
+		<article className="p2-next-post" id={ `post-${ post.id }` }>
+			<header className="p2-next-post-header">
+				{ author && (
+					<img
+						className="p2-next-avatar"
+						src={ author.avatar_urls?.[ 48 ] }
+						alt={ author.name }
+						width={ 48 }
+						height={ 48 }
+					/>
+				) }
+				<div className="p2-next-post-meta">
+					<span className="p2-next-author">
+						{ author?.name ?? __( 'Unknown', 'p2-next' ) }
+					</span>
+					<time
+						className="p2-next-date"
+						dateTime={ post.date_gmt }
+						title={ post.date_gmt }
+					>
+						{ new Date( post.date_gmt + 'Z' ).toLocaleString() }
+					</time>
+				</div>
 
 				{ canEdit && ! isEditing && (
 					<Button
@@ -94,9 +80,28 @@ export default function Post( { post } ) {
 						{ __( 'Edit', 'p2-next' ) }
 					</Button>
 				) }
+			</header>
 
+			{ post.title?.rendered && (
+				<h2
+					className="p2-next-post-title"
+					dangerouslySetInnerHTML={ { __html: post.title.rendered } }
+				/>
+			) }
+
+			{ isEditing ? (
+				<PostEditor postId={ post.id } />
+			) : (
+				<div
+					className="p2-next-post-content"
+					dangerouslySetInnerHTML={ {
+						__html: post.content?.rendered ?? '',
+					} }
+				/>
+			) }
+
+			<footer className="p2-next-post-footer">
 				<Button
-					className="p2-next-comments-toggle"
 					variant="link"
 					onClick={ onToggleComments }
 					aria-expanded={ isExpanded }
@@ -114,9 +119,9 @@ export default function Post( { post } ) {
 								commentCount
 						  ) }
 				</Button>
-			</div>
+			</footer>
 
 			{ isExpanded && <Comments postId={ post.id } /> }
-		</div>
+		</article>
 	);
 }
