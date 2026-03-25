@@ -4,15 +4,21 @@
 
 // Editor containers
 .p2-next-editor-canvas {
-	background-color: #fafafa;
-	border: 1px solid #e0e0e0;
+	background-color: #fff;
+	border: 1px solid #ddd;
 	border-radius: 4px;
 	padding: 16px;
 	margin: 12px 0;
 	min-height: 120px;
 	cursor: text;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-	&:focus {
+	&:hover {
+		border-color: #b0b0b0;
+	}
+
+	// Use :focus-within so the highlight fires when inner contenteditable is focused.
+	&:focus-within {
 		outline: none;
 		border-color: #0073aa;
 		box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
@@ -20,6 +26,18 @@
 
 	.is-root-container {
 		min-height: inherit;
+	}
+
+	// Show subtle block boundaries while editing.
+	&:focus-within .wp-block {
+		outline: 1px dashed transparent;
+		outline-offset: 2px;
+		transition: outline-color 0.1s ease;
+
+		&:hover,
+		&.is-selected {
+			outline-color: rgba(0, 115, 170, 0.3);
+		}
 	}
 
 	// Core block styles for frontend display
@@ -70,11 +88,26 @@
 	margin: 16px 0;
 	background-color: #fff;
 	border: 1px solid #ddd;
-	border-radius: 4px;
+	border-radius: 6px;
 	padding: 16px;
+	transition: box-shadow 0.2s ease;
 
-	&[data-expanded="true"] {
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	// Prompt shown above the canvas so users know what to do here.
+	&::before {
+		content: "What's on your mind?";
+		display: block;
+		font-size: 0.85em;
+		font-weight: 600;
+		color: #888;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		margin-bottom: 10px;
+	}
+
+	// Lift the card when the canvas has focus.
+	&:focus-within {
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+		border-color: #b0b0b0;
 	}
 
 	.p2-next-editor-canvas {
@@ -94,26 +127,60 @@
 // Post enhancement (comment/edit controls)
 .p2-next-post-actions {
 	display: flex;
-	gap: 8px;
+	gap: 6px;
 	margin-top: 12px;
 	padding: 8px 0;
 	flex-wrap: wrap;
+	border-top: 1px solid #f0f0f0;
+
+	// Style the action buttons as subtle pill chips so they're clearly clickable.
+	.p2-next-comments-toggle,
+	.p2-next-edit-btn {
+		font-size: 0.82em !important;
+		font-weight: 500 !important;
+		color: #555 !important;
+		background-color: #f4f4f4 !important;
+		border: 1px solid #e0e0e0 !important;
+		border-radius: 20px !important;
+		padding: 3px 12px !important;
+		height: auto !important;
+		line-height: 1.6 !important;
+		text-decoration: none !important;
+		transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+
+		&:hover {
+			background-color: #e8e8e8 !important;
+			border-color: #c0c0c0 !important;
+			color: #222 !important;
+		}
+
+		&[aria-expanded="true"] {
+			background-color: #0073aa !important;
+			border-color: #0073aa !important;
+			color: #fff !important;
+		}
+	}
 }
 
 // Comments section
 .p2-next-comments {
-	background-color: #f5f5f5;
-	border-left: 4px solid #0073aa;
-	padding: 12px;
-	margin-top: 12px;
-	border-radius: 3px;
+	background-color: #f8f9fa;
+	border-left: 3px solid #0073aa;
+	padding: 12px 16px;
+	margin-top: 4px;
+	border-radius: 0 4px 4px 0;
 
 	.p2-next-comment {
 		background-color: #fff;
-		border: 1px solid #e5e5e5;
-		border-radius: 3px;
+		border: 1px solid #e8e8e8;
+		border-radius: 4px;
 		padding: 12px;
-		margin-bottom: 12px;
+		margin-bottom: 10px;
+		transition: border-color 0.15s ease;
+
+		&:hover {
+			border-color: #d0d0d0;
+		}
 
 		&:last-child {
 			margin-bottom: 0;
@@ -130,6 +197,7 @@
 	.p2-next-avatar {
 		border-radius: 50%;
 		flex-shrink: 0;
+		box-shadow: 0 0 0 2px #e8e8e8;
 	}
 
 	.p2-next-comment-meta {
@@ -146,18 +214,18 @@
 	}
 
 	.p2-next-date {
-		color: #999;
+		color: #aaa;
 	}
 
 	.p2-next-comment-content {
 		margin: 8px 0;
-		line-height: 1.5;
+		line-height: 1.6;
 	}
 
 	.p2-next-comment-footer {
 		margin-top: 8px;
 		padding-top: 8px;
-		border-top: 1px solid #eee;
+		border-top: 1px solid #f0f0f0;
 	}
 
 	.p2-next-reply-form {
@@ -181,13 +249,21 @@
 
 // New posts banner
 .p2-next-new-posts-banner {
-	background-color: #fff;
+	background-color: #e8f4fa;
 	border: 1px solid #0073aa;
 	border-radius: 4px;
 	padding: 12px 16px;
 	margin: 16px 0;
 	text-align: center;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 1px 4px rgba(0, 115, 170, 0.15);
+	cursor: pointer;
+	font-weight: 500;
+	color: #0073aa;
+	transition: background-color 0.15s ease;
+
+	&:hover {
+		background-color: #d4ecf7;
+	}
 }
 
 // Comment thread nesting
@@ -200,7 +276,9 @@
 	&.depth-1,
 	&.depth-2,
 	&.depth-3 {
-		margin-left: 16px;
+		margin-left: 20px;
+		border-left: 2px solid #e8e8e8;
+		padding-left: 12px;
 	}
 
 	.p2-next-comment-children {
