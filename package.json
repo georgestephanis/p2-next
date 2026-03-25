@@ -4,10 +4,15 @@
   "version": "0.1.0",
   "description": "Modern P2/o2 replacement using the Block Editor and REST API.",
   "scripts": {
-    "build": "WP_BLOCKS_MANIFEST=true wp-scripts build --output-path=build",
-    "start": "WP_BLOCKS_MANIFEST=true wp-scripts start --output-path=build",
-    "lint:js": "wp-scripts lint-js src",
-    "lint:php": "vendor/bin/phpcs"
+    "build": "wp-scripts build --blocks-manifest",
+    "start": "wp-scripts start --blocks-manifest",
+    "lint:js": "wp-scripts lint-js",
+    "lint:css": "wp-scripts lint-style",
+    "lint:php": "composer lint:php",
+    "format:js": "wp-scripts lint-js --fix",
+    "format:css": "wp-scripts lint-style --fix",
+    "format:php": "composer format:php",
+    "plugin-zip": "wp-scripts plugin-zip"
   },
   "devDependencies": {
     "@wordpress/scripts": "^30.0.0"

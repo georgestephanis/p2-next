@@ -33,8 +33,6 @@ export default function NewPostEditor() {
 	const [ blocks, setBlocks ] = useState( [
 		createBlock( 'core/paragraph' ),
 	] );
-	const [ isExpanded, setExpanded ] = useState( false );
-
 	const { createPost } = useDispatch( STORE_NAME );
 	const isSaving = useSelect( ( select ) =>
 		select( STORE_NAME ).isSavingPost()
@@ -47,13 +45,10 @@ export default function NewPostEditor() {
 		await createPost( { blocks } );
 		// Reset editor to a fresh paragraph after successful save.
 		setBlocks( [ createBlock( 'core/paragraph' ) ] );
-		setExpanded( false );
 	}, [ blocks, createPost ] );
 
-	const onFocus = useCallback( () => setExpanded( true ), [] );
-
 	return (
-		<div className="p2-next-new-post-editor" data-expanded={ isExpanded }>
+		<div className="p2-next-new-post-editor">
 			<BlockEditorProvider
 				value={ blocks }
 				onInput={ setBlocks }
@@ -66,7 +61,6 @@ export default function NewPostEditor() {
 						<ObserveTyping>
 							<div
 								className="p2-next-editor-canvas"
-								onFocus={ onFocus }
 								role="textbox"
 								aria-multiline="true"
 								aria-label={ __(
@@ -81,30 +75,27 @@ export default function NewPostEditor() {
 				</BlockTools>
 			</BlockEditorProvider>
 
-			{ isExpanded && (
-				<div className="p2-next-editor-toolbar">
-					<Button
-						variant="primary"
-						onClick={ onPublish }
-						disabled={ isSaving }
-						isBusy={ isSaving }
-					>
-						{ isSaving
-							? __( 'Publishing…', 'p2-next' )
-							: __( 'Publish', 'p2-next' ) }
-					</Button>
-					<Button
-						variant="tertiary"
-						onClick={ () => {
-							setBlocks( [ createBlock( 'core/paragraph' ) ] );
-							setExpanded( false );
-						} }
-						disabled={ isSaving }
-					>
-						{ __( 'Cancel', 'p2-next' ) }
-					</Button>
-				</div>
-			) }
+			<div className="p2-next-editor-toolbar">
+				<Button
+					variant="primary"
+					onClick={ onPublish }
+					disabled={ isSaving }
+					isBusy={ isSaving }
+				>
+					{ isSaving
+						? __( 'Publishing…', 'p2-next' )
+						: __( 'Publish', 'p2-next' ) }
+				</Button>
+				<Button
+					variant="tertiary"
+					onClick={ () =>
+						setBlocks( [ createBlock( 'core/paragraph' ) ] )
+					}
+					disabled={ isSaving }
+				>
+					{ __( 'Cancel', 'p2-next' ) }
+				</Button>
+			</div>
 		</div>
 	);
 }
