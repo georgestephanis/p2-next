@@ -261,6 +261,7 @@ function p2next_enqueue_frontend() {
 	$can_update_posts   = p2next_can_update_posts();
 	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
 	$require_name_email = get_option( 'require_name_email' ) === '1';
+	$debug_telemetry    = defined( 'WP_DEBUG' ) && WP_DEBUG;
 
 	if ( $current_user->ID ) {
 		$user_data = array(
@@ -280,6 +281,7 @@ function p2next_enqueue_frontend() {
 				'nonce'            => wp_create_nonce( 'wp_rest' ),
 				'restUrl'          => esc_url_raw( rest_url() ),
 				'siteTitle'        => get_bloginfo( 'name' ),
+				'debugTelemetry'   => $debug_telemetry,
 				'currentUser'      => $user_data,
 				'canCreatePosts'   => $can_publish,
 				'canUpdatePosts'   => $can_update_posts,

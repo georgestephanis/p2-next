@@ -8,6 +8,47 @@
 import apiFetch from '@wordpress/api-fetch';
 
 let initialised = false;
+let telemetryInitialised = false;
+
+function normalisePath( path = '' ) {
+	// Collapse numeric IDs to keep telemetry groupings stable.
+	return path.replace( /\/\d+(?=\/|$|\?)/g, '/:id' );
+}
+
+function initTelemetry() {
+	if ( telemetryInitialised ) {
+		return;
+	}
+	telemetryInitialised = true;
+
+	const buckets = new Map();
+
+	apiFetch.use( async ( options, next ) => {
+		const method = ( options?.method ?? 'GET' ).toUpperCase();
+		const path = normalisePath(
+			options?.path ?? options?.url ?? 'unknown'
+		);
+		const key = `${ method } ${ path }`;
+		buckets.set( key, ( buckets.get( key ) ?? 0 ) + 1 );
+
+		return next( options );
+	} );
+
+	window.setInterval( () => {
+		if ( buckets.size === 0 ) {
+			return;
+		}
+
+		const summary = [ ...buckets.entries() ]
+			.sort( ( a, b ) => b[ 1 ] - a[ 1 ] )
+			.map( ( [ key, count ] ) => `${ key } = ${ count }/min` )
+			.join( ', ' );
+
+		// eslint-disable-next-line no-console
+		console.info( `[p2-next telemetry] ${ summary }` );
+		buckets.clear();
+	}, 60 * 1000 );
+}
 
 export function initApiFetch() {
 	if ( initialised ) {
@@ -15,13 +56,17 @@ export function initApiFetch() {
 	}
 	initialised = true;
 
-	const { nonce, restUrl } = window.p2NextConfig ?? {};
+	const { nonce, restUrl, debugTelemetry } = window.p2NextConfig ?? {};
 
 	if ( restUrl ) {
 		apiFetch.use( apiFetch.createRootURLMiddleware( restUrl ) );
 	}
 	if ( nonce ) {
 		apiFetch.use( apiFetch.createNonceMiddleware( nonce ) );
+	}
+
+	if ( debugTelemetry ) {
+		initTelemetry();
 	}
 }
 
