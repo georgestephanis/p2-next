@@ -45,6 +45,7 @@ function activatePost( postId, enhancementEl ) {
 	activeRoot.render(
 		createElement( PostEnhancement, {
 			postId,
+			postElement: enhancementEl.closest( '.wp-block-post' ),
 			onDeactivate: () => deactivatePost( enhancementEl ),
 		} )
 	);

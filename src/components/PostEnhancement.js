@@ -1,15 +1,18 @@
 /**
  * PostEnhancement — React content for the active post's toolbar slot.
  *
- * Rendered on demand by enhancer.js into the `.p2-next-post-react` slot
- * when the user interacts with a post's plain-DOM toolbar. Renders the
- * reactive versions of the action buttons plus any expanded content
- * (block editor or comment thread).
- *
- * Calls onDeactivate() once the user has closed everything, so enhancer.js
- * can unmount this root and restore the plain-DOM toolbar.
+ * When editing, the theme-rendered post content element is animated out and
+ * a container div is inserted in its place. PostEditor is portaled into that
+ * container so the editor appears where the content was. On close, the
+ * content animates back in.
  */
-import { useEffect, useRef, useCallback } from '@wordpress/element';
+import {
+	useEffect,
+	useRef,
+	useState,
+	useCallback,
+	createPortal,
+} from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
@@ -17,7 +20,10 @@ import { STORE_NAME } from '../store';
 import Comments from './Comments';
 import PostEditor from './PostEditor';
 
-export default function PostEnhancement( { postId, onDeactivate } ) {
+const CONTENT_SELECTOR = '.wp-block-post-content, .entry-content';
+const TRANSITION = 'height 0.25s ease, opacity 0.25s ease';
+
+export default function PostEnhancement( { postId, postElement, onDeactivate } ) {
 	const { expandPost, collapsePost, setEditingPost, fetchComments } =
 		useDispatch( STORE_NAME );
 
@@ -33,8 +39,66 @@ export default function PostEnhancement( { postId, onDeactivate } ) {
 	const currentUser = window.p2NextConfig?.currentUser;
 	const canEdit = currentUser?.canUpdatePosts ?? currentUser?.canPublish;
 
-	// Track whether the user has actually opened anything. Once they have,
-	// closing everything signals that React is done here.
+	// -----------------------------------------------------------------------
+	// In-place editor: swap content element for an editor container.
+	// -----------------------------------------------------------------------
+	const [ editorContainer, setEditorContainer ] = useState( null );
+	const contentElRef = useRef( null );
+	const savedHeightRef = useRef( 0 );
+
+	useEffect( () => {
+		if ( ! postElement || ! isEditing ) {
+			return;
+		}
+
+		const contentEl = postElement.querySelector( CONTENT_SELECTOR );
+		contentElRef.current = contentEl;
+
+		// Collapse the existing content element out.
+		if ( contentEl ) {
+			savedHeightRef.current = contentEl.scrollHeight;
+			contentEl.style.height = savedHeightRef.current + 'px';
+			contentEl.style.overflow = 'hidden';
+			requestAnimationFrame( () => {
+				contentEl.style.transition = TRANSITION;
+				contentEl.style.height = '0';
+				contentEl.style.opacity = '0';
+			} );
+		}
+
+		// Insert an editor container div where the content was.
+		const container = document.createElement( 'div' );
+		container.className = 'p2-next-editor-container';
+		if ( contentEl?.parentNode ) {
+			contentEl.parentNode.insertBefore( container, contentEl );
+		} else {
+			postElement.appendChild( container );
+		}
+		setEditorContainer( container );
+
+		return () => {
+			// Restore the content element.
+			const el = contentElRef.current;
+			if ( el ) {
+				el.style.transition = TRANSITION;
+				el.style.height = savedHeightRef.current + 'px';
+				el.style.opacity = '1';
+				el.addEventListener(
+					'transitionend',
+					() => {
+						el.style.cssText = '';
+					},
+					{ once: true }
+				);
+			}
+			container.remove();
+			setEditorContainer( null );
+		};
+	}, [ isEditing, postElement ] );
+
+	// -----------------------------------------------------------------------
+	// Deactivate once the user has finished everything.
+	// -----------------------------------------------------------------------
 	const wasActive = useRef( false );
 	useEffect( () => {
 		if ( isExpanded || isEditing ) {
@@ -44,6 +108,9 @@ export default function PostEnhancement( { postId, onDeactivate } ) {
 		}
 	}, [ isExpanded, isEditing, onDeactivate ] );
 
+	// -----------------------------------------------------------------------
+	// Comment label
+	// -----------------------------------------------------------------------
 	const commentCount = isExpanded ? comments.length : 0;
 	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2-next' ) }`;
 	if ( isExpanded ) {
@@ -66,28 +133,37 @@ export default function PostEnhancement( { postId, onDeactivate } ) {
 	}, [ postId, setEditingPost ] );
 
 	return (
-		<div className="p2-next-post-actions">
-			<Button
-				variant="link"
-				className="p2-next-comments-toggle"
-				onClick={ onToggleComments }
-				aria-expanded={ isExpanded }
-			>
-				{ commentLabel }
-			</Button>
-
-			{ canEdit && ! isEditing && (
+		<>
+			<div className="p2-next-post-actions">
 				<Button
 					variant="link"
-					className="p2-next-edit-btn"
-					onClick={ onEdit }
+					className="p2-next-comments-toggle"
+					onClick={ onToggleComments }
+					aria-expanded={ isExpanded }
 				>
-					{ __( 'Edit', 'p2-next' ) }
+					{ commentLabel }
 				</Button>
-			) }
 
-			{ isEditing && <PostEditor postId={ postId } /> }
+				{ canEdit && ! isEditing && (
+					<Button
+						variant="link"
+						className="p2-next-edit-btn"
+						onClick={ onEdit }
+					>
+						{ __( 'Edit', 'p2-next' ) }
+					</Button>
+				) }
+			</div>
+
+			{ /* Editor portaled into the container inserted before the content */ }
+			{ isEditing &&
+				editorContainer &&
+				createPortal(
+					<PostEditor postId={ postId } />,
+					editorContainer
+				) }
+
 			{ isExpanded && ! isEditing && <Comments postId={ postId } /> }
-		</div>
+		</>
 	);
 }

@@ -75,6 +75,22 @@
 	}
 }
 
+// Editor container — inserted in place of post content while editing.
+.p2-next-editor-container {
+	animation: p2NextEditorSlideIn 0.2s ease;
+}
+
+@keyframes p2NextEditorSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY( -6px );
+	}
+	to {
+		opacity: 1;
+		transform: translateY( 0 );
+	}
+}
+
 // Post Editor (inline editing)
 .p2-next-post-editor {
 	margin-top: 12px;
