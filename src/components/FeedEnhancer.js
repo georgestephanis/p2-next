@@ -17,10 +17,9 @@
 import {
 	useEffect,
 	useRef,
+	useState,
 	useCallback,
 	createPortal,
-	createElement,
-	createRoot,
 	useMemo,
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
@@ -68,9 +67,10 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		return () => banner.remove();
 	}, [ feedContainer ] );
 
-	// Tracks injected <li> elements and their React roots by post ID.
-	const newPostElsRef = useRef( {} ); // { [postId]: liElement }
-	const newPostRootsRef = useRef( {} ); // { [postId]: ReactRoot }
+	// Tracks injected <li> elements by post ID.
+	// The ref holds the DOM nodes; state triggers portal re-renders.
+	const newPostElsRef = useRef( {} );
+	const [ newPostEls, setNewPostEls ] = useState( {} );
 
 	// Seed lastFetched from the most recent post on the page so polling only
 	// fetches posts newer than what's already visible.
@@ -246,32 +246,18 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 							);
 						}
 					}
-
-					// Mount enhancement controls into the injected element.
-					const mountPoint = document.createElement( 'div' );
-					li.appendChild( mountPoint );
-					const root = createRoot( mountPoint );
-					root.render(
-						createElement( PostEnhancement, {
-							postId: post.id,
-							postElement: li,
-						} )
-					);
-					newPostRootsRef.current[ post.id ] = root;
 				} );
-			} )
+					setNewPostEls( { ...newPostElsRef.current } );
+				} )
 			.catch( () => {
 				// Fetch failed — silently skip. The post is saved; a page
 				// reload or the next poll cycle will surface it.
 			} );
 	}, [ newPosts, feedContainer ] );
 
-	// Unmount React roots and remove injected elements on teardown.
+	// Remove injected elements on teardown.
 	useEffect( () => {
 		return () => {
-			Object.values( newPostRootsRef.current ).forEach( ( root ) =>
-				root.unmount()
-			);
 			Object.values( newPostElsRef.current ).forEach( ( el ) =>
 				el.remove()
 			);
@@ -311,6 +297,15 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 				<PostEnhancement
 					key={ id }
 					postId={ id }
+					postElement={ element }
+				/>
+			) ) }
+
+			{ /* Per-post enhancement portals for injected posts */ }
+			{ Object.entries( newPostEls ).map( ( [ id, element ] ) => (
+				<PostEnhancement
+					key={ id }
+					postId={ Number( id ) }
 					postElement={ element }
 				/>
 			) ) }

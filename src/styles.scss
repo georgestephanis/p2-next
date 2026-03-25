@@ -137,6 +137,13 @@
 	}
 }
 
+// Post enhancement mount point — constrain to content width and center.
+.p2-next-post-enhancement {
+	max-width: var(--wp--style--global--content-size);
+	margin-left: auto;
+	margin-right: auto;
+}
+
 // Post enhancement (comment/edit controls)
 .p2-next-post-actions {
 	display: flex;
