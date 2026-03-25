@@ -11,6 +11,7 @@
 import {
 	useEffect,
 	useRef,
+	useState,
 	useCallback,
 	createPortal,
 	useMemo,
@@ -46,8 +47,6 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 
 	// Container for the "new posts" banner — injected before the post list.
 	const bannerContainerRef = useRef( null );
-	// Container for new posts prepended above the existing list.
-	const newPostsContainerRef = useRef( null );
 
 	useEffect( () => {
 		if ( ! feedContainer || ! feedContainer.parentNode ) {
@@ -60,17 +59,13 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		feedContainer.parentNode.insertBefore( banner, feedContainer );
 		bannerContainerRef.current = banner;
 
-		// New-posts container sits between the banner and the existing list.
-		const newPosts = document.createElement( 'div' );
-		newPosts.className = 'p2-next-new-posts-container';
-		feedContainer.parentNode.insertBefore( newPosts, feedContainer );
-		newPostsContainerRef.current = newPosts;
-
-		return () => {
-			banner.remove();
-			newPosts.remove();
-		};
+		return () => banner.remove();
 	}, [ feedContainer ] );
+
+	// Map of postId → <li> element prepended into feedContainer.
+	// Using a ref for the DOM nodes and state to trigger portal re-renders.
+	const newPostElsRef = useRef( {} );
+	const [ newPostEls, setNewPostEls ] = useState( {} );
 
 	// Seed lastFetched from the most recent post on the page so polling only
 	// fetches posts newer than what's already visible.
@@ -190,6 +185,39 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		[ storePosts, staticIds ]
 	);
 
+	// Create <li> elements inside feedContainer for each new post.
+	// Prepend in reverse order so newPosts[0] (newest) ends up at the top.
+	useEffect( () => {
+		if ( ! feedContainer ) {
+			return;
+		}
+		const prevIds = new Set(
+			Object.keys( newPostElsRef.current ).map( Number )
+		);
+		const toAdd = newPosts.filter( ( p ) => ! prevIds.has( p.id ) );
+		if ( ! toAdd.length ) {
+			return;
+		}
+		const added = {};
+		[ ...toAdd ].reverse().forEach( ( post ) => {
+			const li = document.createElement( 'li' );
+			li.className = `wp-block-post post-${ post.id } post type-post status-publish format-standard hentry`;
+			feedContainer.prepend( li );
+			added[ post.id ] = li;
+		} );
+		newPostElsRef.current = { ...newPostElsRef.current, ...added };
+		setNewPostEls( { ...newPostElsRef.current } );
+	}, [ newPosts, feedContainer ] );
+
+	// Remove all injected <li> elements on unmount.
+	useEffect( () => {
+		return () => {
+			Object.values( newPostElsRef.current ).forEach( ( el ) =>
+				el.remove()
+			);
+		};
+	}, [] );
+
 	const onReveal = useCallback( () => {
 		revealPendingPosts();
 	}, [ revealPendingPosts ] );
@@ -218,15 +246,13 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 					bannerContainerRef.current
 				) }
 
-			{ /* New posts — from createPost or revealed polling */ }
-			{ newPostsContainerRef.current &&
-				newPosts.length > 0 &&
-				createPortal(
-					newPosts.map( ( post ) => (
-						<Post key={ post.id } post={ post } />
-					) ),
-					newPostsContainerRef.current
-				) }
+			{ /* New posts — each portaled into its own <li> inside feedContainer */ }
+			{ newPosts.map( ( post ) => {
+				const el = newPostEls[ post.id ];
+				return el
+					? createPortal( <Post post={ post } />, el )
+					: null;
+			} ) }
 
 			{ /* Per-post enhancement portals */ }
 			{ postElements.map( ( { id, element } ) => (
