@@ -13,12 +13,14 @@ import {
 	useRef,
 	useCallback,
 	createPortal,
+	useMemo,
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
 import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
+import Post from './Post';
 import PostEnhancement from './PostEnhancement';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
@@ -35,8 +37,8 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 	const pendingCount = useSelect( ( select ) =>
 		select( STORE_NAME ).getPendingCount()
 	);
-	const pendingPosts = useSelect( ( select ) =>
-		select( STORE_NAME ).getPendingPosts()
+	const storePosts = useSelect( ( select ) =>
+		select( STORE_NAME ).getPosts()
 	);
 	const expandedPostIds = useSelect( ( select ) =>
 		select( STORE_NAME ).getExpandedPosts()
@@ -175,6 +177,19 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		};
 	}, [ expandedPostIds, fetchComments ] );
 
+	// IDs of posts the theme already rendered — we enhance those via portals
+	// but never duplicate them in the new-posts container.
+	const staticIds = useMemo(
+		() => new Set( postElements.map( ( { id } ) => id ) ),
+		[ postElements ]
+	);
+
+	// Posts that arrived via createPost or revealed polling — need full render.
+	const newPosts = useMemo(
+		() => storePosts.filter( ( p ) => ! staticIds.has( p.id ) ),
+		[ storePosts, staticIds ]
+	);
+
 	const onReveal = useCallback( () => {
 		revealPendingPosts();
 	}, [ revealPendingPosts ] );
@@ -203,10 +218,15 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 					bannerContainerRef.current
 				) }
 
-			{ /* New posts revealed from polling */ }
+			{ /* New posts — from createPost or revealed polling */ }
 			{ newPostsContainerRef.current &&
-				pendingPosts.length === 0 &&
-				createPortal( null, newPostsContainerRef.current ) }
+				newPosts.length > 0 &&
+				createPortal(
+					newPosts.map( ( post ) => (
+						<Post key={ post.id } post={ post } />
+					) ),
+					newPostsContainerRef.current
+				) }
 
 			{ /* Per-post enhancement portals */ }
 			{ postElements.map( ( { id, element } ) => (
