@@ -3,10 +3,11 @@
  */
 import { useState, useCallback } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
-import { Button, TextareaControl, TextControl } from '@wordpress/components';
+import { Button, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comment from './Comment';
+import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
 
 /**
  * Nest flat comment array into a tree by parent ID.
@@ -135,9 +136,7 @@ export default function Comments( { postId } ) {
 							/>
 						</>
 					) }
-					<TextareaControl
-						label={ __( 'Add a comment', 'p2026' ) }
-						hideLabelFromVision
+					<MentionTextareaControl
 						placeholder={ __( 'Write a comment…', 'p2026' ) }
 						value={ content }
 						onChange={ setContent }

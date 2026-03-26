@@ -3,7 +3,8 @@
  */
 import { useState, useCallback } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
-import { Button, TextareaControl, TextControl } from '@wordpress/components';
+import { Button, TextControl } from '@wordpress/components';
+import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 
@@ -140,9 +141,7 @@ export default function Comment( { comment, postId } ) {
 									/>
 								</>
 							) }
-							<TextareaControl
-								label={ __( 'Your reply', 'p2026' ) }
-								hideLabelFromVision
+							<MentionTextareaControl
 								placeholder={ __( 'Write a reply…', 'p2026' ) }
 								value={ replyContent }
 								onChange={ setReplyContent }

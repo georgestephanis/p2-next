@@ -532,3 +532,64 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 		}
 	}
 }
+
+// =============================================================================
+// Mentions module
+// =============================================================================
+
+// Inline mention tokens in serialized block content and comment text.
+.p2026-mention {
+	color: #0073aa;
+	font-weight: 500;
+}
+
+// Wrapper that positions the suggestion list relative to the textarea.
+.p2026-mention-textarea-wrap {
+	position: relative;
+}
+
+// Autocomplete suggestion list (rendered below the textarea).
+.p2026-mention-suggestions {
+	position: absolute;
+	z-index: 9999;
+	left: 0;
+	right: 0;
+	list-style: none;
+	margin: 2px 0 0;
+	padding: 0;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+	max-height: 200px;
+	overflow-y: auto;
+	font-size: 13px;
+
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		cursor: pointer;
+
+		&:hover,
+		&.is-active {
+			background: #f0f6fc;
+		}
+
+		img {
+			border-radius: 50%;
+			flex-shrink: 0;
+		}
+	}
+
+	&__name {
+		font-weight: 500;
+		color: #1e1e1e;
+	}
+
+	&__slug {
+		color: #757575;
+		font-size: 12px;
+	}
+}
