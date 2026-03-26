@@ -89,6 +89,7 @@ export default function MentionTextareaControl( {
 		}
 
 		const { query } = mentionMeta;
+		const controller = new AbortController();
 
 		if ( debounceRef.current ) {
 			clearTimeout( debounceRef.current );
@@ -99,11 +100,16 @@ export default function MentionTextareaControl( {
 					path: `/p2026/v1/users?search=${ encodeURIComponent(
 						query
 					) }&per_page=5`,
+					signal: controller.signal,
 				} );
-				setSuggestions( users );
-				setActiveIndex( 0 );
+				if ( ! controller.signal.aborted ) {
+					setSuggestions( users );
+					setActiveIndex( 0 );
+				}
 			} catch {
-				setSuggestions( [] );
+				if ( ! controller.signal.aborted ) {
+					setSuggestions( [] );
+				}
 			}
 		}, DEBOUNCE_MS );
 
@@ -111,6 +117,7 @@ export default function MentionTextareaControl( {
 			if ( debounceRef.current ) {
 				clearTimeout( debounceRef.current );
 			}
+			controller.abort();
 		};
 	}, [ isLoggedIn, mentionMeta ] );
 
