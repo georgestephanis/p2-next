@@ -13,6 +13,24 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 -   **Capability-aware UX** — All controls are gated by WordPress capabilities (and an optional Abilities API), so guests, contributors, and editors each see the appropriate UI.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
+## Building a Company Intranet
+
+P2026 works well as the collaboration layer for a private internal site. A few companion plugins round out the setup:
+
+### Access control
+
+-   **[WP Force Login](https://wordpress.org/plugins/wp-force-login/)** — redirects all unauthenticated visitors to the login page, keeping every page of the site internal. Essential first step.
+-   **[Domain Restricted Registration](https://github.com/georgestephanis/domain-restricted-registration/)** — lets you whitelist an email domain (e.g. `@yourcompany.com`) so coworkers can self-register without opening the door to outsiders.
+-   **[WP SAML Auth](https://wordpress.org/plugins/wp-saml-auth/)** — single sign-on via your company's identity provider (Google Workspace, Azure AD, Okta, etc.). Employees log in with their existing corporate credentials and never need a separate WordPress password.
+
+### People
+
+-   **[Simple Local Avatars](https://wordpress.org/plugins/simple-local-avatars/)** — lets users upload profile photos that are stored on your own server. Avoids the Gravatar dependency, which matters on an intranet where employees may not have public Gravatar accounts and external requests are undesirable.
+
+### Visibility and compliance
+
+-   **[Stream](https://wordpress.org/plugins/stream/)** — keeps a full audit log of who created, edited, or deleted content and when. Useful for regulated industries or any team that needs an activity trail.
+
 ## Requirements
 
 -   WordPress 6.0+
