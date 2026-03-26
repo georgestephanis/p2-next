@@ -17,13 +17,17 @@ Do not convert this plugin into a full SPA. Preserve theme ownership of initial 
 
 ## Core Entry Points
 
-- p2026.php: bootstrap, abilities registration, permission helpers, config injection, block registration, admin bar node.
-- src/frontend.js: finds post list + post nodes, mounts FeedEnhancer, mounts NewPostModal root, wires admin bar button.
+- p2026.php: bootstrap, abilities registration, permission helpers, config injection, block registration, admin bar node, PHP module glob-loader.
+- src/frontend.js: finds post list + post nodes, mounts FeedEnhancer, mounts NewPostModal root, wires admin bar button, imports all JS modules via `src/modules/index.js`.
+- src/enhancer.js: exports `setupPostToolbar` (mounts PostEnhancement React root per post for menu/comments/editing) and `observePosts` (no-op stub kept for API compatibility).
 - src/blocks/new-post/render.php: server-gated mount point for new-post UI.
 - src/blocks/new-post/view.js: frontend mount for new-post editor.
 - src/store/index.js: canonical state/actions/selectors (includes newPostModalOpen).
 - src/components/FeedEnhancer.js: post polling + comment refresh scheduling.
 - src/components/NewPostModal.js: modal driven by newPostModalOpen store state; wraps NewPostEditor.
+- src/modules/index.js: side-effect imports for all active JS modules; add new modules here.
+- modules/mentions/index.php: REST user-search + hovercard endpoints, @mention linkification on `the_content`/`comment_text`, `p2026_mentions_found` action hook for third-party notifications.
+- src/modules/mentions/: JS mentions module — `p2026/mention` rich-text format, Block Editor `@` completer, `MentionTextareaControl` for plain textareas, hovercard host.
 
 ## Permission and Capability Rules
 
@@ -83,6 +87,8 @@ Manual smoke checks expected after behavior changes:
 - src/components/Comments.js and src/components/Comment.js: keep top-level/reply forms behavior aligned.
 - src/components/FeedEnhancer.js timers: avoid introducing synchronized polling bursts.
 - src/components/NewPostModal.js + src/store/index.js: newPostModalOpen state and the savingPost context key ('new') are coupled; keep them in sync.
+- modules/mentions/index.php `p2026_mentions_found` hook: this is the public notification contract for third-party plugins; its parameter signature (`$users`, `$object_type`, `$object_id`, `$author_id`) must not change.
+- src/modules/mentions/ REST paths (`/p2026/v1/users`, `/p2026/v1/users/<id>`): changing these breaks both autocomplete surfaces and the hovercard fetch.
 
 ## Performance Guardrails
 

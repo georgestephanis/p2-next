@@ -2,6 +2,12 @@
  * P2026 frontend styles
  */
 
+// =============================================================================
+// Modules
+// =============================================================================
+
+@use "modules/mentions/mentions";
+
 // Editor containers
 .p2026-editor-canvas {
 	background-color: #fff;

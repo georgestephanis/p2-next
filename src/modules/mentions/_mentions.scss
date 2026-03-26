@@ -1,0 +1,135 @@
+// =============================================================================
+// Mentions module
+// =============================================================================
+
+// Inline mention tokens in serialized block content and comment text.
+.p2026-mention {
+	color: #0073aa;
+	font-weight: 500;
+}
+
+// Wrapper that positions the suggestion list relative to the textarea.
+.p2026-mention-textarea-wrap {
+	position: relative;
+}
+
+// Autocomplete suggestion list (rendered below the textarea).
+.p2026-mention-suggestions {
+	position: absolute;
+	z-index: 9999;
+	left: 0;
+	right: 0;
+	list-style: none;
+	margin: 2px 0 0;
+	padding: 0;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+	max-height: 200px;
+	overflow-y: auto;
+	font-size: 13px;
+
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		cursor: pointer;
+
+		&:hover,
+		&.is-active {
+			background: #f0f6fc;
+		}
+
+		img {
+			border-radius: 50%;
+			flex-shrink: 0;
+		}
+	}
+
+	&__name {
+		font-weight: 500;
+		color: #1e1e1e;
+	}
+
+	&__slug {
+		color: #757575;
+		font-size: 12px;
+	}
+}
+
+// Hovercard — floating profile card shown when hovering a .p2026-mention link.
+// Position (fixed top/left) and opacity are set inline by Hovercard.js.
+.p2026-hovercard {
+	min-width: 240px;
+	max-width: 300px;
+	padding: 14px;
+	background-color: #fff;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	border-radius: 6px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
+	z-index: 99990;
+	transition: opacity 0.1s ease;
+	pointer-events: auto;
+
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 10px;
+	}
+
+	&__avatar {
+		border-radius: 50%;
+		flex-shrink: 0;
+		box-shadow: 0 0 0 2px #e8e8e8;
+	}
+
+	&__identity {
+		min-width: 0; // allow text truncation
+	}
+
+	&__name {
+		font-weight: 600;
+		font-size: 0.9rem;
+		color: #1e1e1e;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	&__slug {
+		font-size: 0.8rem;
+		color: #757575;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	&__bio {
+		font-size: 0.82rem;
+		color: #444;
+		line-height: 1.5;
+		margin: 0 0 10px;
+	}
+
+	&__meta {
+		font-size: 0.78rem;
+		color: #888;
+		margin-bottom: 10px;
+	}
+
+	&__link {
+		display: inline-block;
+		font-size: 0.82rem;
+		font-weight: 500;
+		color: #0073aa;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+			color: #005177;
+		}
+	}
+}

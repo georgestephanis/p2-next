@@ -339,3 +339,57 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 	);
 }
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
+
+// ---------------------------------------------------------------------------
+// Modules — self-contained feature extensions loaded from modules/*/index.php.
+// ---------------------------------------------------------------------------
+
+/**
+ * Return the list of explicitly enabled module slugs, or null if the option
+ * has never been saved (meaning all modules are active by default).
+ *
+ * @return string[]|null
+ */
+function p2026_get_active_modules() {
+	$stored = get_option( 'p2026_active_modules', null );
+	return is_array( $stored ) ? $stored : null;
+}
+
+/**
+ * Whether a given module slug is currently active.
+ *
+ * When the option has never been saved (null), every module is considered
+ * active so new installs get the full feature set without any configuration.
+ *
+ * @param string        $slug   Module directory slug.
+ * @param string[]|null $active Cached active list, or null to fetch the option.
+ * @return bool
+ */
+function p2026_is_module_active( $slug, $active = null ) {
+	if ( null === $active ) {
+		$active = p2026_get_active_modules();
+	}
+	// Option never saved → all modules are active.
+	if ( null === $active ) {
+		return true;
+	}
+	return in_array( $slug, $active, true );
+}
+
+// Load each module whose slug is in the active list (all by default).
+$p2026_active = p2026_get_active_modules();
+$modules      = glob( P2026_DIR . 'modules/*/index.php' );
+if ( ! $modules ) {
+	$modules = array();
+}
+foreach ( $modules as $p2026_module ) {
+	if ( p2026_is_module_active( basename( dirname( $p2026_module ) ), $p2026_active ) ) {
+		require_once $p2026_module;
+	}
+}
+unset( $p2026_active, $p2026_module );
+
+// Admin settings page (menu registration, module management UI).
+if ( is_admin() ) {
+	require_once P2026_DIR . 'admin/settings.php';
+}
