@@ -8,26 +8,97 @@ if ( ! defined( 'ABSPATH' ) ) {
 $sample_posts = [
     [
         'post_title'   => 'Welcome to P2026',
-        'post_content' => '<!-- wp:paragraph --><p>This is a test post. Use the \u22ef menu in the top-right corner to edit it, copy a link, or delete it.</p><!-- /wp:paragraph -->',
+        'post_content' => '<!-- wp:paragraph --><p>This is a test post. Use the ⋯ menu in the top-right corner to edit it, copy a link, or delete it.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
         'post_author'  => 1,
     ],
     [
         'post_title'   => 'Try the comments',
-        'post_content' => '<!-- wp:paragraph --><p>Open the \u22ef menu on any post and click the comments item to expand the thread and reply inline.</p><!-- /wp:paragraph -->',
+        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu on any post and click the comments item to expand the thread and reply inline.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
         'post_author'  => 1,
     ],
     [
         'post_title'   => 'Inline editing with the Block Editor',
-        'post_content' => '<!-- wp:paragraph --><p>Open the \u22ef menu and click Edit to update this post using the Block Editor without leaving the page.</p><!-- /wp:paragraph -->',
+        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu and click Edit to update this post using the Block Editor without leaving the page.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
         'post_author'  => 1,
     ],
 ];
 
+$post_ids = [];
 foreach ( $sample_posts as $data ) {
-    wp_insert_post( $data );
+    $post_ids[] = wp_insert_post( $data );
+}
+
+// Add nested sample comments to the "Try the comments" post (index 1) so
+// the threaded view is populated out of the box.
+// Structure (thread depth ≥ 3):
+//   L0-A  "Great post!"
+//     L1-A  "Thanks!"
+//       L2-A  "Agreed, very useful."
+//         L3-A  "Exactly what I was thinking."
+//   L0-B  "How does the polling work?"
+//     L1-B  "It hits /wp/v2/posts every 15 seconds."
+//       L2-B  "Does it back off on errors?"
+if ( ! empty( $post_ids[1] ) ) {
+    $comments_post = $post_ids[1];
+
+    $l0a = wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Alice',
+        'comment_content'  => 'Great post! Really enjoying the new inline comment experience.',
+        'comment_approved' => 1,
+        'comment_parent'   => 0,
+    ] );
+
+    $l1a = wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Bob',
+        'comment_content'  => 'Thanks! It was a fun one to build.',
+        'comment_approved' => 1,
+        'comment_parent'   => $l0a,
+    ] );
+
+    $l2a = wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Carol',
+        'comment_content'  => 'Agreed — much nicer than a full page reload.',
+        'comment_approved' => 1,
+        'comment_parent'   => $l1a,
+    ] );
+
+    wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Dave',
+        'comment_content'  => 'Exactly what I was thinking. The animation is a nice touch.',
+        'comment_approved' => 1,
+        'comment_parent'   => $l2a,
+    ] );
+
+    $l0b = wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Eve',
+        'comment_content'  => 'How does the live polling work under the hood?',
+        'comment_approved' => 1,
+        'comment_parent'   => 0,
+    ] );
+
+    $l1b = wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Alice',
+        'comment_content'  => 'It calls GET /wp/v2/posts every 15 seconds and buffers new ones behind a banner.',
+        'comment_approved' => 1,
+        'comment_parent'   => $l0b,
+    ] );
+
+    wp_insert_comment( [
+        'comment_post_ID'  => $comments_post,
+        'comment_author'   => 'Eve',
+        'comment_content'  => 'Smart. Does it back off if the request fails?',
+        'comment_approved' => 1,
+        'comment_parent'   => $l1b,
+    ] );
 }
 
 // Ensure the homepage shows the latest posts (not a static page), so the

@@ -6,9 +6,11 @@
   "scripts": {
     "build": "wp-scripts build --blocks-manifest",
     "start": "wp-scripts start --blocks-manifest",
+    "lint": "npm run lint:js; npm run lint:css; npm run lint:php",
     "lint:js": "wp-scripts lint-js",
     "lint:css": "wp-scripts lint-style",
     "lint:php": "composer lint:php",
+    "format": "npm run format:js; npm run format:css; npm run format:php",
     "format:js": "wp-scripts lint-js --fix",
     "format:css": "wp-scripts lint-style --fix",
     "format:php": "composer format:php",
