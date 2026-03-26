@@ -31,7 +31,7 @@ add_action( 'admin_menu', 'p2026_admin_menu' );
 /**
  * Discover all modules and read their file-header metadata.
  *
- * Reads the following doc-block headers from each modules/*/index.php:
+ * Reads the following doc-block headers from each modules/whatever/index.php:
  *   Module Name:        Human-readable name.
  *   Module Description: One-line description shown in the settings table.
  *   Module Version:     Semver string, e.g. 0.1.0.
