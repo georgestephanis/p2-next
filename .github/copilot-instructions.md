@@ -17,12 +17,13 @@ Do not convert this plugin into a full SPA. Preserve theme ownership of initial 
 
 ## Core Entry Points
 
-- p2026.php: bootstrap, abilities registration, permission helpers, config injection, block registration.
-- src/frontend.js: finds post list + post nodes and mounts FeedEnhancer.
+- p2026.php: bootstrap, abilities registration, permission helpers, config injection, block registration, admin bar node.
+- src/frontend.js: finds post list + post nodes, mounts FeedEnhancer, mounts NewPostModal root, wires admin bar button.
 - src/blocks/new-post/render.php: server-gated mount point for new-post UI.
 - src/blocks/new-post/view.js: frontend mount for new-post editor.
-- src/store/index.js: canonical state/actions/selectors.
+- src/store/index.js: canonical state/actions/selectors (includes newPostModalOpen).
 - src/components/FeedEnhancer.js: post polling + comment refresh scheduling.
+- src/components/NewPostModal.js: modal driven by newPostModalOpen store state; wraps NewPostEditor.
 
 ## Permission and Capability Rules
 
@@ -73,6 +74,7 @@ Manual smoke checks expected after behavior changes:
 3. New-post editor visibility matches permissions.
 4. Inline edit visibility matches permissions.
 5. Polling and new-post banner still behave correctly.
+6. Admin bar "New Post" button appears for users who can create posts; opens modal when block is absent, scrolls/focuses editor when block is present.
 
 ## High-Risk Areas
 
@@ -80,6 +82,7 @@ Manual smoke checks expected after behavior changes:
 - src/store/index.js action signatures: createComment authorData support must be preserved.
 - src/components/Comments.js and src/components/Comment.js: keep top-level/reply forms behavior aligned.
 - src/components/FeedEnhancer.js timers: avoid introducing synchronized polling bursts.
+- src/components/NewPostModal.js + src/store/index.js: newPostModalOpen state and the savingPost context key ('new') are coupled; keep them in sync.
 
 ## Performance Guardrails
 

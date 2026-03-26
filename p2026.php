@@ -312,3 +312,30 @@ function p2026_auto_title( $prepared_post, $request ) { // phpcs:ignore Generic.
 	return $prepared_post;
 }
 add_filter( 'rest_pre_insert_post', 'p2026_auto_title', 10, 2 );
+
+/**
+ * Add a "New Post" node to the admin bar on the front-end blog index.
+ *
+ * Only shown to users who can create posts. The JS click handler in
+ * frontend.js either scrolls to an existing new-post editor on the page
+ * or opens the React modal.
+ *
+ * @param WP_Admin_Bar $wp_admin_bar Admin bar instance.
+ */
+function p2026_admin_bar_new_post( $wp_admin_bar ) {
+	if ( ! is_home() && ! is_front_page() ) {
+		return;
+	}
+	if ( ! p2026_can_create_posts() ) {
+		return;
+	}
+	$wp_admin_bar->add_node(
+		array(
+			'id'    => 'p2026-new-post',
+			'title' => __( 'New Post', 'p2026' ),
+			'href'  => '#',
+			'meta'  => array( 'class' => 'p2026-adminbar-new-post' ),
+		)
+	);
+}
+add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );

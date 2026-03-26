@@ -170,8 +170,8 @@
 
 .p2026-menu-wrap {
 	position: absolute;
-	top: max( 10px, var(--wp--preset--spacing--60) );
-	right: max( 10px, calc( ( 100% - var(--wp--style--global--content-size) ) / 2) );
+	top: max(10px, var(--wp--preset--spacing--60));
+	right: max(10px, calc(( 100% - var(--wp--style--global--content-size) ) / 2));
 	z-index: 10;
 
 	// Remove the native <details> disclosure triangle.
@@ -411,5 +411,121 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 		color: #999;
 		padding: 32px 16px;
 		font-style: italic;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// New-post modal — triggered by the admin bar "New Post" button when the
+// p2026/new-post block is not already present on the page.
+// ---------------------------------------------------------------------------
+
+// Full-screen dimmed backdrop. Clicking it closes the modal.
+.p2026-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 60px; // clear the admin bar
+	z-index: 100000; // above the WP admin bar (z-index 99999)
+	overflow-y: auto;
+}
+
+// Dialog panel.
+.p2026-modal {
+	background-color: #fff;
+	border-radius: 6px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	width: 100%;
+	max-width: 680px;
+	margin: 0 16px 60px;
+	outline: none; // focus ring suppressed; we move focus inside
+
+	// Slide in from slightly above.
+	animation: p2026ModalSlideIn 0.18s ease;
+}
+
+@keyframes p2026ModalSlideIn {
+
+	from {
+		opacity: 0;
+		transform: translateY(-12px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+// Modal header — title on the left, close button on the right.
+.p2026-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 16px 12px;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+.p2026-modal-title {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #1e1e1e;
+}
+
+.p2026-modal-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: none;
+	border: 1px solid transparent;
+	border-radius: 50%;
+	font-size: 18px;
+	line-height: 1;
+	color: #666;
+	cursor: pointer;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+
+	&:hover {
+		background-color: rgba(0, 0, 0, 0.06);
+		border-color: rgba(0, 0, 0, 0.12);
+		color: #333;
+	}
+
+	&:focus-visible {
+		border-color: #0073aa;
+		box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.25);
+		outline: none;
+	}
+}
+
+// Modal body — contains the NewPostEditor.
+.p2026-modal-body {
+	padding: 16px;
+
+	// Remove the outer card chrome from NewPostEditor since the modal
+	// already provides the container.
+	.p2026-new-post-editor {
+		margin: 0;
+		border: none;
+		border-radius: 0;
+		padding: 0;
+		box-shadow: none;
+
+		&::before {
+			display: none;
+		}
+
+		&:focus-within {
+			box-shadow: none;
+			border-color: transparent;
+		}
 	}
 }

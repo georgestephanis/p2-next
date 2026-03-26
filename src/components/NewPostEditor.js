@@ -29,7 +29,7 @@ const EDITOR_SETTINGS = {
 	},
 };
 
-export default function NewPostEditor() {
+export default function NewPostEditor( { onAfterPublish } ) {
 	const [ blocks, setBlocks ] = useState( [
 		createBlock( 'core/paragraph' ),
 	] );
@@ -87,7 +87,8 @@ export default function NewPostEditor() {
 		await createPost( { blocks } );
 		// Reset editor to a fresh paragraph after successful save.
 		setBlocks( [ createBlock( 'core/paragraph' ) ] );
-	}, [ blocks, createPost ] );
+		onAfterPublish?.();
+	}, [ blocks, createPost, onAfterPublish ] );
 
 	return (
 		<div className="p2026-new-post-editor">

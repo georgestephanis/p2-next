@@ -17,24 +17,28 @@ It is intentionally not a complete SPA replacement.
 
 ## Top-Level Layout
 
-- p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration.
-- src/frontend.js: enhancement bootstrap for existing loop pages.
+- p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration, admin bar node.
+- src/frontend.js: enhancement bootstrap for existing loop pages; mounts modal root and wires admin bar button.
 - src/blocks/new-post/: dynamic block server render + frontend mount.
-- src/components/: feed controls, comments UI, post editor/new post editor.
+- src/components/: feed controls, comments UI, post editor/new post editor, new post modal.
 - src/store/index.js: shared @wordpress/data store and async thunks.
 - src/api/index.js: apiFetch middleware and polling helper.
-- src/styles.scss: frontend styling for editor/comment/feed enhancements.
+- src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay.
+- _playground/: WordPress Playground blueprint and setup script.
 - build/: generated artifacts from @wordpress/scripts (do not hand-edit).
 
 ## Runtime Flow
 
 1. PHP registers block metadata from build output and enqueues frontend assets.
 2. PHP injects window.p2026Config before frontend script execution.
-3. frontend.js discovers rendered posts in block or classic themes.
-4. FeedEnhancer mounts once and portals controls into existing post markup.
-5. Posts poll on a fixed cadence and buffer new content behind a reveal banner.
-6. Expanded comment threads fetch and render inline.
-7. Inline editing and new-post creation use Block Editor primitives on frontend.
+3. PHP adds a "New Post" admin bar node on the blog index for users who can create posts.
+4. frontend.js discovers rendered posts in block or classic themes.
+5. frontend.js mounts the NewPostModal root and wires the admin bar button click.
+6. FeedEnhancer mounts once and portals controls into existing post markup.
+7. Posts poll on a fixed cadence and buffer new content behind a reveal banner.
+8. Expanded comment threads fetch and render inline.
+9. Inline editing and new-post creation use Block Editor primitives on frontend.
+10. Admin bar "New Post" button scrolls to an existing new-post editor if present, otherwise opens the NewPostModal.
 
 ## Permission Model
 
@@ -75,7 +79,8 @@ Key state:
 - comments by post ID
 - pendingPosts and pendingCount
 - expandedPosts / editingPost
-- savingPost / savingComment
+- savingPost (null | postId | 'new') / savingComment
+- newPostModalOpen
 
 REST endpoints in use:
 
@@ -106,6 +111,7 @@ Validation expectations after functional changes:
    - top-level comments and replies work for expected user states,
    - inline post editing respects permissions,
    - new-post block visibility matches capabilities,
+   - admin bar "New Post" button opens modal when block is absent; scrolls to block when present,
    - new-post banner and comment refresh behavior are sane.
 
 ## Working Conventions

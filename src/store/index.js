@@ -22,6 +22,7 @@ const DEFAULT_STATE = {
 		editingPost: null, // post ID currently being edited inline
 		savingPost: null, // post ID being saved, 'new' for new-post, null when idle
 		savingComment: false,
+		newPostModalOpen: false,
 	},
 };
 
@@ -64,6 +65,12 @@ export const actions = {
 	},
 	setSavingComment( saving ) {
 		return { type: 'SET_SAVING_COMMENT', saving };
+	},
+	openNewPostModal() {
+		return { type: 'OPEN_NEW_POST_MODAL' };
+	},
+	closeNewPostModal() {
+		return { type: 'CLOSE_NEW_POST_MODAL' };
 	},
 
 	// Async thunks -------------------------------------------------------
@@ -308,6 +315,18 @@ function reducer( state = DEFAULT_STATE, action ) {
 				ui: { ...state.ui, savingComment: action.saving },
 			};
 
+		case 'OPEN_NEW_POST_MODAL':
+			return {
+				...state,
+				ui: { ...state.ui, newPostModalOpen: true },
+			};
+
+		case 'CLOSE_NEW_POST_MODAL':
+			return {
+				...state,
+				ui: { ...state.ui, newPostModalOpen: false },
+			};
+
 		default:
 			return state;
 	}
@@ -328,6 +347,7 @@ export const selectors = {
 	getEditingPost: ( state ) => state.ui.editingPost,
 	isSavingPost: ( state, context ) => state.ui.savingPost === context,
 	isSavingComment: ( state ) => state.ui.savingComment,
+	isNewPostModalOpen: ( state ) => state.ui.newPostModalOpen,
 };
 
 // ---------------------------------------------------------------------------
