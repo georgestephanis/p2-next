@@ -330,9 +330,11 @@ function p2026_mentions_linkify( $content ) {
 	// Suppress HTML parsing warnings for fragments.
 	$prev_use_errors = libxml_use_internal_errors( true );
 
-	// Convert to HTML entities to preserve UTF-8 correctly.
+	// Wrap with an explicit UTF-8 charset declaration so DOMDocument parses
+	// multibyte characters correctly without the deprecated mb_convert_encoding
+	// HTML-ENTITIES conversion (removed in PHP 8.2+).
 	$loaded = $dom->loadHTML(
-		mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' )
+		'<html><head><meta charset="UTF-8"/></head><body>' . $content . '</body></html>'
 	);
 
 	libxml_clear_errors();
