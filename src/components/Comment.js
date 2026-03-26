@@ -142,6 +142,8 @@ export default function Comment( { comment, postId } ) {
 								</>
 							) }
 							<MentionTextareaControl
+								label={ __( 'Reply', 'p2026' ) }
+								hideLabelFromVision
 								placeholder={ __( 'Write a reply…', 'p2026' ) }
 								value={ replyContent }
 								onChange={ setReplyContent }

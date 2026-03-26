@@ -23,6 +23,7 @@ import { registerFormatType } from '@wordpress/rich-text';
 import { addFilter } from '@wordpress/hooks';
 import { createRoot, createElement } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
+import { __ } from '@wordpress/i18n';
 import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 
 // ---------------------------------------------------------------------------
@@ -32,11 +33,11 @@ import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 // No toolbar button — the format is applied only via the autocomplete completer.
 // ---------------------------------------------------------------------------
 registerFormatType( 'p2026/mention', {
-	title: 'Mention',
+	title: __( 'Mention', 'p2026' ),
 	tagName: 'span',
 	className: 'p2026-mention',
 	attributes: {
-		'data-user-id':   'data-user-id',
+		'data-user-id': 'data-user-id',
 		'data-user-slug': 'data-user-slug',
 	},
 	// No edit UI — applied programmatically by the autocomplete completer.
@@ -103,13 +104,17 @@ addFilter(
 
 			/**
 			 * Text inserted into the RichText field when the user picks a suggestion.
-			 * Returns a plain string; the p2026/mention format is applied around it
-			 * server-side when the post renders (PHP parses the slug).
+			 * Inserts a plain `@username` string; PHP server-side linkification
+			 * converts it to a `<a class="p2026-mention" data-user-id="…">` anchor
+			 * when the post or comment is rendered. The registered `p2026/mention`
+			 * format type lets the editor recognise and round-trip existing formatted
+			 * mention spans when a previously-saved post is re-opened for editing.
 			 *
 			 * @param {Object} user Suggestion item `{ id, slug, name, avatar_url }`.
 			 * @return {string} The @username string to insert.
 			 */
 			getOptionCompletion: ( user ) => `@${ user.slug }`,
+			allowContext: ( before ) => ! /[a-zA-Z0-9.]@$/.test( before ),
 
 			/** Let @wordpress/block-editor debounce the options() call automatically. */
 			isDebounced: true,
@@ -213,6 +218,9 @@ function mountHovercardHost() {
 
 	// Event delegation — handles both theme-rendered and React-rendered mentions.
 	document.addEventListener( 'mouseover', ( e ) => {
+		if ( ! ( e.target instanceof window.Element ) ) {
+			return;
+		}
 		// Entering a hovercard — cancel any pending hide.
 		if ( e.target.closest( '.p2026-hovercard' ) ) {
 			cancelHide();
@@ -229,6 +237,9 @@ function mountHovercardHost() {
 	} );
 
 	document.addEventListener( 'mouseout', ( e ) => {
+		if ( ! ( e.target instanceof window.Element ) ) {
+			return;
+		}
 		// Leaving the hovercard itself — schedule a hide.
 		const card = e.target.closest( '.p2026-hovercard' );
 		if ( card && ! card.contains( e.relatedTarget ) ) {

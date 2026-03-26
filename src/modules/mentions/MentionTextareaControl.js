@@ -18,6 +18,8 @@ import { useState, useEffect, useRef, useCallback } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
 
+let instanceCounter = 0;
+
 /** Minimum characters after `@` before fetching. */
 const MIN_QUERY_LENGTH = 1;
 /** Debounce delay in ms before issuing the REST request. */
@@ -54,12 +56,20 @@ export default function MentionTextareaControl( {
 	onChange,
 	placeholder,
 	label,
+	hideLabelFromVision = false,
 	rows = 4,
 	disabled = false,
 } ) {
 	const textareaRef = useRef( null );
 	const listRef = useRef( null );
 	const debounceRef = useRef( null );
+	const instanceIdRef = useRef( null );
+	if ( instanceIdRef.current === null ) {
+		instanceIdRef.current = ++instanceCounter;
+	}
+	const instanceId = instanceIdRef.current;
+	const textareaId = `p2026-mention-textarea-${ instanceId }`;
+	const suggestionsListId = `p2026-mention-suggestions-${ instanceId }`;
 
 	const [ suggestions, setSuggestions ] = useState( [] );
 	const [ activeIndex, setActiveIndex ] = useState( 0 );
@@ -185,14 +195,20 @@ export default function MentionTextareaControl( {
 	return (
 		<div className="components-base-control p2026-mention-textarea-wrap">
 			{ label && (
-				// eslint-disable-next-line jsx-a11y/label-has-associated-control
-				<label className="components-base-control__label">
+				<label
+					htmlFor={ textareaId }
+					className={
+						'components-base-control__label' +
+						( hideLabelFromVision ? ' screen-reader-text' : '' )
+					}
+				>
 					{ label }
 				</label>
 			) }
 			{ /* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- combobox pattern on textarea */ }
 			<textarea
 				ref={ textareaRef }
+				id={ textareaId }
 				className="components-textarea-control__input"
 				value={ value }
 				placeholder={ placeholder }
@@ -204,18 +220,18 @@ export default function MentionTextareaControl( {
 				aria-autocomplete={ isLoggedIn ? 'list' : undefined }
 				aria-expanded={ showSuggestions }
 				aria-controls={
-					showSuggestions ? 'p2026-mention-suggestions' : undefined
+					showSuggestions ? suggestionsListId : undefined
 				}
 				aria-activedescendant={
 					showSuggestions
-						? `p2026-mention-option-${ activeIndex }`
+						? `p2026-mention-option-${ instanceId }-${ activeIndex }`
 						: undefined
 				}
 			/>
 			{ showSuggestions && (
 				<ul
 					ref={ listRef }
-					id="p2026-mention-suggestions"
+					id={ suggestionsListId }
 					role="listbox"
 					className="p2026-mention-suggestions"
 					aria-label={ __( 'Mention suggestions', 'p2026' ) }
@@ -225,7 +241,7 @@ export default function MentionTextareaControl( {
 					{ suggestions.map( ( user, index ) => (
 						<li
 							key={ user.id }
-							id={ `p2026-mention-option-${ index }` }
+							id={ `p2026-mention-option-${ instanceId }-${ index }` }
 							role="option"
 							aria-selected={ index === activeIndex }
 							className={

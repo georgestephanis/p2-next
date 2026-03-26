@@ -10,7 +10,7 @@
  *     and adjusted to stay within the viewport after the card has rendered.
  */
 import { useState, useEffect, useRef } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 // ---------------------------------------------------------------------------
 // Module-level controller — bridge between vanilla JS event code and React
@@ -47,9 +47,9 @@ export function hideHovercard() {
 // ---------------------------------------------------------------------------
 
 /**
- * @param {Object}   props
- * @param {Object}   props.user     User profile object.
- * @param {Element}  props.anchorEl DOM element to position below.
+ * @param {Object}  props
+ * @param {Object}  props.user     User profile object.
+ * @param {Element} props.anchorEl DOM element to position below.
  */
 function Hovercard( { user, anchorEl } ) {
 	const cardRef = useRef( null );
@@ -93,7 +93,8 @@ function Hovercard( { user, anchorEl } ) {
 			ref={ cardRef }
 			className="p2026-hovercard"
 			style={ { position: 'fixed', ...style } }
-			role="tooltip"
+			role="region"
+			aria-label={ __( 'User profile', 'p2026' ) }
 		>
 			<div className="p2026-hovercard__header">
 				{ user.avatar_url && (
@@ -112,21 +113,17 @@ function Hovercard( { user, anchorEl } ) {
 				</div>
 			</div>
 
-			{ user.bio && (
-				<p className="p2026-hovercard__bio">{ user.bio }</p>
-			) }
+			{ user.bio && <p className="p2026-hovercard__bio">{ user.bio }</p> }
 
 			<div className="p2026-hovercard__meta">
-				{ user.post_count === 1
-					? __( '1 post', 'p2026' )
-					: /* translators: %d: number of posts */
-					  `${ user.post_count } ${ __( 'posts', 'p2026' ) }` }
+				{ sprintf(
+					/* translators: %d: number of posts */
+					_n( '%d post', '%d posts', user.post_count, 'p2026' ),
+					user.post_count
+				) }
 			</div>
 
-			<a
-				className="p2026-hovercard__link"
-				href={ user.profile_url }
-			>
+			<a className="p2026-hovercard__link" href={ user.profile_url }>
 				{ __( 'View profile', 'p2026' ) } &rarr;
 			</a>
 		</div>
@@ -156,10 +153,5 @@ export default function HovercardHost() {
 		return null;
 	}
 
-	return (
-		<Hovercard
-			user={ entry.user }
-			anchorEl={ entry.anchorEl }
-		/>
-	);
+	return <Hovercard user={ entry.user } anchorEl={ entry.anchorEl } />;
 }
