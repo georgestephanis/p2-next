@@ -1,7 +1,7 @@
 /**
  * P2026 Module: Mentions — frontend initialisation.
  *
- * Registers two things on module load (side-effect import from src/modules/index.js):
+ * Registers three things on module load (side-effect import from src/modules/index.js):
  *
  *   1. `p2026/mention` rich-text format type — so that mentions inserted by the
  *      autocomplete completer are stored as highlighted <span> elements inside
@@ -11,12 +11,19 @@
  *      Block Editor's built-in autocomplete system. Works inside any RichText
  *      field (paragraph, heading, etc.) rendered by BlockEditorProvider.
  *
+ *   3. Hovercard host — a React component mounted to a portal div on the body.
+ *      Event delegation on `document` shows a profile hovercard when the user
+ *      hovers over any `.p2026-mention[data-user-id]` anchor, whether rendered
+ *      by the PHP theme loop or injected by React via dangerouslySetInnerHTML.
+ *
  * Comment textarea autocomplete is handled by MentionTextareaControl, which
  * Comments.js and Comment.js import directly.
  */
 import { registerFormatType } from '@wordpress/rich-text';
 import { addFilter } from '@wordpress/hooks';
+import { createRoot, createElement } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
+import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 
 // ---------------------------------------------------------------------------
 // Format type: p2026/mention
@@ -29,7 +36,7 @@ registerFormatType( 'p2026/mention', {
 	tagName: 'span',
 	className: 'p2026-mention',
 	attributes: {
-		'data-user-id': 'data-user-id',
+		'data-user-id':   'data-user-id',
 		'data-user-slug': 'data-user-slug',
 	},
 	// No edit UI — applied programmatically by the autocomplete completer.
@@ -109,3 +116,139 @@ addFilter(
 		},
 	]
 );
+
+// ---------------------------------------------------------------------------
+// Hovercard: mount host + wire event delegation
+// ---------------------------------------------------------------------------
+
+// Per-user profile cache — keyed by numeric user ID.
+const hovercardCache = new Map();
+
+/**
+ * Fetch rich profile data for a user, using the in-memory cache.
+ *
+ * @param {number} userId Numeric WordPress user ID.
+ * @return {Promise<Object>} Resolved user profile object.
+ */
+async function fetchUserDetail( userId ) {
+	if ( hovercardCache.has( userId ) ) {
+		return hovercardCache.get( userId );
+	}
+	const user = await apiFetch( { path: `/p2026/v1/users/${ userId }` } );
+	hovercardCache.set( userId, user );
+	return user;
+}
+
+// Timers shared across both mention-hover and hovercard-hover handlers.
+let showTimer = null;
+let hideTimer = null;
+
+// The anchor element currently being hovered — used to guard stale fetches.
+let currentAnchor = null;
+
+/**
+ * Schedule a show after a short delay, cancelling any pending hide.
+ * If the user moves away before the fetch resolves, the card is not shown.
+ *
+ * @param {number}  userId   WordPress user ID from data-user-id.
+ * @param {Element} anchorEl The .p2026-mention link element.
+ */
+function scheduleShow( userId, anchorEl ) {
+	currentAnchor = anchorEl;
+	if ( hideTimer ) {
+		clearTimeout( hideTimer );
+		hideTimer = null;
+	}
+	if ( showTimer ) {
+		clearTimeout( showTimer );
+	}
+	showTimer = setTimeout( async () => {
+		showTimer = null;
+		if ( currentAnchor !== anchorEl ) {
+			return; // Moved away before the timer fired.
+		}
+		try {
+			const user = await fetchUserDetail( userId );
+			if ( currentAnchor === anchorEl ) {
+				showHovercard( user, anchorEl );
+			}
+		} catch {
+			// Ignore network errors — silently skip the hovercard.
+		}
+	}, 300 );
+}
+
+/**
+ * Schedule hiding after a short delay, allowing the pointer to travel
+ * into the hovercard without it disappearing.
+ */
+function scheduleHide() {
+	currentAnchor = null;
+	if ( showTimer ) {
+		clearTimeout( showTimer );
+		showTimer = null;
+	}
+	hideTimer = setTimeout( hideHovercard, 200 );
+}
+
+/** Cancel a pending hide (called when pointer enters the hovercard). */
+function cancelHide() {
+	if ( hideTimer ) {
+		clearTimeout( hideTimer );
+		hideTimer = null;
+	}
+}
+
+// Mount the hovercard host on DOMContentLoaded (or immediately if already ready).
+function mountHovercardHost() {
+	// Only show hovercards for logged-in users (the detail endpoint requires auth).
+	if ( ! window.p2026Config?.currentUser ) {
+		return;
+	}
+
+	const hostEl = document.createElement( 'div' );
+	hostEl.id = 'p2026-hovercard-root';
+	document.body.appendChild( hostEl );
+	createRoot( hostEl ).render( createElement( HovercardHost ) );
+
+	// Event delegation — handles both theme-rendered and React-rendered mentions.
+	document.addEventListener( 'mouseover', ( e ) => {
+		// Entering a hovercard — cancel any pending hide.
+		if ( e.target.closest( '.p2026-hovercard' ) ) {
+			cancelHide();
+			return;
+		}
+
+		const mention = e.target.closest( 'a.p2026-mention[data-user-id]' );
+		if ( mention ) {
+			const userId = parseInt( mention.dataset.userId, 10 );
+			if ( userId ) {
+				scheduleShow( userId, mention );
+			}
+		}
+	} );
+
+	document.addEventListener( 'mouseout', ( e ) => {
+		// Leaving the hovercard itself — schedule a hide.
+		const card = e.target.closest( '.p2026-hovercard' );
+		if ( card && ! card.contains( e.relatedTarget ) ) {
+			scheduleHide();
+			return;
+		}
+
+		// Leaving a mention anchor — schedule a hide (unless entering the card).
+		const mention = e.target.closest( 'a.p2026-mention[data-user-id]' );
+		if ( mention && ! mention.contains( e.relatedTarget ) ) {
+			// Don't hide if the pointer is moving into the hovercard.
+			if ( ! e.relatedTarget?.closest( '.p2026-hovercard' ) ) {
+				scheduleHide();
+			}
+		}
+	} );
+}
+
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', mountHovercardHost );
+} else {
+	mountHovercardHost();
+}

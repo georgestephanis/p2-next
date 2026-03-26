@@ -51,8 +51,55 @@ function p2026_mentions_register_routes() {
 			),
 		)
 	);
+
+	register_rest_route(
+		'p2026/v1',
+		'/users/(?P<id>\d+)',
+		array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => 'p2026_mentions_user_detail',
+			'permission_callback' => 'is_user_logged_in',
+			'args'                => array(
+				'id' => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+			),
+		)
+	);
 }
 add_action( 'rest_api_init', 'p2026_mentions_register_routes' );
+
+/**
+ * Return rich profile data for a single user (used by the hovercard).
+ *
+ * Response: { id, slug, name, bio, avatar_url, profile_url, post_count }
+ *
+ * @param WP_REST_Request $request REST request.
+ * @return WP_REST_Response|WP_Error
+ */
+function p2026_mentions_user_detail( $request ) {
+	$user = get_user_by( 'id', (int) $request['id'] );
+	if ( ! $user ) {
+		return new WP_Error(
+			'p2026_user_not_found',
+			__( 'User not found.', 'p2026' ),
+			array( 'status' => 404 )
+		);
+	}
+
+	return rest_ensure_response(
+		array(
+			'id'          => $user->ID,
+			'slug'        => $user->user_login,
+			'name'        => $user->display_name,
+			'bio'         => (string) get_user_meta( $user->ID, 'description', true ),
+			'avatar_url'  => get_avatar_url( $user->ID, array( 'size' => 64 ) ),
+			'profile_url' => get_author_posts_url( $user->ID ),
+			'post_count'  => (int) count_user_posts( $user->ID, 'post', true ),
+		)
+	);
+}
 
 /**
  * Return a list of users matching the search query.
@@ -236,3 +283,75 @@ function p2026_mentions_on_comment_post( $comment_id, $approved ) {
 	do_action( 'p2026_mentions_found', $users, 'comment', $comment_id, (int) $comment->user_id );
 }
 add_action( 'comment_post', 'p2026_mentions_on_comment_post', 20, 2 );
+
+// ---------------------------------------------------------------------------
+// Content linkification — render @mentions as linked profile anchors
+// ---------------------------------------------------------------------------
+
+/**
+ * Replace @username tokens in HTML content with profile links.
+ *
+ * Splits the content on HTML tags and HTML comments so that attribute values
+ * and tag contents are never mutated — only bare text nodes are processed.
+ * A single WP_User_Query batch-resolves all slugs found in the content.
+ *
+ * The generated anchor carries `data-user-id` and `data-user-slug` so the
+ * frontend hovercard script can fetch rich profile data without re-parsing
+ * the username from the href.
+ *
+ * @param string $content Post content or comment text (may already contain HTML).
+ * @return string Content with @mentions replaced by profile links.
+ */
+function p2026_mentions_linkify( $content ) {
+	$slugs = p2026_mentions_parse_usernames( $content );
+	if ( empty( $slugs ) ) {
+		return $content;
+	}
+
+	$users = p2026_mentions_resolve_users( $slugs );
+	if ( empty( $users ) ) {
+		return $content;
+	}
+
+	// Build a slug → user map for O(1) lookup inside the callback.
+	$map = array();
+	foreach ( $users as $user ) {
+		$map[ strtolower( $user->user_login ) ] = $user;
+	}
+
+	// Split into HTML tags/comments (odd-indexed) and text nodes (even-indexed).
+	$parts = preg_split( '/(<[^>]+>|<!--.*?-->)/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE );
+
+	$result = '';
+	foreach ( $parts as $part ) {
+		if ( '<' === ( $part[0] ?? '' ) ) {
+			// HTML tag or comment — pass through unchanged.
+			$result .= $part;
+			continue;
+		}
+
+		// Text node — replace @mentions that resolve to real users.
+		$result .= preg_replace_callback(
+			'/(?<![a-zA-Z0-9.@])@([a-zA-Z0-9_-]{2,60})/u',
+			static function ( $m ) use ( $map ) {
+				$slug = strtolower( $m[1] );
+				if ( ! isset( $map[ $slug ] ) ) {
+					return $m[0];
+				}
+				$user = $map[ $slug ];
+				return sprintf(
+					'<a class="p2026-mention" href="%s" data-user-id="%d" data-user-slug="%s">@%s</a>',
+					esc_url( get_author_posts_url( $user->ID ) ),
+					(int) $user->ID,
+					esc_attr( $user->user_login ),
+					esc_html( $user->user_login )
+				);
+			},
+			$part
+		);
+	}
+
+	return $result;
+}
+add_filter( 'the_content', 'p2026_mentions_linkify' );
+add_filter( 'comment_text', 'p2026_mentions_linkify' );
