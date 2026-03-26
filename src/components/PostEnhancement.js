@@ -1,10 +1,18 @@
 /**
- * PostEnhancement — React content for the active post's toolbar slot.
+ * PostEnhancement — per-post menu and interaction layer.
  *
- * When editing, the theme-rendered post content element is animated out and
- * a container div is inserted in its place. PostEditor is portaled into that
- * container so the editor appears where the content was. On close, the
- * content animates back in.
+ * Renders a three-dots trigger button in the top-right corner of the post
+ * card (via position:absolute). Clicking it opens a <details>-based dropdown
+ * that contains all post actions:
+ *
+ *   • Comments toggle  — available to everyone
+ *   • Edit             — editors only
+ *   • Copy link        — available to everyone
+ *   • Delete           — editors only (destructive, styled in red)
+ *
+ * Comment threads expand below the post in normal document flow. The inline
+ * Block Editor is portaled into a container inserted before the post content
+ * so editing happens in-place.
  */
 import {
 	useEffect,
@@ -14,7 +22,7 @@ import {
 	createPortal,
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
-import { Button } from '@wordpress/components';
+import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comments from './Comments';
@@ -23,7 +31,14 @@ import PostEditor from './PostEditor';
 const CONTENT_SELECTOR = '.wp-block-post-content, .entry-content';
 const TRANSITION = 'height 0.25s ease, opacity 0.25s ease';
 
-export default function PostEnhancement( { postId, postElement, onDeactivate } ) {
+function getPermalink( postElement ) {
+	return (
+		postElement.querySelector( '.wp-block-post-title a, a[rel="bookmark"]' )
+			?.href ?? ''
+	);
+}
+
+export default function PostEnhancement( { postId, postElement } ) {
 	const { expandPost, collapsePost, setEditingPost, fetchComments } =
 		useDispatch( STORE_NAME );
 
@@ -37,10 +52,78 @@ export default function PostEnhancement( { postId, postElement, onDeactivate } )
 	const isEditing = editingPost === postId;
 
 	const currentUser = window.p2NextConfig?.currentUser;
-	const canEdit = currentUser?.canUpdatePosts ?? currentUser?.canPublish;
+	const canEdit =
+		currentUser && ( currentUser.canUpdatePosts || currentUser.canPublish );
 
 	// -----------------------------------------------------------------------
-	// In-place editor: swap content element for an editor container.
+	// <details> open / close behaviour
+	//
+	// We attach outside-click and Escape listeners only while the menu is
+	// open (via the toggle event) so there is no global listener overhead
+	// on every post at rest.
+	// -----------------------------------------------------------------------
+	const detailsRef = useRef( null );
+
+	useEffect( () => {
+		const details = detailsRef.current;
+		if ( ! details ) {
+			return;
+		}
+
+		let removeListeners = null;
+		let deferTimer = null;
+
+		const onToggle = () => {
+			if ( details.open ) {
+				const outsideClick = ( e ) => {
+					if ( ! details.contains( e.target ) ) {
+						details.open = false;
+					}
+				};
+				const onKeydown = ( e ) => {
+					if ( e.key === 'Escape' ) {
+						details.open = false;
+					}
+				};
+
+				// Defer so the click that opened the menu doesn't immediately
+				// close it via the outside-click handler.
+				deferTimer = setTimeout( () => {
+					deferTimer = null;
+					document.addEventListener( 'click', outsideClick );
+				} );
+				document.addEventListener( 'keydown', onKeydown );
+
+				removeListeners = () => {
+					if ( deferTimer ) {
+						clearTimeout( deferTimer );
+						deferTimer = null;
+					}
+					document.removeEventListener( 'click', outsideClick );
+					document.removeEventListener( 'keydown', onKeydown );
+				};
+			} else {
+				removeListeners?.();
+				removeListeners = null;
+			}
+		};
+
+		details.addEventListener( 'toggle', onToggle );
+		return () => {
+			details.removeEventListener( 'toggle', onToggle );
+			removeListeners?.();
+		};
+	}, [] );
+
+	const closeMenu = useCallback( () => {
+		if ( detailsRef.current ) {
+			detailsRef.current.open = false;
+		}
+	}, [] );
+
+	// -----------------------------------------------------------------------
+	// In-place editor: animate the theme content out and insert an editor
+	// container in its place. On unmount, restore the content.
 	// -----------------------------------------------------------------------
 	const [ editorContainer, setEditorContainer ] = useState( null );
 	const contentElRef = useRef( null );
@@ -54,19 +137,17 @@ export default function PostEnhancement( { postId, postElement, onDeactivate } )
 		const contentEl = postElement.querySelector( CONTENT_SELECTOR );
 		contentElRef.current = contentEl;
 
-		// Collapse the existing content element out.
 		if ( contentEl ) {
 			savedHeightRef.current = contentEl.scrollHeight;
 			contentEl.style.height = savedHeightRef.current + 'px';
 			contentEl.style.overflow = 'hidden';
-			requestAnimationFrame( () => {
+			window.requestAnimationFrame( () => {
 				contentEl.style.transition = TRANSITION;
 				contentEl.style.height = '0';
 				contentEl.style.opacity = '0';
 			} );
 		}
 
-		// Insert an editor container div where the content was.
 		const container = document.createElement( 'div' );
 		container.className = 'p2-next-editor-container';
 		if ( contentEl?.parentNode ) {
@@ -77,7 +158,6 @@ export default function PostEnhancement( { postId, postElement, onDeactivate } )
 		setEditorContainer( container );
 
 		return () => {
-			// Restore the content element.
 			const el = contentElRef.current;
 			if ( el ) {
 				el.style.transition = TRANSITION;
@@ -97,19 +177,7 @@ export default function PostEnhancement( { postId, postElement, onDeactivate } )
 	}, [ isEditing, postElement ] );
 
 	// -----------------------------------------------------------------------
-	// Deactivate once the user has finished everything.
-	// -----------------------------------------------------------------------
-	const wasActive = useRef( false );
-	useEffect( () => {
-		if ( isExpanded || isEditing ) {
-			wasActive.current = true;
-		} else if ( wasActive.current ) {
-			onDeactivate?.();
-		}
-	}, [ isExpanded, isEditing, onDeactivate ] );
-
-	// -----------------------------------------------------------------------
-	// Comment label
+	// Menu actions
 	// -----------------------------------------------------------------------
 	const commentCount = isExpanded ? comments.length : 0;
 	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2-next' ) }`;
@@ -120,42 +188,141 @@ export default function PostEnhancement( { postId, postElement, onDeactivate } )
 	}
 
 	const onToggleComments = useCallback( () => {
+		closeMenu();
 		if ( isExpanded ) {
 			collapsePost( postId );
 		} else {
 			expandPost( postId );
 			fetchComments( postId );
 		}
-	}, [ isExpanded, postId, expandPost, collapsePost, fetchComments ] );
+	}, [
+		isExpanded,
+		postId,
+		expandPost,
+		collapsePost,
+		fetchComments,
+		closeMenu,
+	] );
 
 	const onEdit = useCallback( () => {
+		closeMenu();
 		setEditingPost( postId );
-	}, [ postId, setEditingPost ] );
+	}, [ postId, setEditingPost, closeMenu ] );
 
+	const [ copyLabel, setCopyLabel ] = useState(
+		__( 'Copy link', 'p2-next' )
+	);
+	const onCopyLink = useCallback( async () => {
+		closeMenu();
+		const url = getPermalink( postElement );
+		if ( ! url ) {
+			return;
+		}
+		try {
+			await window.navigator.clipboard.writeText( url );
+		} catch {
+			// Clipboard API unavailable — fall back to execCommand.
+			const input = Object.assign( document.createElement( 'input' ), {
+				value: url,
+				style: 'position:fixed;opacity:0',
+			} );
+			document.body.appendChild( input );
+			input.select();
+			// eslint-disable-next-line no-undef
+			document.execCommand( 'copy' );
+			input.remove();
+		}
+		setCopyLabel( __( 'Copied!', 'p2-next' ) );
+		setTimeout( () => setCopyLabel( __( 'Copy link', 'p2-next' ) ), 2000 );
+	}, [ postElement, closeMenu ] );
+
+	const onDelete = useCallback( async () => {
+		closeMenu();
+		// eslint-disable-next-line no-alert
+		const confirmed = window.confirm(
+			__( 'Move this post to the trash?', 'p2-next' )
+		);
+		if ( ! confirmed ) {
+			return;
+		}
+		try {
+			await apiFetch( {
+				path: `/wp/v2/posts/${ postId }`,
+				method: 'DELETE',
+			} );
+			postElement.remove();
+		} catch ( err ) {
+			// eslint-disable-next-line no-console
+			console.error( '[p2-next] Delete failed', err );
+		}
+	}, [ postId, postElement, closeMenu ] );
+
+	// -----------------------------------------------------------------------
+	// Render
+	// -----------------------------------------------------------------------
 	return (
 		<>
-			<div className="p2-next-post-actions">
-				<Button
-					variant="link"
-					className="p2-next-comments-toggle"
-					onClick={ onToggleComments }
-					aria-expanded={ isExpanded }
+			{ /* Three-dots trigger + dropdown, absolutely positioned top-right */ }
+			<details ref={ detailsRef } className="p2-next-menu-wrap">
+				<summary
+					className="p2-next-menu-trigger"
+					aria-label={ __( 'Post actions', 'p2-next' ) }
 				>
-					{ commentLabel }
-				</Button>
+					<span aria-hidden="true">&middot;&middot;&middot;</span>
+				</summary>
 
-				{ canEdit && ! isEditing && (
-					<Button
-						variant="link"
-						className="p2-next-edit-btn"
-						onClick={ onEdit }
-					>
-						{ __( 'Edit', 'p2-next' ) }
-					</Button>
-				) }
-			</div>
+				<ul className="p2-next-menu-dropdown" role="menu">
+					<li role="none">
+						<button
+							type="button"
+							role="menuitem"
+							className="p2-next-menu-item"
+							onClick={ onToggleComments }
+						>
+							{ commentLabel }
+						</button>
+					</li>
 
-			{ /* Editor portaled into the container inserted before the content */ }
+					{ canEdit && ! isEditing && (
+						<li role="none">
+							<button
+								type="button"
+								role="menuitem"
+								className="p2-next-menu-item"
+								onClick={ onEdit }
+							>
+								{ __( 'Edit', 'p2-next' ) }
+							</button>
+						</li>
+					) }
+
+					<li role="none">
+						<button
+							type="button"
+							role="menuitem"
+							className="p2-next-menu-item"
+							onClick={ onCopyLink }
+						>
+							{ copyLabel }
+						</button>
+					</li>
+
+					{ canEdit && (
+						<li role="none">
+							<button
+								type="button"
+								role="menuitem"
+								className="p2-next-menu-item is-destructive"
+								onClick={ onDelete }
+							>
+								{ __( 'Delete', 'p2-next' ) }
+							</button>
+						</li>
+					) }
+				</ul>
+			</details>
+
+			{ /* Editor portaled into a container inserted before the content */ }
 			{ isEditing &&
 				editorContainer &&
 				createPortal(
@@ -163,6 +330,7 @@ export default function PostEnhancement( { postId, postElement, onDeactivate } )
 					editorContainer
 				) }
 
+			{ /* Comment thread — renders in normal flow below the post content */ }
 			{ isExpanded && ! isEditing && <Comments postId={ postId } /> }
 		</>
 	);

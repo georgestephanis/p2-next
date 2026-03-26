@@ -32,6 +32,7 @@ export default function PostEditor( { postId } ) {
 	const [ error, setError ] = useState( null );
 
 	const { updatePost, setEditingPost } = useDispatch( STORE_NAME );
+	const { selectBlock } = useDispatch( 'core/block-editor' );
 	const isSaving = useSelect( ( select ) =>
 		select( STORE_NAME ).isSavingPost()
 	);
@@ -57,6 +58,47 @@ export default function PostEditor( { postId } ) {
 	const onCancel = useCallback( () => {
 		setEditingPost( null );
 	}, [ setEditingPost ] );
+
+	// Clicking or pressing Enter/Space on the canvas backdrop (not a block)
+	// selects the nearest block (click) or the first block (keyboard).
+	const onCanvasKeyDown = useCallback(
+		( e ) => {
+			if ( e.target !== e.currentTarget ) {
+				return;
+			}
+			if ( e.key !== 'Enter' && e.key !== ' ' ) {
+				return;
+			}
+			const first = e.currentTarget.querySelector( '[data-block]' );
+			if ( first ) {
+				selectBlock( first.dataset.block );
+			}
+		},
+		[ selectBlock ]
+	);
+
+	const onCanvasClick = useCallback(
+		( e ) => {
+			if ( e.target !== e.currentTarget ) {
+				return;
+			}
+			const blockEls = [
+				...e.currentTarget.querySelectorAll( '[data-block]' ),
+			];
+			if ( ! blockEls.length ) {
+				return;
+			}
+			const { clientY } = e;
+			const nearest = blockEls.reduce( ( best, el ) => {
+				const { top, height } = el.getBoundingClientRect();
+				const dist = Math.abs( clientY - ( top + height / 2 ) );
+				const { top: bt, height: bh } = best.getBoundingClientRect();
+				return dist < Math.abs( clientY - ( bt + bh / 2 ) ) ? el : best;
+			} );
+			selectBlock( nearest.dataset.block );
+		},
+		[ selectBlock ]
+	);
 
 	if ( error ) {
 		return <p className="p2-next-error">{ error }</p>;
@@ -86,8 +128,15 @@ export default function PostEditor( { postId } ) {
 									'Edit post content',
 									'p2-next'
 								) }
+								tabIndex={ 0 }
+								onClick={ onCanvasClick }
+								onKeyDown={ onCanvasKeyDown }
 							>
-								<BlockList renderAppender={ BlockList.ButtonBlockAppender } />
+								<BlockList
+									renderAppender={
+										BlockList.ButtonBlockAppender
+									}
+								/>
 							</div>
 						</ObserveTyping>
 					</WritingFlow>

@@ -235,8 +235,9 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 					newPostElsRef.current[ post.id ] = li;
 
 					if ( referenceGroup ) {
-						const injectedGroup =
-							li.querySelector( ':scope > .wp-block-group' );
+						const injectedGroup = li.querySelector(
+							':scope > .wp-block-group'
+						);
 						if ( injectedGroup ) {
 							referenceGroup.classList.forEach( ( cls ) =>
 								injectedGroup.classList.add( cls )
@@ -289,7 +290,6 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 					) : null,
 					bannerContainerRef.current
 				) }
-
-			</>
+		</>
 	);
 }
