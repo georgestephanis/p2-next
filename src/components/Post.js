@@ -21,7 +21,7 @@ export default function Post( { post } ) {
 	);
 	const isEditing = editingPost === post.id;
 
-	const currentUser = window.p2NextConfig?.currentUser;
+	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
 		currentUser &&
 		( currentUser.id === post.author ||
@@ -46,23 +46,23 @@ export default function Post( { post } ) {
 	const commentCount = post.comment_count ?? 0;
 
 	return (
-		<article className="p2-next-post" id={ `post-${ post.id }` }>
-			<header className="p2-next-post-header">
+		<article className="p2026-post" id={ `post-${ post.id }` }>
+			<header className="p2026-post-header">
 				{ author && (
 					<img
-						className="p2-next-avatar"
+						className="p2026-avatar"
 						src={ author.avatar_urls?.[ 48 ] }
 						alt={ author.name }
 						width={ 48 }
 						height={ 48 }
 					/>
 				) }
-				<div className="p2-next-post-meta">
-					<span className="p2-next-author">
-						{ author?.name ?? __( 'Unknown', 'p2-next' ) }
+				<div className="p2026-post-meta">
+					<span className="p2026-author">
+						{ author?.name ?? __( 'Unknown', 'p2026' ) }
 					</span>
 					<time
-						className="p2-next-date"
+						className="p2026-date"
 						dateTime={ post.date_gmt }
 						title={ post.date_gmt }
 					>
@@ -72,19 +72,19 @@ export default function Post( { post } ) {
 
 				{ canEdit && ! isEditing && (
 					<Button
-						className="p2-next-edit-btn"
+						className="p2026-edit-btn"
 						variant="tertiary"
 						onClick={ onEdit }
-						aria-label={ __( 'Edit post', 'p2-next' ) }
+						aria-label={ __( 'Edit post', 'p2026' ) }
 					>
-						{ __( 'Edit', 'p2-next' ) }
+						{ __( 'Edit', 'p2026' ) }
 					</Button>
 				) }
 			</header>
 
 			{ post.title?.rendered && (
 				<h2
-					className="p2-next-post-title"
+					className="p2026-post-title"
 					dangerouslySetInnerHTML={ { __html: post.title.rendered } }
 				/>
 			) }
@@ -93,28 +93,28 @@ export default function Post( { post } ) {
 				<PostEditor postId={ post.id } />
 			) : (
 				<div
-					className="p2-next-post-content"
+					className="p2026-post-content"
 					dangerouslySetInnerHTML={ {
 						__html: post.content?.rendered ?? '',
 					} }
 				/>
 			) }
 
-			<footer className="p2-next-post-footer">
+			<footer className="p2026-post-footer">
 				<Button
 					variant="link"
 					onClick={ onToggleComments }
 					aria-expanded={ isExpanded }
 				>
 					{ isExpanded
-						? __( 'Hide comments', 'p2-next' )
+						? __( 'Hide comments', 'p2026' )
 						: sprintf(
 								/* translators: %d: comment count */
 								_n(
 									'%d comment',
 									'%d comments',
 									commentCount,
-									'p2-next'
+									'p2026'
 								),
 								commentCount
 						  ) }

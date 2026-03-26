@@ -16,10 +16,10 @@ function Edit() {
 		<div { ...useBlockProps() }>
 			<Placeholder
 				icon="edit"
-				label={ __( 'New Post Editor', 'p2-next' ) }
+				label={ __( 'New Post Editor', 'p2026' ) }
 				instructions={ __(
 					'This block renders a live Block Editor on the frontend, allowing visitors to create posts without leaving the page.',
-					'p2-next'
+					'p2026'
 				) }
 			/>
 		</div>

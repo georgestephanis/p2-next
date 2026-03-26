@@ -1,4 +1,4 @@
-# p2-next Architecture
+# p2026 Architecture
 
 This plugin adds real-time P2/o2-style collaboration features by progressively enhancing theme-rendered post lists.
 
@@ -6,15 +6,15 @@ This plugin adds real-time P2/o2-style collaboration features by progressively e
 
 - Theme HTML remains the source of truth for initial rendering.
 - React portals add controls and editors into existing DOM nodes.
-- A shared `@wordpress/data` store (`p2-next`) drives posts/comments/editor UI state.
-- REST API requests are authenticated with nonce + root URL from `window.p2NextConfig`.
+- A shared `@wordpress/data` store (`p2026`) drives posts/comments/editor UI state.
+- REST API requests are authenticated with nonce + root URL from `window.p2026Config`.
 
 ## Runtime Request/Data Flow
 
 ```mermaid
 flowchart TD
-    A[wp_enqueue_scripts in p2-next.php] --> B[Enqueue build/frontend.js]
-    A --> C[Inject window.p2NextConfig]
+    A[wp_enqueue_scripts in p2026.php] --> B[Enqueue build/frontend.js]
+    A --> C[Inject window.p2026Config]
 
     B --> D[src/frontend.js]
     C --> D
@@ -49,7 +49,7 @@ flowchart TD
 
 ## File-Level Responsibilities
 
-- `p2-next.php`: block registration, frontend enqueue, config injection, auto-title filter.
+- `p2026.php`: block registration, frontend enqueue, config injection, auto-title filter.
 - `src/frontend.js`: enhancement bootstrap and portal mounting.
 - `src/store/index.js`: post/comment/polling/editor state and async actions.
 - `src/api/index.js`: `apiFetch` middleware and polling utility.

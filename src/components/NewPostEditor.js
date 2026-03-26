@@ -90,7 +90,7 @@ export default function NewPostEditor() {
 	}, [ blocks, createPost ] );
 
 	return (
-		<div className="p2-next-new-post-editor">
+		<div className="p2026-new-post-editor">
 			<BlockEditorProvider
 				value={ blocks }
 				onInput={ setBlocks }
@@ -102,12 +102,12 @@ export default function NewPostEditor() {
 					<WritingFlow>
 						<ObserveTyping>
 							<div
-								className="p2-next-editor-canvas"
+								className="p2026-editor-canvas"
 								role="textbox"
 								aria-multiline="true"
 								aria-label={ __(
 									'New post content',
-									'p2-next'
+									'p2026'
 								) }
 								tabIndex={ 0 }
 								onClick={ onCanvasClick }
@@ -124,7 +124,7 @@ export default function NewPostEditor() {
 				</BlockTools>
 			</BlockEditorProvider>
 
-			<div className="p2-next-editor-toolbar">
+			<div className="p2026-editor-toolbar">
 				<Button
 					variant="tertiary"
 					onClick={ () =>
@@ -132,7 +132,7 @@ export default function NewPostEditor() {
 					}
 					disabled={ isSaving }
 				>
-					{ __( 'Cancel', 'p2-next' ) }
+					{ __( 'Cancel', 'p2026' ) }
 				</Button>
 				<Button
 					variant="primary"
@@ -141,8 +141,8 @@ export default function NewPostEditor() {
 					isBusy={ isSaving }
 				>
 					{ isSaving
-						? __( 'Publishing…', 'p2-next' )
-						: __( 'Publish', 'p2-next' ) }
+						? __( 'Publishing…', 'p2026' )
+						: __( 'Publish', 'p2026' ) }
 				</Button>
 			</div>
 		</div>

@@ -51,7 +51,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 	);
 	const isEditing = editingPost === postId;
 
-	const currentUser = window.p2NextConfig?.currentUser;
+	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
 		currentUser && ( currentUser.canUpdatePosts || currentUser.canPublish );
 
@@ -149,7 +149,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 		}
 
 		const container = document.createElement( 'div' );
-		container.className = 'p2-next-editor-container';
+		container.className = 'p2026-editor-container';
 		if ( contentEl?.parentNode ) {
 			contentEl.parentNode.insertBefore( container, contentEl );
 		} else {
@@ -180,11 +180,11 @@ export default function PostEnhancement( { postId, postElement } ) {
 	// Menu actions
 	// -----------------------------------------------------------------------
 	const commentCount = isExpanded ? comments.length : 0;
-	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2-next' ) }`;
+	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
 	if ( isExpanded ) {
-		commentLabel = __( 'Hide comments', 'p2-next' );
+		commentLabel = __( 'Hide comments', 'p2026' );
 	} else if ( commentCount === 1 ) {
-		commentLabel = __( '1 comment', 'p2-next' );
+		commentLabel = __( '1 comment', 'p2026' );
 	}
 
 	const onToggleComments = useCallback( () => {
@@ -210,7 +210,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 	}, [ postId, setEditingPost, closeMenu ] );
 
 	const [ copyLabel, setCopyLabel ] = useState(
-		__( 'Copy link', 'p2-next' )
+		__( 'Copy link', 'p2026' )
 	);
 	const onCopyLink = useCallback( async () => {
 		closeMenu();
@@ -232,15 +232,15 @@ export default function PostEnhancement( { postId, postElement } ) {
 			document.execCommand( 'copy' );
 			input.remove();
 		}
-		setCopyLabel( __( 'Copied!', 'p2-next' ) );
-		setTimeout( () => setCopyLabel( __( 'Copy link', 'p2-next' ) ), 2000 );
+		setCopyLabel( __( 'Copied!', 'p2026' ) );
+		setTimeout( () => setCopyLabel( __( 'Copy link', 'p2026' ) ), 2000 );
 	}, [ postElement, closeMenu ] );
 
 	const onDelete = useCallback( async () => {
 		closeMenu();
 		// eslint-disable-next-line no-alert
 		const confirmed = window.confirm(
-			__( 'Move this post to the trash?', 'p2-next' )
+			__( 'Move this post to the trash?', 'p2026' )
 		);
 		if ( ! confirmed ) {
 			return;
@@ -253,7 +253,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 			postElement.remove();
 		} catch ( err ) {
 			// eslint-disable-next-line no-console
-			console.error( '[p2-next] Delete failed', err );
+			console.error( '[p2026] Delete failed', err );
 		}
 	}, [ postId, postElement, closeMenu ] );
 
@@ -263,20 +263,20 @@ export default function PostEnhancement( { postId, postElement } ) {
 	return (
 		<>
 			{ /* Three-dots trigger + dropdown, absolutely positioned top-right */ }
-			<details ref={ detailsRef } className="p2-next-menu-wrap">
+			<details ref={ detailsRef } className="p2026-menu-wrap">
 				<summary
-					className="p2-next-menu-trigger"
-					aria-label={ __( 'Post actions', 'p2-next' ) }
+					className="p2026-menu-trigger"
+					aria-label={ __( 'Post actions', 'p2026' ) }
 				>
 					<span aria-hidden="true">&middot;&middot;&middot;</span>
 				</summary>
 
-				<ul className="p2-next-menu-dropdown" role="menu">
+				<ul className="p2026-menu-dropdown" role="menu">
 					<li role="none">
 						<button
 							type="button"
 							role="menuitem"
-							className="p2-next-menu-item"
+							className="p2026-menu-item"
 							onClick={ onToggleComments }
 						>
 							{ commentLabel }
@@ -288,10 +288,10 @@ export default function PostEnhancement( { postId, postElement } ) {
 							<button
 								type="button"
 								role="menuitem"
-								className="p2-next-menu-item"
+								className="p2026-menu-item"
 								onClick={ onEdit }
 							>
-								{ __( 'Edit', 'p2-next' ) }
+								{ __( 'Edit', 'p2026' ) }
 							</button>
 						</li>
 					) }
@@ -300,7 +300,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 						<button
 							type="button"
 							role="menuitem"
-							className="p2-next-menu-item"
+							className="p2026-menu-item"
 							onClick={ onCopyLink }
 						>
 							{ copyLabel }
@@ -312,10 +312,10 @@ export default function PostEnhancement( { postId, postElement } ) {
 							<button
 								type="button"
 								role="menuitem"
-								className="p2-next-menu-item is-destructive"
+								className="p2026-menu-item is-destructive"
 								onClick={ onDelete }
 							>
-								{ __( 'Delete', 'p2-next' ) }
+								{ __( 'Delete', 'p2026' ) }
 							</button>
 						</li>
 					) }

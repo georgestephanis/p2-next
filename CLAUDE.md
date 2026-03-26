@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file documents the current architecture and contribution conventions for the p2-next plugin.
+This file documents the current architecture and contribution conventions for the p2026 plugin.
 
 ## What This Plugin Is
 
-p2-next modernizes P2/o2-style collaboration by layering React and Block Editor UX on top of theme-rendered loops.
+p2026 modernizes P2/o2-style collaboration by layering React and Block Editor UX on top of theme-rendered loops.
 
 Core design principles:
 
@@ -17,7 +17,7 @@ It is intentionally not a complete SPA replacement.
 
 ## Top-Level Layout
 
-- p2-next.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration.
+- p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration.
 - src/frontend.js: enhancement bootstrap for existing loop pages.
 - src/blocks/new-post/: dynamic block server render + frontend mount.
 - src/components/: feed controls, comments UI, post editor/new post editor.
@@ -29,7 +29,7 @@ It is intentionally not a complete SPA replacement.
 ## Runtime Flow
 
 1. PHP registers block metadata from build output and enqueues frontend assets.
-2. PHP injects window.p2NextConfig before frontend script execution.
+2. PHP injects window.p2026Config before frontend script execution.
 3. frontend.js discovers rendered posts in block or classic themes.
 4. FeedEnhancer mounts once and portals controls into existing post markup.
 5. Posts poll on a fixed cadence and buffer new content behind a reveal banner.
@@ -38,11 +38,11 @@ It is intentionally not a complete SPA replacement.
 
 ## Permission Model
 
-p2-next now uses an abilities-first model with fallback:
+p2026 now uses an abilities-first model with fallback:
 
 - If Abilities API is present, plugin registers:
-  - p2-next/post-create
-  - p2-next/post-update
+  - p2026/post-create
+  - p2026/post-update
 - Permission checks use ability.check_permissions() when available.
 - If abilities are not available, checks fall back to core capability checks.
 
@@ -54,7 +54,7 @@ Runtime config includes:
 - requireNameEmail
 - currentUser (logged-in metadata when available)
 
-New post mount rendering in src/blocks/new-post/render.php is gated by p2next_can_create_posts().
+New post mount rendering in src/blocks/new-post/render.php is gated by p2026_can_create_posts().
 
 ## Commenting Behavior
 
@@ -67,7 +67,7 @@ New post mount rendering in src/blocks/new-post/render.php is gated by p2next_ca
 
 ## Store and REST Boundaries
 
-Store name: p2-next.
+Store name: p2026.
 
 Key state:
 
@@ -112,9 +112,9 @@ Validation expectations after functional changes:
 
 - Keep enhancement additive; do not replace the theme loop rendering.
 - Reuse existing store selectors/actions before introducing new state paths.
-- Keep i18n text domain as p2-next.
+- Keep i18n text domain as p2026.
 - Keep build output generated only.
-- Prefer capability checks through centralized helpers in p2-next.php.
+- Prefer capability checks through centralized helpers in p2026.php.
 
 ## Performance and Scale Notes
 

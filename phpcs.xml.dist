@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<ruleset name="P2 Next">
-	<description>PHP CodeSniffer rules for the p2-next plugin.</description>
+<ruleset name="P2026">
+	<description>PHP CodeSniffer rules for the p2026 plugin.</description>
 
 	<!-- What to scan -->
-	<file>p2-next.php</file>
+	<file>p2026.php</file>
 	<file>src/blocks/new-post/render.php</file>
 
 	<!-- Ignore build artefacts and third-party code -->
@@ -30,7 +30,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="p2-next"/>
+				<element value="p2026"/>
 			</property>
 		</properties>
 	</rule>

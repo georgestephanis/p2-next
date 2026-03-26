@@ -29,7 +29,7 @@ import { startPolling } from '../api';
 import { setupPostToolbar } from '../enhancer';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
-const POLL_INTERVAL = window.p2NextConfig?.pollInterval ?? 15;
+const POLL_INTERVAL = window.p2026Config?.pollInterval ?? 15;
 const COMMENT_REFRESH_BASE_INTERVAL = 20;
 const COMMENT_REFRESH_JITTER = 8;
 const COMMENT_REFRESH_MAX_BACKOFF = 8;
@@ -59,7 +59,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 
 		// Banner sits just before the post list.
 		const banner = document.createElement( 'div' );
-		banner.className = 'p2-next-banner-container';
+		banner.className = 'p2026-banner-container';
 		feedContainer.parentNode.insertBefore( banner, feedContainer );
 		bannerContainerRef.current = banner;
 
@@ -273,7 +273,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 			{ bannerContainerRef.current &&
 				createPortal(
 					pendingCount > 0 ? (
-						<div className="p2-next-new-posts-banner">
+						<div className="p2026-new-posts-banner">
 							<Button variant="primary" onClick={ onReveal }>
 								{ sprintf(
 									/* translators: %d: number of new posts */
@@ -281,7 +281,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 										'%d new post — click to view',
 										'%d new posts — click to view',
 										pendingCount,
-										'p2-next'
+										'p2026'
 									),
 									pendingCount
 								) }

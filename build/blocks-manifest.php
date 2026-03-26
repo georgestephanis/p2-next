@@ -4,7 +4,7 @@ return array(
 	'new-post' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,
-		'name' => 'p2-next/new-post',
+		'name' => 'p2026/new-post',
 		'title' => 'New Post Editor',
 		'category' => 'widgets',
 		'description' => 'Embeds the Block Editor on the frontend so visitors can create posts without leaving the page.',
@@ -19,7 +19,7 @@ return array(
 			'html' => false,
 			'multiple' => false
 		),
-		'textdomain' => 'p2-next',
+		'textdomain' => 'p2026',
 		'editorScript' => 'file:./index.js',
 		'viewScript' => 'file:./view.js',
 		'render' => 'file:./render.php'

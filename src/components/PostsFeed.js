@@ -39,9 +39,9 @@ export default function PostsFeed( { postsPerPage = 20, pollInterval = 15 } ) {
 	}, [ revealPendingPosts ] );
 
 	return (
-		<div className="p2-next-posts-feed">
+		<div className="p2026-posts-feed">
 			{ pendingCount > 0 && (
-				<div className="p2-next-new-posts-banner">
+				<div className="p2026-new-posts-banner">
 					<Button variant="primary" onClick={ onReveal }>
 						{ sprintf(
 							/* translators: %d: number of new posts */
@@ -49,7 +49,7 @@ export default function PostsFeed( { postsPerPage = 20, pollInterval = 15 } ) {
 								'%d new post — click to view',
 								'%d new posts — click to view',
 								pendingCount,
-								'p2-next'
+								'p2026'
 							),
 							pendingCount
 						) }
@@ -58,8 +58,8 @@ export default function PostsFeed( { postsPerPage = 20, pollInterval = 15 } ) {
 			) }
 
 			{ posts.length === 0 && (
-				<p className="p2-next-no-posts">
-					{ __( 'No posts yet. Be the first!', 'p2-next' ) }
+				<p className="p2026-no-posts">
+					{ __( 'No posts yet. Be the first!', 'p2026' ) }
 				</p>
 			) }
 

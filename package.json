@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "p2-next",
+  "name": "p2026",
   "version": "0.1.0",
   "description": "Modern P2/o2 replacement using the Block Editor and REST API.",
   "scripts": {

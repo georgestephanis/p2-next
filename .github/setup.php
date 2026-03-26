@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Create sample posts for testing the feed, comments, and inline editing.
 $sample_posts = [
     [
-        'post_title'   => 'Welcome to P2 Next',
+        'post_title'   => 'Welcome to P2026',
         'post_content' => '<!-- wp:paragraph --><p>This is a test post. Use the \u22ef menu in the top-right corner to edit it, copy a link, or delete it.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
         'post_author'  => 1,
@@ -54,7 +54,7 @@ $post_id    = wp_insert_post( [
     'post_type'    => 'wp_template',
     'post_name'    => 'home',
     'post_title'   => 'Home',
-    'post_content' => '<!-- wp:p2-next/new-post /-->' . "\n" . $query_block,
+    'post_content' => '<!-- wp:p2026/new-post /-->' . "\n" . $query_block,
     'post_status'  => 'publish',
     'post_author'  => 1,
 ] );

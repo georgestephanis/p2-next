@@ -1,10 +1,10 @@
-# Copilot Instructions for p2-next
+# Copilot Instructions for p2026
 
-Scope: wp-content/plugins/p2-next.
+Scope: wp-content/plugins/p2026.
 
 ## Purpose
 
-p2-next adds P2/o2-style collaboration UX by progressively enhancing theme-rendered post lists.
+p2026 adds P2/o2-style collaboration UX by progressively enhancing theme-rendered post lists.
 
 Primary stack:
 
@@ -17,7 +17,7 @@ Do not convert this plugin into a full SPA. Preserve theme ownership of initial 
 
 ## Core Entry Points
 
-- p2-next.php: bootstrap, abilities registration, permission helpers, config injection, block registration.
+- p2026.php: bootstrap, abilities registration, permission helpers, config injection, block registration.
 - src/frontend.js: finds post list + post nodes and mounts FeedEnhancer.
 - src/blocks/new-post/render.php: server-gated mount point for new-post UI.
 - src/blocks/new-post/view.js: frontend mount for new-post editor.
@@ -26,14 +26,14 @@ Do not convert this plugin into a full SPA. Preserve theme ownership of initial 
 
 ## Permission and Capability Rules
 
-Use centralized helpers in p2-next.php for post capabilities:
+Use centralized helpers in p2026.php for post capabilities:
 
-- p2next_can_create_posts()
-- p2next_can_update_posts()
+- p2026_can_create_posts()
+- p2026_can_update_posts()
 
 These are abilities-first and fallback to current_user_can when abilities are unavailable.
 
-Frontend capability flags come from window.p2NextConfig. Prefer these flags over ad hoc checks in JS:
+Frontend capability flags come from window.p2026Config. Prefer these flags over ad hoc checks in JS:
 
 - canCreatePosts
 - canUpdatePosts
@@ -53,8 +53,8 @@ For logged-in users, currentUser includes canPublish/canUpdatePosts/canComment.
 ## Architectural Guardrails
 
 - Keep portal-based injection; avoid replacing post loop HTML.
-- Reuse window.__p2NextStore anti-duplication pattern.
-- Maintain i18n coverage with text domain p2-next.
+- Reuse window.__p2026Store anti-duplication pattern.
+- Maintain i18n coverage with text domain p2026.
 - Avoid editing build/ directly.
 - Keep API calls in store thunks unless there is a strong reason to move them.
 
@@ -76,7 +76,7 @@ Manual smoke checks expected after behavior changes:
 
 ## High-Risk Areas
 
-- p2-next.php config keys and helper naming: changing these can silently break frontend gating.
+- p2026.php config keys and helper naming: changing these can silently break frontend gating.
 - src/store/index.js action signatures: createComment authorData support must be preserved.
 - src/components/Comments.js and src/components/Comment.js: keep top-level/reply forms behavior aligned.
 - src/components/FeedEnhancer.js timers: avoid introducing synchronized polling bursts.

@@ -1,5 +1,5 @@
 /**
- * P2 Next — frontend enhancement entry point.
+ * P2026 — frontend enhancement entry point.
  *
  * Progressively enhances any post list on the page — whether rendered by the
  * Query Loop block, a classic theme loop, or anything else — with:
@@ -21,8 +21,8 @@ import './styles.scss';
 
 // Register core block types so parse() and PostEditor work on the frontend.
 // Guard against double-registration when view.js is also on the page.
-if ( ! window.__p2NextBlocksRegistered ) {
-	window.__p2NextBlocksRegistered = true;
+if ( ! window.__p2026BlocksRegistered ) {
+	window.__p2026BlocksRegistered = true;
 	registerCoreBlocks();
 	setDefaultBlockName( 'core/paragraph' );
 }
@@ -84,7 +84,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	const postElements = collectPostElements();
 
 	// eslint-disable-next-line no-console
-	console.log( '[p2-next] DOMContentLoaded', {
+	console.log( '[p2026] DOMContentLoaded', {
 		feedContainer,
 		postCount: postElements.length,
 		postIds: postElements.map( ( p ) => p.id ),
@@ -92,7 +92,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 
 	if ( ! feedContainer && ! postElements.length ) {
 		// eslint-disable-next-line no-console
-		console.warn( '[p2-next] No feed container or posts found — bailing.' );
+		console.warn( '[p2026] No feed container or posts found — bailing.' );
 		return; // Not a page with a post list — nothing to enhance.
 	}
 
@@ -105,7 +105,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 
 	// Single React root for polling state and the new-posts banner.
 	const mountPoint = document.createElement( 'div' );
-	mountPoint.id = 'p2-next-enhancer-root';
+	mountPoint.id = 'p2026-enhancer-root';
 	mountPoint.style.display = 'none';
 	document.body.appendChild( mountPoint );
 

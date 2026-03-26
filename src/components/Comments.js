@@ -27,11 +27,11 @@ function CommentTree( { comments, postId, depth = 0 } ) {
 			{ comments.map( ( comment ) => (
 				<div
 					key={ comment.id }
-					className={ `p2-next-comment-thread depth-${ depth }` }
+					className={ `p2026-comment-thread depth-${ depth }` }
 				>
 					<Comment comment={ comment } postId={ postId } />
 					{ comment.children.length > 0 && (
-						<div className="p2-next-comment-children">
+						<div className="p2026-comment-children">
 							<CommentTree
 								comments={ comment.children }
 								postId={ postId }
@@ -59,10 +59,10 @@ export default function Comments( { postId } ) {
 	const [ guestEmail, setGuestEmail ] = useState( '' );
 	const [ guestUrl, setGuestUrl ] = useState( '' );
 
-	const currentUser = window.p2NextConfig?.currentUser;
-	const canComment = window.p2NextConfig?.canComment ?? !! currentUser;
+	const currentUser = window.p2026Config?.currentUser;
+	const canComment = window.p2026Config?.canComment ?? !! currentUser;
 	const requireNameEmail =
-		! currentUser && !! window.p2NextConfig?.requireNameEmail;
+		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 
@@ -107,28 +107,28 @@ export default function Comments( { postId } ) {
 
 	return (
 		<section
-			className="p2-next-comments"
-			aria-label={ __( 'Comments', 'p2-next' ) }
+			className="p2026-comments"
+			aria-label={ __( 'Comments', 'p2026' ) }
 		>
 			{ canComment && (
-				<div className="p2-next-new-comment-form p2-next-reply-form">
+				<div className="p2026-new-comment-form p2026-reply-form">
 					{ ! currentUser && (
 						<>
 							<TextControl
-								label={ __( 'Name', 'p2-next' ) }
+								label={ __( 'Name', 'p2026' ) }
 								value={ guestName }
 								onChange={ setGuestName }
 								required={ requireNameEmail }
 							/>
 							<TextControl
-								label={ __( 'Email', 'p2-next' ) }
+								label={ __( 'Email', 'p2026' ) }
 								type="email"
 								value={ guestEmail }
 								onChange={ setGuestEmail }
 								required={ requireNameEmail }
 							/>
 							<TextControl
-								label={ __( 'Website (optional)', 'p2-next' ) }
+								label={ __( 'Website (optional)', 'p2026' ) }
 								type="url"
 								value={ guestUrl }
 								onChange={ setGuestUrl }
@@ -136,14 +136,14 @@ export default function Comments( { postId } ) {
 						</>
 					) }
 					<TextareaControl
-						label={ __( 'Add a comment', 'p2-next' ) }
+						label={ __( 'Add a comment', 'p2026' ) }
 						hideLabelFromVision
-						placeholder={ __( 'Write a comment…', 'p2-next' ) }
+						placeholder={ __( 'Write a comment…', 'p2026' ) }
 						value={ content }
 						onChange={ setContent }
 						rows={ 4 }
 					/>
-					<div className="p2-next-reply-actions">
+					<div className="p2026-reply-actions">
 						<Button
 							variant="primary"
 							onClick={ onCommentSubmit }
@@ -155,16 +155,16 @@ export default function Comments( { postId } ) {
 							isBusy={ isSaving }
 						>
 							{ isSaving
-								? __( 'Posting…', 'p2-next' )
-								: __( 'Post comment', 'p2-next' ) }
+								? __( 'Posting…', 'p2026' )
+								: __( 'Post comment', 'p2026' ) }
 						</Button>
 					</div>
 				</div>
 			) }
 
 			{ tree.length === 0 && (
-				<p className="p2-next-no-comments">
-					{ __( 'No comments yet.', 'p2-next' ) }
+				<p className="p2026-no-comments">
+					{ __( 'No comments yet.', 'p2026' ) }
 				</p>
 			) }
 			<CommentTree comments={ tree } postId={ postId } />

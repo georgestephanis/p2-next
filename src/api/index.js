@@ -1,8 +1,8 @@
 /**
- * P2 Next — API bootstrap.
+ * P2026 — API bootstrap.
  *
  * Configures @wordpress/api-fetch middleware using the runtime config injected
- * by p2-next.php. Import this module once (from a view.js entry point) before
+ * by p2026.php. Import this module once (from a view.js entry point) before
  * making any apiFetch calls.
  */
 import apiFetch from '@wordpress/api-fetch';
@@ -45,7 +45,7 @@ function initTelemetry() {
 			.join( ', ' );
 
 		// eslint-disable-next-line no-console
-		console.info( `[p2-next telemetry] ${ summary }` );
+		console.info( `[p2026 telemetry] ${ summary }` );
 		buckets.clear();
 	}, 60 * 1000 );
 }
@@ -56,7 +56,7 @@ export function initApiFetch() {
 	}
 	initialised = true;
 
-	const { nonce, restUrl, debugTelemetry } = window.p2NextConfig ?? {};
+	const { nonce, restUrl, debugTelemetry } = window.p2026Config ?? {};
 
 	if ( restUrl ) {
 		apiFetch.use( apiFetch.createRootURLMiddleware( restUrl ) );

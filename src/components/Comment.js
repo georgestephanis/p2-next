@@ -19,10 +19,10 @@ export default function Comment( { comment, postId } ) {
 		select( STORE_NAME ).isSavingComment()
 	);
 
-	const currentUser = window.p2NextConfig?.currentUser;
-	const canComment = window.p2NextConfig?.canComment ?? !! currentUser;
+	const currentUser = window.p2026Config?.currentUser;
+	const canComment = window.p2026Config?.canComment ?? !! currentUser;
 	const requireNameEmail =
-		! currentUser && !! window.p2NextConfig?.requireNameEmail;
+		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 
@@ -69,23 +69,23 @@ export default function Comment( { comment, postId } ) {
 		comment.author_avatar_urls?.[ 48 ];
 
 	return (
-		<div className="p2-next-comment" id={ `comment-${ comment.id }` }>
-			<header className="p2-next-comment-header">
+		<div className="p2026-comment" id={ `comment-${ comment.id }` }>
+			<header className="p2026-comment-header">
 				{ avatarUrl && (
 					<img
-						className="p2-next-avatar"
+						className="p2026-avatar"
 						src={ avatarUrl }
 						alt={ comment.author_name }
 						width={ 32 }
 						height={ 32 }
 					/>
 				) }
-				<div className="p2-next-comment-meta">
-					<span className="p2-next-author">
+				<div className="p2026-comment-meta">
+					<span className="p2026-author">
 						{ comment.author_name }
 					</span>
 					<time
-						className="p2-next-date"
+						className="p2026-date"
 						dateTime={ comment.date_gmt }
 						title={ comment.date_gmt }
 					>
@@ -95,35 +95,35 @@ export default function Comment( { comment, postId } ) {
 			</header>
 
 			<div
-				className="p2-next-comment-content"
+				className="p2026-comment-content"
 				dangerouslySetInnerHTML={ {
 					__html: comment.content?.rendered ?? '',
 				} }
 			/>
 
 			{ canComment && (
-				<footer className="p2-next-comment-footer">
+				<footer className="p2026-comment-footer">
 					{ ! replying && (
 						<Button
 							variant="link"
 							onClick={ () => setReplying( true ) }
 						>
-							{ __( 'Reply', 'p2-next' ) }
+							{ __( 'Reply', 'p2026' ) }
 						</Button>
 					) }
 
 					{ replying && (
-						<div className="p2-next-reply-form">
+						<div className="p2026-reply-form">
 							{ ! currentUser && (
 								<>
 									<TextControl
-										label={ __( 'Name', 'p2-next' ) }
+										label={ __( 'Name', 'p2026' ) }
 										value={ guestName }
 										onChange={ setGuestName }
 										required={ requireNameEmail }
 									/>
 									<TextControl
-										label={ __( 'Email', 'p2-next' ) }
+										label={ __( 'Email', 'p2026' ) }
 										type="email"
 										value={ guestEmail }
 										onChange={ setGuestEmail }
@@ -132,7 +132,7 @@ export default function Comment( { comment, postId } ) {
 									<TextControl
 										label={ __(
 											'Website (optional)',
-											'p2-next'
+											'p2026'
 										) }
 										type="url"
 										value={ guestUrl }
@@ -141,17 +141,17 @@ export default function Comment( { comment, postId } ) {
 								</>
 							) }
 							<TextareaControl
-								label={ __( 'Your reply', 'p2-next' ) }
+								label={ __( 'Your reply', 'p2026' ) }
 								hideLabelFromVision
 								placeholder={ __(
 									'Write a reply…',
-									'p2-next'
+									'p2026'
 								) }
 								value={ replyContent }
 								onChange={ setReplyContent }
 								rows={ 3 }
 							/>
-							<div className="p2-next-reply-actions">
+							<div className="p2026-reply-actions">
 								<Button
 									variant="primary"
 									onClick={ onReplySubmit }
@@ -163,8 +163,8 @@ export default function Comment( { comment, postId } ) {
 									isBusy={ isSaving }
 								>
 									{ isSaving
-										? __( 'Posting…', 'p2-next' )
-										: __( 'Post reply', 'p2-next' ) }
+										? __( 'Posting…', 'p2026' )
+										: __( 'Post reply', 'p2026' ) }
 								</Button>
 								<Button
 									variant="tertiary"
@@ -174,7 +174,7 @@ export default function Comment( { comment, postId } ) {
 									} }
 									disabled={ isSaving }
 								>
-									{ __( 'Cancel', 'p2-next' ) }
+									{ __( 'Cancel', 'p2026' ) }
 								</Button>
 							</div>
 						</div>

@@ -43,7 +43,7 @@ export default function PostEditor( { postId } ) {
 			.then( ( post ) => setBlocks( parse( post.content?.raw ?? '' ) ) )
 			.catch( ( err ) =>
 				setError(
-					err.message ?? __( 'Could not load post.', 'p2-next' )
+					err.message ?? __( 'Could not load post.', 'p2026' )
 				)
 			);
 	}, [ postId ] );
@@ -101,7 +101,7 @@ export default function PostEditor( { postId } ) {
 	);
 
 	if ( error ) {
-		return <p className="p2-next-error">{ error }</p>;
+		return <p className="p2026-error">{ error }</p>;
 	}
 
 	if ( blocks === null ) {
@@ -109,7 +109,7 @@ export default function PostEditor( { postId } ) {
 	}
 
 	return (
-		<div className="p2-next-post-editor">
+		<div className="p2026-post-editor">
 			<BlockEditorProvider
 				value={ blocks }
 				onInput={ setBlocks }
@@ -121,12 +121,12 @@ export default function PostEditor( { postId } ) {
 					<WritingFlow>
 						<ObserveTyping>
 							<div
-								className="p2-next-editor-canvas"
+								className="p2026-editor-canvas"
 								role="textbox"
 								aria-multiline="true"
 								aria-label={ __(
 									'Edit post content',
-									'p2-next'
+									'p2026'
 								) }
 								tabIndex={ 0 }
 								onClick={ onCanvasClick }
@@ -143,13 +143,13 @@ export default function PostEditor( { postId } ) {
 				</BlockTools>
 			</BlockEditorProvider>
 
-			<div className="p2-next-editor-toolbar">
+			<div className="p2026-editor-toolbar">
 				<Button
 					variant="tertiary"
 					onClick={ onCancel }
 					disabled={ isSaving }
 				>
-					{ __( 'Cancel', 'p2-next' ) }
+					{ __( 'Cancel', 'p2026' ) }
 				</Button>
 				<Button
 					variant="primary"
@@ -158,8 +158,8 @@ export default function PostEditor( { postId } ) {
 					isBusy={ isSaving }
 				>
 					{ isSaving
-						? __( 'Saving…', 'p2-next' )
-						: __( 'Update', 'p2-next' ) }
+						? __( 'Saving…', 'p2026' )
+						: __( 'Update', 'p2026' ) }
 				</Button>
 			</div>
 		</div>

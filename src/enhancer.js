@@ -1,5 +1,5 @@
 /**
- * P2 Next — per-post React root mount.
+ * P2026 — per-post React root mount.
  *
  * Each post gets a PostEnhancement React root mounted immediately. That
  * component owns the full post menu (three-dots trigger in the top-right
@@ -32,7 +32,7 @@ export function setupPostToolbar( postId, postElement ) {
 	}
 
 	const slot = document.createElement( 'div' );
-	slot.className = 'p2-next-post-react';
+	slot.className = 'p2026-post-react';
 	postElement.appendChild( slot );
 
 	const root = createRoot( slot );

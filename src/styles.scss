@@ -1,9 +1,9 @@
 /**
- * P2 Next frontend styles
+ * P2026 frontend styles
  */
 
 // Editor containers
-.p2-next-editor-canvas {
+.p2026-editor-canvas {
 	background-color: #fff;
 	border: 1px solid #ddd;
 	border-radius: 4px;
@@ -76,11 +76,11 @@
 }
 
 // Editor container — inserted in place of post content while editing.
-.p2-next-editor-container {
-	animation: p2NextEditorSlideIn 0.2s ease;
+.p2026-editor-container {
+	animation: p2026EditorSlideIn 0.2s ease;
 }
 
-@keyframes p2NextEditorSlideIn {
+@keyframes p2026EditorSlideIn {
 	from {
 		opacity: 0;
 		transform: translateY( -6px );
@@ -92,14 +92,14 @@
 }
 
 // Post Editor (inline editing)
-.p2-next-post-editor {
+.p2026-post-editor {
 	margin-top: 12px;
 
-	.p2-next-editor-canvas {
+	.p2026-editor-canvas {
 		margin: 12px 0;
 	}
 
-	.p2-next-editor-toolbar {
+	.p2026-editor-toolbar {
 		display: flex;
 		gap: 8px;
 		justify-content: flex-end;
@@ -112,7 +112,7 @@
 }
 
 // New Post Editor (new-post block)
-.p2-next-new-post-editor {
+.p2026-new-post-editor {
 	margin: 16px 0;
 	background-color: #fff;
 	border: 1px solid #ddd;
@@ -138,14 +138,14 @@
 		border-color: #b0b0b0;
 	}
 
-	.p2-next-editor-canvas {
+	.p2026-editor-canvas {
 		background-color: #fafafa;
 		border: 1px solid #e0e0e0;
 		margin: 0;
 		min-height: 100px;
 	}
 
-	.p2-next-editor-toolbar {
+	.p2026-editor-toolbar {
 		display: flex;
 		gap: 8px;
 		justify-content: flex-end;
@@ -155,7 +155,7 @@
 
 // Post enhancement mount point — zero natural height since the menu is
 // position:absolute. Comment threads and the editor expand it when active.
-.p2-next-post-react {
+.p2026-post-react {
 	// Intentionally empty — layout handled by children.
 }
 
@@ -166,7 +166,7 @@
 // The host post element receives position:relative from setupPostToolbar.
 // ---------------------------------------------------------------------------
 
-.p2-next-menu-wrap {
+.p2026-menu-wrap {
 	position: absolute;
 	top: 10px;
 	right: calc( ( 100vw - var(--wp--style--global--content-size) ) / 2 );
@@ -183,7 +183,7 @@
 }
 
 // Trigger button — circular icon target.
-.p2-next-menu-trigger {
+.p2026-menu-trigger {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -217,14 +217,14 @@
 }
 
 // Keep the trigger visually "active" while the dropdown is open.
-details[open].p2-next-menu-wrap .p2-next-menu-trigger {
+details[open].p2026-menu-wrap .p2026-menu-trigger {
 	background-color: rgba(0, 0, 0, 0.08);
 	border-color: rgba(0, 0, 0, 0.15);
 	color: #333;
 }
 
 // Dropdown panel — floats below the trigger, right-aligned.
-.p2-next-menu-dropdown {
+.p2026-menu-dropdown {
 	position: absolute;
 	top: calc(100% + 4px);
 	right: 0;
@@ -241,7 +241,7 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 }
 
 // Individual menu items.
-.p2-next-menu-item {
+.p2026-menu-item {
 	display: block;
 	width: 100%;
 	padding: 8px 16px;
@@ -274,14 +274,14 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 }
 
 // Comments section
-.p2-next-comments {
+.p2026-comments {
 	background-color: #f8f9fa;
 	border-left: 3px solid #0073aa;
 	padding: 12px 16px;
 	margin-top: 4px;
 	border-radius: 0 4px 4px 0;
 
-	.p2-next-comment {
+	.p2026-comment {
 		background-color: #fff;
 		border: 1px solid #e8e8e8;
 		border-radius: 4px;
@@ -298,20 +298,20 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 		}
 	}
 
-	.p2-next-comment-header {
+	.p2026-comment-header {
 		display: flex;
 		gap: 8px;
 		align-items: flex-start;
 		margin-bottom: 8px;
 	}
 
-	.p2-next-avatar {
+	.p2026-avatar {
 		border-radius: 50%;
 		flex-shrink: 0;
 		box-shadow: 0 0 0 2px #e8e8e8;
 	}
 
-	.p2-next-comment-meta {
+	.p2026-comment-meta {
 		display: flex;
 		gap: 8px;
 		font-size: 0.85em;
@@ -319,27 +319,27 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 		align-items: center;
 	}
 
-	.p2-next-author {
+	.p2026-author {
 		font-weight: 600;
 		color: #333;
 	}
 
-	.p2-next-date {
+	.p2026-date {
 		color: #aaa;
 	}
 
-	.p2-next-comment-content {
+	.p2026-comment-content {
 		margin: 8px 0;
 		line-height: 1.6;
 	}
 
-	.p2-next-comment-footer {
+	.p2026-comment-footer {
 		margin-top: 8px;
 		padding-top: 8px;
 		border-top: 1px solid #f0f0f0;
 	}
 
-	.p2-next-reply-form {
+	.p2026-reply-form {
 		background-color: #f9f9f9;
 		border: 1px solid #e5e5e5;
 		border-radius: 3px;
@@ -347,11 +347,11 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 		margin-top: 8px;
 	}
 
-	.p2-next-new-comment-form {
+	.p2026-new-comment-form {
 		margin-bottom: 12px;
 	}
 
-	.p2-next-reply-actions {
+	.p2026-reply-actions {
 		display: flex;
 		gap: 8px;
 		margin-top: 8px;
@@ -359,7 +359,7 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 }
 
 // New posts banner
-.p2-next-new-posts-banner {
+.p2026-new-posts-banner {
 	background-color: #e8f4fa;
 	border: 1px solid #0073aa;
 	border-radius: 4px;
@@ -378,7 +378,7 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 }
 
 // Comment thread nesting
-.p2-next-comment-thread {
+.p2026-comment-thread {
 
 	&.depth-0 {
 		margin-left: 0;
@@ -392,15 +392,15 @@ details[open].p2-next-menu-wrap .p2-next-menu-trigger {
 		padding-left: 12px;
 	}
 
-	.p2-next-comment-children {
+	.p2026-comment-children {
 		margin-top: 8px;
 	}
 }
 
 // Posts feed
-.p2-next-posts-feed {
+.p2026-posts-feed {
 
-	.p2-next-no-posts {
+	.p2026-no-posts {
 		text-align: center;
 		color: #999;
 		padding: 32px 16px;

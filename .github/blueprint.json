@@ -15,14 +15,14 @@
       "step": "installPlugin",
       "pluginData": {
         "resource": "git:directory",
-        "url": "https://github.com/georgestephanis/p2-next",
+        "url": "https://github.com/georgestephanis/p2026",
         "ref": "HEAD",
         "path": "/"
       }
     },
     {
       "step": "runPHP",
-      "code": "<?php require '/wordpress/wp-load.php'; include_once WP_PLUGIN_DIR . '/p2-next/.github/setup.php';"
+      "code": "<?php require '/wordpress/wp-load.php'; include_once WP_PLUGIN_DIR . '/p2026/.github/setup.php';"
     }
   ]
 }

@@ -14,8 +14,8 @@ import NewPostEditor from '../../components/NewPostEditor';
 // Register core block types so createBlock() and the BlockEditor work on the
 // frontend. WordPress only does this in the admin by default.
 // Guard against double-registration when frontend.js is also on the page.
-if ( ! window.__p2NextBlocksRegistered ) {
-	window.__p2NextBlocksRegistered = true;
+if ( ! window.__p2026BlocksRegistered ) {
+	window.__p2026BlocksRegistered = true;
 	registerCoreBlocks();
 	setDefaultBlockName( 'core/paragraph' );
 }
@@ -23,7 +23,7 @@ if ( ! window.__p2NextBlocksRegistered ) {
 // Ensure @wordpress/api-fetch is wired up with our nonce / root URL.
 initApiFetch();
 
-const root = document.getElementById( 'p2-next-new-post' );
+const root = document.getElementById( 'p2026-new-post' );
 if ( root ) {
 	createRoot( root ).render( createElement( NewPostEditor ) );
 }

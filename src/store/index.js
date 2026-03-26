@@ -1,12 +1,12 @@
 /**
- * P2 Next — @wordpress/data store.
+ * P2026 — @wordpress/data store.
  *
  * Manages posts, comments, and UI state for the live feed and editors.
  */
 import { createReduxStore, register } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
 
-export const STORE_NAME = 'p2-next';
+export const STORE_NAME = 'p2026';
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -343,7 +343,7 @@ function mergeByIdPrepend( existing, incoming ) {
 // we share the single registered store instance via window. The first bundle
 // to load creates and registers it; subsequent bundles reuse that instance
 // without calling createReduxStore or register a second time.
-const WINDOW_KEY = '__p2NextStore';
+const WINDOW_KEY = '__p2026Store';
 
 const store =
 	window[ WINDOW_KEY ] ??

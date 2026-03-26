@@ -1,48 +1,48 @@
 <?php
 /**
- * Plugin Name: P2 Next
- * Plugin URI:  https://github.com/georgestephanis/p2-next
+ * Plugin Name: P2026
+ * Plugin URI:  https://github.com/georgestephanis/p2026
  * Description: Modern P2/o2 replacement using the Block Editor and REST API.
  * Version:     0.1.0
  * Author:      George Stephanis
  * License:     GPL-2.0-or-later
- * Text Domain: p2-next
+ * Text Domain: p2026
  *
- * @package P2Next
+ * @package P2026
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'P2NEXT_VERSION', '0.1.0' );
-define( 'P2NEXT_DIR', plugin_dir_path( __FILE__ ) );
-define( 'P2NEXT_URL', plugin_dir_url( __FILE__ ) );
+define( 'P2026_VERSION', '0.1.0' );
+define( 'P2026_DIR', plugin_dir_path( __FILE__ ) );
+define( 'P2026_URL', plugin_dir_url( __FILE__ ) );
 
 /**
- * Register a dedicated abilities category for p2-next, when the API is available.
+ * Register a dedicated abilities category for p2026, when the API is available.
  */
-function p2next_register_ability_categories() {
+function p2026_register_ability_categories() {
 	if ( ! function_exists( 'wp_register_ability_category' ) ) {
 		return;
 	}
 
 	wp_register_ability_category(
-		'p2-next',
+		'p2026',
 		array(
-			'label'       => __( 'P2 Next', 'p2-next' ),
-			'description' => __( 'Abilities exposed by the P2 Next plugin.', 'p2-next' ),
+			'label'       => __( 'P2026', 'p2026' ),
+			'description' => __( 'Abilities exposed by the P2026 plugin.', 'p2026' ),
 		)
 	);
 }
-add_action( 'wp_abilities_api_categories_init', 'p2next_register_ability_categories' );
+add_action( 'wp_abilities_api_categories_init', 'p2026_register_ability_categories' );
 
 /**
  * Permission callback for creating posts.
  *
  * @return bool
  */
-function p2next_ability_can_create_post() {
+function p2026_ability_can_create_post() {
 	return current_user_can( 'publish_posts' );
 }
 
@@ -52,7 +52,7 @@ function p2next_ability_can_create_post() {
  * @param array|null $input Optional input payload.
  * @return bool
  */
-function p2next_ability_can_update_post( $input = null ) {
+function p2026_ability_can_update_post( $input = null ) {
 	$post_id = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
 
 	if ( $post_id > 0 ) {
@@ -63,32 +63,32 @@ function p2next_ability_can_update_post( $input = null ) {
 }
 
 /**
- * Register p2-next abilities, if the Abilities API is available.
+ * Register p2026 abilities, if the Abilities API is available.
  */
-function p2next_register_abilities() {
+function p2026_register_abilities() {
 	if ( ! function_exists( 'wp_register_ability' ) ) {
 		return;
 	}
 
 	wp_register_ability(
-		'p2-next/post-create',
+		'p2026/post-create',
 		array(
-			'label'               => __( 'Create Post', 'p2-next' ),
-			'description'         => __( 'Checks whether the current user can create and publish posts via P2 Next.', 'p2-next' ),
-			'category'            => 'p2-next',
+			'label'               => __( 'Create Post', 'p2026' ),
+			'description'         => __( 'Checks whether the current user can create and publish posts via P2026.', 'p2026' ),
+			'category'            => 'p2026',
 			'output_schema'       => array(
 				'type'       => 'object',
 				'properties' => array(
 					'allowed' => array(
 						'type'        => 'boolean',
-						'description' => __( 'Whether post creation is allowed.', 'p2-next' ),
+						'description' => __( 'Whether post creation is allowed.', 'p2026' ),
 					),
 				),
 			),
 			'execute_callback'    => static function () {
 				return array( 'allowed' => true );
 			},
-			'permission_callback' => 'p2next_ability_can_create_post',
+			'permission_callback' => 'p2026_ability_can_create_post',
 			'meta'                => array(
 				'annotations' => array(
 					'readonly'    => true,
@@ -100,17 +100,17 @@ function p2next_register_abilities() {
 	);
 
 	wp_register_ability(
-		'p2-next/post-update',
+		'p2026/post-update',
 		array(
-			'label'               => __( 'Update Post', 'p2-next' ),
-			'description'         => __( 'Checks whether the current user can update posts via P2 Next.', 'p2-next' ),
-			'category'            => 'p2-next',
+			'label'               => __( 'Update Post', 'p2026' ),
+			'description'         => __( 'Checks whether the current user can update posts via P2026.', 'p2026' ),
+			'category'            => 'p2026',
 			'input_schema'        => array(
 				'type'                 => 'object',
 				'properties'           => array(
 					'post_id' => array(
 						'type'        => 'integer',
-						'description' => __( 'Optional post ID to check edit permission against.', 'p2-next' ),
+						'description' => __( 'Optional post ID to check edit permission against.', 'p2026' ),
 						'minimum'     => 1,
 					),
 				),
@@ -121,14 +121,14 @@ function p2next_register_abilities() {
 				'properties' => array(
 					'allowed' => array(
 						'type'        => 'boolean',
-						'description' => __( 'Whether post updates are allowed.', 'p2-next' ),
+						'description' => __( 'Whether post updates are allowed.', 'p2026' ),
 					),
 				),
 			),
 			'execute_callback'    => static function () {
 				return array( 'allowed' => true );
 			},
-			'permission_callback' => 'p2next_ability_can_update_post',
+			'permission_callback' => 'p2026_ability_can_update_post',
 			'meta'                => array(
 				'annotations' => array(
 					'readonly'    => true,
@@ -139,7 +139,7 @@ function p2next_register_abilities() {
 		)
 	);
 }
-add_action( 'wp_abilities_api_init', 'p2next_register_abilities' );
+add_action( 'wp_abilities_api_init', 'p2026_register_abilities' );
 
 /**
  * Resolve a permission check via Abilities API when available, otherwise fallback.
@@ -149,7 +149,7 @@ add_action( 'wp_abilities_api_init', 'p2next_register_abilities' );
  * @param array    $input             Optional ability input.
  * @return bool
  */
-function p2next_check_permission( $ability_name, $fallback_callback, $input = array() ) {
+function p2026_check_permission( $ability_name, $fallback_callback, $input = array() ) {
 	if ( function_exists( 'wp_has_ability' ) && function_exists( 'wp_get_ability' ) && wp_has_ability( $ability_name ) ) {
 		$ability = wp_get_ability( $ability_name );
 		if ( $ability && method_exists( $ability, 'check_permissions' ) ) {
@@ -174,9 +174,9 @@ function p2next_check_permission( $ability_name, $fallback_callback, $input = ar
  *
  * @return bool
  */
-function p2next_can_create_posts() {
-	return p2next_check_permission(
-		'p2-next/post-create',
+function p2026_can_create_posts() {
+	return p2026_check_permission(
+		'p2026/post-create',
 		static function () {
 			return current_user_can( 'publish_posts' );
 		}
@@ -189,11 +189,11 @@ function p2next_can_create_posts() {
  * @param int $post_id Optional post ID for object-level checks.
  * @return bool
  */
-function p2next_can_update_posts( $post_id = 0 ) {
+function p2026_can_update_posts( $post_id = 0 ) {
 	$input = $post_id > 0 ? array( 'post_id' => (int) $post_id ) : array();
 
-	return p2next_check_permission(
-		'p2-next/post-update',
+	return p2026_check_permission(
+		'p2026/post-update',
 		static function () use ( $post_id ) {
 			if ( $post_id > 0 ) {
 				return current_user_can( 'edit_post', $post_id );
@@ -210,14 +210,14 @@ function p2next_can_update_posts( $post_id = 0 ) {
  * Uses the block manifest generated by @wordpress/scripts for efficient
  * metadata loading, then registers the block from the build directory.
  */
-function p2next_register_blocks() {
-	$manifest = P2NEXT_DIR . 'build/blocks-manifest.php';
+function p2026_register_blocks() {
+	$manifest = P2026_DIR . 'build/blocks-manifest.php';
 	if ( file_exists( $manifest ) ) {
-		wp_register_block_metadata_collection( P2NEXT_DIR . 'build', $manifest );
+		wp_register_block_metadata_collection( P2026_DIR . 'build', $manifest );
 	}
-	register_block_type( P2NEXT_DIR . 'build/blocks/new-post' );
+	register_block_type( P2026_DIR . 'build/blocks/new-post' );
 }
-add_action( 'init', 'p2next_register_blocks' );
+add_action( 'init', 'p2026_register_blocks' );
 
 /**
  * Enqueue the frontend enhancement script on all public pages.
@@ -226,8 +226,8 @@ add_action( 'init', 'p2next_register_blocks' );
  * (Query Loop block or classic loop) with live polling, inline comments,
  * and inline post editing — without replacing the theme's own output.
  */
-function p2next_enqueue_frontend() {
-	$asset_file = P2NEXT_DIR . 'build/frontend.asset.php';
+function p2026_enqueue_frontend() {
+	$asset_file = P2026_DIR . 'build/frontend.asset.php';
 	if ( ! file_exists( $asset_file ) ) {
 		return;
 	}
@@ -239,18 +239,18 @@ function p2next_enqueue_frontend() {
 	wp_enqueue_style( 'wp-block-editor' );
 	wp_enqueue_style( 'wp-block-library' );
 
-	// Enqueue the compiled custom styles (p2-next-specific layouts and containers).
+	// Enqueue the compiled custom styles (p2026-specific layouts and containers).
 	wp_enqueue_style(
-		'p2-next-frontend',
-		P2NEXT_URL . 'build/frontend.css',
+		'p2026-frontend',
+		P2026_URL . 'build/frontend.css',
 		array( 'wp-components', 'wp-block-editor', 'wp-block-library' ),
 		$asset['version']
 	);
-	wp_style_add_data( 'p2-next-frontend', 'rtl', 'replace' );
+	wp_style_add_data( 'p2026-frontend', 'rtl', 'replace' );
 
 	wp_enqueue_script(
-		'p2-next-frontend',
-		P2NEXT_URL . 'build/frontend.js',
+		'p2026-frontend',
+		P2026_URL . 'build/frontend.js',
 		$asset['dependencies'],
 		$asset['version'],
 		array( 'strategy' => 'defer' )
@@ -258,8 +258,8 @@ function p2next_enqueue_frontend() {
 
 	$current_user       = wp_get_current_user();
 	$user_data          = null;
-	$can_publish        = p2next_can_create_posts();
-	$can_update_posts   = p2next_can_update_posts();
+	$can_publish        = p2026_can_create_posts();
+	$can_update_posts   = p2026_can_update_posts();
 	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
 	$require_name_email = get_option( 'require_name_email' ) === '1';
 	$debug_telemetry    = defined( 'WP_DEBUG' ) && WP_DEBUG;
@@ -276,8 +276,8 @@ function p2next_enqueue_frontend() {
 	}
 
 	wp_add_inline_script(
-		'p2-next-frontend',
-		'window.p2NextConfig = ' . wp_json_encode(
+		'p2026-frontend',
+		'window.p2026Config = ' . wp_json_encode(
 			array(
 				'nonce'            => wp_create_nonce( 'wp_rest' ),
 				'restUrl'          => esc_url_raw( rest_url() ),
@@ -294,7 +294,7 @@ function p2next_enqueue_frontend() {
 		'before'
 	);
 }
-add_action( 'wp_enqueue_scripts', 'p2next_enqueue_frontend' );
+add_action( 'wp_enqueue_scripts', 'p2026_enqueue_frontend' );
 
 /**
  * Auto-generate post title from the first line of content when none is provided.
@@ -304,11 +304,11 @@ add_action( 'wp_enqueue_scripts', 'p2next_enqueue_frontend' );
  * @param WP_REST_Request $request       REST request.
  * @return stdClass
  */
-function p2next_auto_title( $prepared_post, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+function p2026_auto_title( $prepared_post, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	if ( empty( $prepared_post->post_title ) && ! empty( $prepared_post->post_content ) ) {
 		$first_line                = strtok( wp_strip_all_tags( $prepared_post->post_content ), "\n" );
 		$prepared_post->post_title = wp_trim_words( $first_line, 10, '' );
 	}
 	return $prepared_post;
 }
-add_filter( 'rest_pre_insert_post', 'p2next_auto_title', 10, 2 );
+add_filter( 'rest_pre_insert_post', 'p2026_auto_title', 10, 2 );
