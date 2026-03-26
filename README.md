@@ -24,6 +24,21 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 2. Activate **P2026** in the WordPress admin.
 3. Add the **P2026: New Post** block to a page or template to enable front-end post creation.
 
+### Classic (non-FSE) themes
+
+For traditional PHP themes, render the new-post block above the loop in your `home.php`:
+
+```php
+<?php
+// Render the P2026 new-post editor above the post loop.
+if ( function_exists( 'p2026_can_create_posts' ) && p2026_can_create_posts() ) {
+    echo do_blocks( '<!-- wp:p2026/new-post /-->' );
+}
+?>
+```
+
+Place this snippet just before your `while ( have_posts() )` loop. The block outputs nothing for users who lack the `publish_posts` capability, so the `p2026_can_create_posts()` guard is optional but avoids the `do_blocks()` call for guests entirely.
+
 ## Development
 
 From the plugin root:
