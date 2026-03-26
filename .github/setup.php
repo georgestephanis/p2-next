@@ -196,17 +196,21 @@ if ( empty( $base_content ) ) {
 }
 
 // Look for an existing user-customised DB record to update instead of insert.
-// WordPress stores template post_name as "{theme_slug}//home".
-$existing = get_posts( [
-    'post_type'   => 'wp_template',
-    'name'        => $template_name,
-    'numberposts' => 1,
-    'post_status' => 'any',
-] );
+// get_posts() by post_name is unreliable here because WordPress sanitizes '//'
+// in post_name on insert. Use the WP_Block_Template objects from the earlier
+// get_block_templates() call directly — source === 'custom' means it is a
+// DB-stored override and ->wp_id is its post ID.
+$existing_custom = null;
+foreach ( $found as $tmpl ) {
+    if ( 'home' === $tmpl->slug && 'custom' === $tmpl->source ) {
+        $existing_custom = $tmpl;
+        break;
+    }
+}
 
-if ( $existing ) {
+if ( $existing_custom ) {
     wp_update_post( [
-        'ID'           => $existing[0]->ID,
+        'ID'           => $existing_custom->wp_id,
         'post_content' => $new_content,
         'post_status'  => 'publish',
     ] );
