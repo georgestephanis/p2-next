@@ -21,6 +21,7 @@ import { setupPostToolbar, observePosts } from './enhancer';
 import FeedEnhancer from './components/FeedEnhancer';
 import NewPostModal from './components/NewPostModal';
 import './styles.scss';
+import './modules';
 
 // Register core block types so parse() and PostEditor work on the frontend.
 // Guard against double-registration when view.js is also on the page.
