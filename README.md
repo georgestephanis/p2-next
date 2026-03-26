@@ -2,7 +2,7 @@
 
 A modern WordPress plugin that adds P2/o2-style team collaboration features by progressively enhancing theme-rendered post lists using React, the Block Editor, and the WordPress REST API.
 
-[![Open in WordPress Playground](https://playground.wordpress.net/assets/playground-badge.svg)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/georgestephanis/p2026/HEAD/.github/blueprint.json)
+[![Open in WordPress Playground](https://playground.wordpress.net/assets/playground-badge.svg)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/georgestephanis/p2026/HEAD/_playground/blueprint.json)
 
 ## What It Does
 

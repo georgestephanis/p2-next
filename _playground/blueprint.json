@@ -22,7 +22,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php require '/wordpress/wp-load.php'; include_once WP_PLUGIN_DIR . '/p2026/.github/setup.php';"
+      "code": "<?php require '/wordpress/wp-load.php'; include_once WP_PLUGIN_DIR . '/p2026/_playground/setup.php';"
     }
   ]
 }
