@@ -24,7 +24,7 @@ It is intentionally not a complete SPA replacement.
 - src/store/index.js: shared @wordpress/data store and async thunks.
 - src/api/index.js: apiFetch middleware and polling helper.
 - src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay.
-- _playground/: WordPress Playground blueprint and setup script.
+- .github/: WordPress Playground blueprint and setup script.
 - build/: generated artifacts from @wordpress/scripts (do not hand-edit).
 
 ## Runtime Flow
