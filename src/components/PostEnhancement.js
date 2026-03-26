@@ -49,6 +49,11 @@ export default function PostEnhancement( { postId, postElement } ) {
 	const comments = useSelect( ( s ) =>
 		s( STORE_NAME ).getComments( postId )
 	);
+	// comment_count from the REST API post object — available once fetchPosts
+	// runs on mount. Used as the display count before the thread is expanded.
+	const storedCommentCount = useSelect( ( s ) =>
+		s( STORE_NAME ).getPostCommentCount( postId )
+	);
 	const isEditing = editingPost === postId;
 
 	const currentUser = window.p2026Config?.currentUser;
@@ -179,12 +184,17 @@ export default function PostEnhancement( { postId, postElement } ) {
 	// -----------------------------------------------------------------------
 	// Menu actions
 	// -----------------------------------------------------------------------
-	const commentCount = isExpanded ? comments.length : 0;
-	let commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
+	// Once the thread has been fetched, prefer the live count; otherwise fall
+	// back to the server-provided comment_count from the post REST object.
+	const commentCount =
+		comments.length > 0 ? comments.length : storedCommentCount;
+	let commentLabel;
 	if ( isExpanded ) {
 		commentLabel = __( 'Hide comments', 'p2026' );
 	} else if ( commentCount === 1 ) {
 		commentLabel = __( '1 comment', 'p2026' );
+	} else {
+		commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
 	}
 
 	const onToggleComments = useCallback( () => {

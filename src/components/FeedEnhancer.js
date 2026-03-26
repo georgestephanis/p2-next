@@ -69,23 +69,14 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 	// Tracks injected <li> elements by post ID.
 	const newPostElsRef = useRef( {} );
 
-	// Seed lastFetched from the most recent post on the page so polling only
-	// fetches posts newer than what's already visible.
+	// Fetch the current post list on mount. This populates the store with post
+	// objects (including comment_count) so PostEnhancement can show accurate
+	// comment counts before the user ever expands a thread. The thunk also
+	// sets lastFetched, so the polling interval only picks up posts newer
+	// than this initial fetch.
 	useEffect( () => {
-		if ( ! postElements.length ) {
-			return;
-		}
-
-		// The newest post's date is in its <time> element or data attribute.
-		const firstPost = postElements[ 0 ]?.element;
-		const time = firstPost?.querySelector( 'time[datetime]' );
-		if ( time?.dateTime ) {
-			// Manually set lastFetched in the store without triggering a full fetch.
-			fetchPosts( { seedOnly: true, since: time.dateTime } );
-		} else {
-			fetchPosts( { seedOnly: true, since: new Date().toISOString() } );
-		}
-	}, [ fetchPosts, postElements ] );
+		fetchPosts( { perPage: 20 } );
+	}, [ fetchPosts ] );
 
 	// Start polling.
 	useEffect( () => {

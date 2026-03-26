@@ -348,6 +348,8 @@ export const selectors = {
 	isSavingPost: ( state, context ) => state.ui.savingPost === context,
 	isSavingComment: ( state ) => state.ui.savingComment,
 	isNewPostModalOpen: ( state ) => state.ui.newPostModalOpen,
+	getPostCommentCount: ( state, postId ) =>
+		state.posts.find( ( p ) => p.id === postId )?.comment_count ?? 0,
 };
 
 // ---------------------------------------------------------------------------
