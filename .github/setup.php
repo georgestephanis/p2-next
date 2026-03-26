@@ -252,16 +252,17 @@ update_option( 'show_on_front', 'posts' );
 //   4. If no Home template exists at all, fall back to a minimal query loop.
 // ---------------------------------------------------------------------------
 
-$theme_slug    = wp_get_theme()->get_stylesheet();
-$template_name = $theme_slug . '//home';
+$theme_slug           = wp_get_theme()->get_stylesheet();
+$template_slug        = 'home';
+$legacy_template_slug = sanitize_title( $theme_slug . '//' . $template_slug );
 
 // get_block_templates() merges file-based and DB templates; it returns
 // WP_Block_Template objects whose ->slug is the bare slug (no theme prefix).
-$found = get_block_templates( [ 'slug__in' => [ 'home' ] ], 'wp_template' );
+$found = get_block_templates( [ 'slug__in' => [ $template_slug ] ], 'wp_template' );
 
 $base_content = '';
 foreach ( $found as $tmpl ) {
-    if ( 'home' === $tmpl->slug ) {
+    if ( $template_slug === $tmpl->slug ) {
         $base_content = $tmpl->content;
         break;
     }
@@ -336,9 +337,35 @@ if ( empty( $base_content ) ) {
 // DB-stored override and ->wp_id is its post ID.
 $existing_custom = null;
 foreach ( $found as $tmpl ) {
-    if ( 'home' === $tmpl->slug && 'custom' === $tmpl->source ) {
+    if ( $template_slug === $tmpl->slug && 'custom' === $tmpl->source ) {
         $existing_custom = $tmpl;
         break;
+    }
+}
+
+$legacy_custom = null;
+if ( ! $existing_custom && $legacy_template_slug !== $template_slug ) {
+    $legacy_templates = get_posts(
+        [
+            'name'                   => $legacy_template_slug,
+            'post_type'              => 'wp_template',
+            'post_status'            => [ 'publish', 'draft', 'auto-draft' ],
+            'posts_per_page'         => 1,
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+            'tax_query'              => [
+                [
+                    'taxonomy' => 'wp_theme',
+                    'field'    => 'name',
+                    'terms'    => $theme_slug,
+                ],
+            ],
+        ]
+    );
+
+    if ( ! empty( $legacy_templates ) ) {
+        $legacy_custom = $legacy_templates[0];
     }
 }
 
@@ -348,17 +375,24 @@ if ( $existing_custom ) {
         'post_content' => $new_content,
         'post_status'  => 'publish',
     ] );
+} elseif ( $legacy_custom ) {
+    wp_update_post( [
+        'ID'           => $legacy_custom->ID,
+        'post_name'    => $template_slug,
+        'post_title'   => 'Blog Home',
+        'post_content' => $new_content,
+        'post_status'  => 'publish',
+    ] );
 } else {
     $post_id = wp_insert_post( [
         'post_type'    => 'wp_template',
-        'post_name'    => $template_name,
+        'post_name'    => $template_slug,
         'post_title'   => 'Blog Home',
         'post_content' => $new_content,
         'post_status'  => 'publish',
         'post_author'  => 1,
+        'tax_input'    => [
+            'wp_theme' => [ $theme_slug ],
+        ],
     ] );
-
-    if ( $post_id && ! is_wp_error( $post_id ) ) {
-        wp_set_object_terms( $post_id, $theme_slug, 'wp_theme' );
-    }
 }
