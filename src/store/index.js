@@ -20,7 +20,7 @@ const DEFAULT_STATE = {
 	ui: {
 		expandedPosts: [], // post IDs whose comment thread is visible
 		editingPost: null, // post ID currently being edited inline
-		savingPost: false,
+		savingPost: null, // post ID being saved, 'new' for new-post, null when idle
 		savingComment: false,
 	},
 };
@@ -59,8 +59,8 @@ export const actions = {
 	setEditingPost( postId ) {
 		return { type: 'SET_EDITING_POST', postId };
 	},
-	setSavingPost( saving ) {
-		return { type: 'SET_SAVING_POST', saving };
+	setSavingPost( context ) {
+		return { type: 'SET_SAVING_POST', context };
 	},
 	setSavingComment( saving ) {
 		return { type: 'SET_SAVING_COMMENT', saving };
@@ -114,7 +114,7 @@ export const actions = {
 	createPost( { blocks, title = '' } ) {
 		return async ( { dispatch } ) => {
 			const { serialize } = await import( '@wordpress/blocks' );
-			dispatch( actions.setSavingPost( true ) );
+			dispatch( actions.setSavingPost( 'new' ) );
 			try {
 				const post = await apiFetch( {
 					path: '/wp/v2/posts',
@@ -131,14 +131,14 @@ export const actions = {
 				} );
 				dispatch( actions.createPostSuccess( full ) );
 			} finally {
-				dispatch( actions.setSavingPost( false ) );
+				dispatch( actions.setSavingPost( null ) );
 			}
 		};
 	},
 
 	updatePost( postId, { blocks, title } ) {
 		return async ( { dispatch } ) => {
-			dispatch( actions.setSavingPost( true ) );
+			dispatch( actions.setSavingPost( postId ) );
 			try {
 				const { serialize } = await import( '@wordpress/blocks' );
 				const data = { content: serialize( blocks ) };
@@ -156,7 +156,7 @@ export const actions = {
 				dispatch( actions.updatePostSuccess( full ) );
 				dispatch( actions.setEditingPost( null ) );
 			} finally {
-				dispatch( actions.setSavingPost( false ) );
+				dispatch( actions.setSavingPost( null ) );
 			}
 		};
 	},
@@ -297,7 +297,10 @@ function reducer( state = DEFAULT_STATE, action ) {
 			};
 
 		case 'SET_SAVING_POST':
-			return { ...state, ui: { ...state.ui, savingPost: action.saving } };
+			return {
+				...state,
+				ui: { ...state.ui, savingPost: action.context },
+			};
 
 		case 'SET_SAVING_COMMENT':
 			return {
@@ -323,7 +326,7 @@ export const selectors = {
 	isPostExpanded: ( state, postId ) =>
 		state.ui.expandedPosts.includes( postId ),
 	getEditingPost: ( state ) => state.ui.editingPost,
-	isSavingPost: ( state ) => state.ui.savingPost,
+	isSavingPost: ( state, context ) => state.ui.savingPost === context,
 	isSavingComment: ( state ) => state.ui.savingComment,
 };
 

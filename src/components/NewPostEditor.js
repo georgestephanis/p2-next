@@ -36,7 +36,7 @@ export default function NewPostEditor() {
 	const { createPost } = useDispatch( STORE_NAME );
 	const { selectBlock } = useDispatch( 'core/block-editor' );
 	const isSaving = useSelect( ( select ) =>
-		select( STORE_NAME ).isSavingPost()
+		select( STORE_NAME ).isSavingPost( 'new' )
 	);
 
 	// Clicking or pressing Enter/Space on the canvas backdrop (not a block)

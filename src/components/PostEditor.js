@@ -33,8 +33,9 @@ export default function PostEditor( { postId } ) {
 
 	const { updatePost, setEditingPost } = useDispatch( STORE_NAME );
 	const { selectBlock } = useDispatch( 'core/block-editor' );
-	const isSaving = useSelect( ( select ) =>
-		select( STORE_NAME ).isSavingPost()
+	const isSaving = useSelect(
+		( select ) => select( STORE_NAME ).isSavingPost( postId ),
+		[ postId ]
 	);
 
 	// Fetch raw post content for editing (requires ?context=edit).
