@@ -17,13 +17,18 @@ It is intentionally not a complete SPA replacement.
 
 ## Top-Level Layout
 
-- p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration, admin bar node.
-- src/frontend.js: enhancement bootstrap for existing loop pages; mounts modal root and wires admin bar button.
+- p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration, admin bar node, PHP module loader.
+- src/frontend.js: enhancement bootstrap for existing loop pages; mounts modal root, wires admin bar button, and side-effect-imports all JS modules.
+- src/enhancer.js: exports `setupPostToolbar` (mounts per-post PostEnhancement React root) and `observePosts` (no-op stub retained for API compatibility).
 - src/blocks/new-post/: dynamic block server render + frontend mount.
 - src/components/: feed controls, comments UI, post editor/new post editor, new post modal.
 - src/store/index.js: shared @wordpress/data store and async thunks.
 - src/api/index.js: apiFetch middleware and polling helper.
-- src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay.
+- src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay; imports module stylesheets via `@use`.
+- src/modules/index.js: side-effect entry point that imports every active JS module; add a new module by creating `src/modules/{name}/index.js` and importing it here.
+- src/modules/mentions/: JS mentions module — Block Editor autocomplete, textarea autocomplete (`MentionTextareaControl`), and hovercard host.
+- modules/: PHP modules directory; each subdirectory contains an `index.php` loaded by glob on init.
+- modules/mentions/index.php: REST endpoints for user search and hovercard detail, @mention linkification on `the_content`/`comment_text`, and the `p2026_mentions_found` notification hook.
 - .github/: WordPress Playground blueprint and setup script.
 - build/: generated artifacts from @wordpress/scripts (do not hand-edit).
 
@@ -32,13 +37,15 @@ It is intentionally not a complete SPA replacement.
 1. PHP registers block metadata from build output and enqueues frontend assets.
 2. PHP injects window.p2026Config before frontend script execution.
 3. PHP adds a "New Post" admin bar node on the blog index for users who can create posts.
-4. frontend.js discovers rendered posts in block or classic themes.
-5. frontend.js mounts the NewPostModal root and wires the admin bar button click.
-6. FeedEnhancer mounts once and portals controls into existing post markup.
-7. Posts poll on a fixed cadence and buffer new content behind a reveal banner.
-8. Expanded comment threads fetch and render inline.
-9. Inline editing and new-post creation use Block Editor primitives on frontend.
-10. Admin bar "New Post" button scrolls to an existing new-post editor if present, otherwise opens the NewPostModal.
+4. PHP glob-loads `modules/*/index.php`; active modules are controlled by the `p2026_active_modules` option (defaults to all modules active).
+5. frontend.js discovers rendered posts in block or classic themes.
+6. frontend.js mounts the NewPostModal root and wires the admin bar button click.
+7. frontend.js side-effect-imports `src/modules/index.js`, which initialises all JS modules (e.g. mentions autocomplete, hovercard host).
+8. `setupPostToolbar` from `enhancer.js` mounts a PostEnhancement React root per post, providing the three-dots menu, comment expansion, and inline editing.
+9. FeedEnhancer mounts once and polls for new posts.
+10. Posts buffer new content behind a reveal banner; expanded comment threads fetch and render inline.
+11. Inline editing and new-post creation use Block Editor primitives on frontend.
+12. Admin bar "New Post" button scrolls to an existing new-post editor if present, otherwise opens the NewPostModal.
 
 ## Permission Model
 
@@ -88,6 +95,20 @@ REST endpoints in use:
 - POST /wp/v2/posts (create/update)
 - GET /wp/v2/comments (thread fetch)
 - POST /wp/v2/comments (top-level + reply)
+
+## Module System
+
+p2026 has a lightweight module system for self-contained features.
+
+**PHP side:** `p2026.php` globs `modules/*/index.php` at init and requires each file whose slug appears in the `p2026_active_modules` option. If the option has never been saved, all discovered modules are active by default. Each PHP module file is responsible for hooking into WordPress itself; there is no module API to call.
+
+**JS side:** `src/modules/index.js` is a single file of side-effect imports. `frontend.js` imports it once. To add a new JS module, create `src/modules/{name}/index.js` and add `import './{name}';` to `src/modules/index.js`.
+
+**Active modules:**
+
+| Module | PHP | JS |
+|---|---|---|
+| mentions | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard |
 
 ## Build and Validation
 
