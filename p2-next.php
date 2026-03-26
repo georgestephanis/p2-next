@@ -246,6 +246,7 @@ function p2next_enqueue_frontend() {
 		array( 'wp-components', 'wp-block-editor', 'wp-block-library' ),
 		$asset['version']
 	);
+	wp_style_add_data( 'p2-next-frontend', 'rtl', 'replace' );
 
 	wp_enqueue_script(
 		'p2-next-frontend',
