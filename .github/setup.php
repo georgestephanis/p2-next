@@ -4,25 +4,174 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Create sample posts for testing the feed, comments, and inline editing.
+// ---------------------------------------------------------------------------
+// Sample users — 15 team members used as post authors and commenters.
+// Slugs match the @mention tokens used in post content and comments below.
+// ---------------------------------------------------------------------------
+
+$sample_users = [
+    [
+        'user_login'   => 'alice',
+        'display_name' => 'Alice Chen',
+        'user_email'   => 'alice@example.com',
+        'description'  => 'Frontend engineer. Passionate about accessible UIs and design systems.',
+        'role'         => 'editor',
+    ],
+    [
+        'user_login'   => 'bob',
+        'display_name' => 'Bob Martinez',
+        'user_email'   => 'bob@example.com',
+        'description'  => 'Full-stack developer who loves a well-placed cache invalidation.',
+        'role'         => 'editor',
+    ],
+    [
+        'user_login'   => 'carol',
+        'display_name' => 'Carol Singh',
+        'user_email'   => 'carol@example.com',
+        'description'  => 'Product designer. Turns rough ideas into polished interfaces.',
+        'role'         => 'editor',
+    ],
+    [
+        'user_login'   => 'dave',
+        'display_name' => 'Dave Kim',
+        'user_email'   => 'dave@example.com',
+        'description'  => 'Backend engineer specialising in WordPress core and REST APIs.',
+        'role'         => 'editor',
+    ],
+    [
+        'user_login'   => 'eve',
+        'display_name' => 'Eve Okafor',
+        'user_email'   => 'eve@example.com',
+        'description'  => 'Infrastructure engineer. If it scales, she probably built it.',
+        'role'         => 'editor',
+    ],
+    [
+        'user_login'   => 'frank',
+        'display_name' => 'Frank Novak',
+        'user_email'   => 'frank@example.com',
+        'description'  => 'Developer advocate. Writes docs, gives talks, fixes onboarding.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'grace',
+        'display_name' => 'Grace Li',
+        'user_email'   => 'grace@example.com',
+        'description'  => 'QA engineer. Nothing ships without her sign-off.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'hank',
+        'display_name' => 'Hank Patel',
+        'user_email'   => 'hank@example.com',
+        'description'  => 'Performance engineer. Obsessed with Core Web Vitals.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'iris',
+        'display_name' => 'Iris Johansson',
+        'user_email'   => 'iris@example.com',
+        'description'  => 'Security researcher. Reads CVEs for fun.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'jack',
+        'display_name' => 'Jack Reyes',
+        'user_email'   => 'jack@example.com',
+        'description'  => 'Mobile engineer branching out into web. Still learning CSS.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'kate',
+        'display_name' => 'Kate Dubois',
+        'user_email'   => 'kate@example.com',
+        'description'  => 'Engineering manager. Keeps the team unblocked and the roadmap honest.',
+        'role'         => 'editor',
+    ],
+    [
+        'user_login'   => 'liam',
+        'display_name' => "Liam O'Brien",
+        'user_email'   => 'liam@example.com',
+        'description'  => 'Data engineer. Turns logs into dashboards.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'maya',
+        'display_name' => 'Maya Thornton',
+        'user_email'   => 'maya@example.com',
+        'description'  => 'Technical writer. Believes good documentation is a feature.',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'nate',
+        'display_name' => 'Nate Ferreira',
+        'user_email'   => 'nate@example.com',
+        'description'  => 'DevOps engineer. Makes deployments boring (in the best way).',
+        'role'         => 'author',
+    ],
+    [
+        'user_login'   => 'olivia',
+        'display_name' => 'Olivia Nakamura',
+        'user_email'   => 'olivia@example.com',
+        'description'  => 'React specialist. Thinks in components, dreams in hooks.',
+        'role'         => 'editor',
+    ],
+];
+
+// Create users and build a slug → user_id map for use below.
+$user_ids = [];
+foreach ( $sample_users as $data ) {
+    $existing = get_user_by( 'login', $data['user_login'] );
+    if ( $existing ) {
+        $uid = $existing->ID;
+    } else {
+        $uid = wp_insert_user( [
+            'user_login'   => $data['user_login'],
+            'user_pass'    => wp_generate_password(),
+            'display_name' => $data['display_name'],
+            'user_email'   => $data['user_email'],
+            'role'         => $data['role'],
+        ] );
+    }
+
+    if ( $uid && ! is_wp_error( $uid ) ) {
+        update_user_meta( $uid, 'description', $data['description'] );
+        $user_ids[ $data['user_login'] ] = $uid;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Sample posts — authored by different team members, with @mention tokens
+// that the mentions module will linkify on output.
+// ---------------------------------------------------------------------------
+
 $sample_posts = [
     [
         'post_title'   => 'Welcome to P2026',
-        'post_content' => '<!-- wp:paragraph --><p>This is a test post. Use the ⋯ menu in the top-right corner to edit it, copy a link, or delete it.</p><!-- /wp:paragraph -->',
+        'post_content' => '<!-- wp:paragraph --><p>This is a test post. Use the ⋯ menu in the top-right corner to edit it, copy a link, or delete it.</p><!-- /wp:paragraph -->'
+            . "\n" . '<!-- wp:paragraph --><p>Say hi to @alice and @bob — they built most of the editor you\'re using right now.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
-        'post_author'  => 1,
+        'post_author'  => $user_ids['kate'] ?? 1,
     ],
     [
         'post_title'   => 'Try the comments',
-        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu on any post and click the comments item to expand the thread and reply inline.</p><!-- /wp:paragraph -->',
+        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu on any post and click the comments item to expand the thread and reply inline.</p><!-- /wp:paragraph -->'
+            . "\n" . '<!-- wp:paragraph --><p>@carol designed the comment UI and @dave wired up the REST endpoints — give it a try and let them know what you think.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
-        'post_author'  => 1,
+        'post_author'  => $user_ids['frank'] ?? 1,
     ],
     [
         'post_title'   => 'Inline editing with the Block Editor',
-        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu and click Edit to update this post using the Block Editor without leaving the page.</p><!-- /wp:paragraph -->',
+        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu and click Edit to update this post using the Block Editor without leaving the page.</p><!-- /wp:paragraph -->'
+            . "\n" . '<!-- wp:paragraph --><p>Shoutout to @olivia for the React work and @hank for making sure it doesn\'t tank the performance budget.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
-        'post_author'  => 1,
+        'post_author'  => $user_ids['maya'] ?? 1,
+    ],
+    [
+        'post_title'   => '@mention support is live',
+        'post_content' => '<!-- wp:paragraph --><p>Type <code>@</code> followed by a username in any post or comment to mention a teammate. Hovering a mention shows a profile card.</p><!-- /wp:paragraph -->'
+            . "\n" . '<!-- wp:paragraph --><p>Thanks to @iris for the security review and @grace for thorough QA before we shipped.</p><!-- /wp:paragraph -->',
+        'post_status'  => 'publish',
+        'post_author'  => $user_ids['alice'] ?? 1,
     ],
 ];
 
@@ -31,74 +180,59 @@ foreach ( $sample_posts as $data ) {
     $post_ids[] = wp_insert_post( $data );
 }
 
-// Add nested sample comments to the "Try the comments" post (index 1) so
-// the threaded view is populated out of the box.
-// Structure (thread depth ≥ 3):
-//   L0-A  "Great post!"
-//     L1-A  "Thanks!"
-//       L2-A  "Agreed, very useful."
-//         L3-A  "Exactly what I was thinking."
-//   L0-B  "How does the polling work?"
-//     L1-B  "It hits /wp/v2/posts every 15 seconds."
-//       L2-B  "Does it back off on errors?"
+// ---------------------------------------------------------------------------
+// Sample comments on "Try the comments" (index 1) — tied to real user accounts.
+// Thread structure:
+//   L0-A  alice   "Great post!"
+//     L1-A  bob     "Thanks!"
+//       L2-A  carol   "Agreed, very useful."
+//         L3-A  dave  "Exactly what I was thinking."
+//   L0-B  eve     "How does the polling work?"
+//     L1-B  alice   "It hits /wp/v2/posts every 15 seconds."
+//       L2-B  eve     "Does it back off on errors?"
+//         L3-B  bob   "Not yet — @hank and @iris are looking at backoff."
+//   L0-C  frank   "Is anonymous commenting supported?"
+//     L1-C  kate    "Yes — @dave added it. Name/email optional per WP settings."
+// ---------------------------------------------------------------------------
+
 if ( ! empty( $post_ids[1] ) ) {
     $comments_post = $post_ids[1];
 
-    $l0a = wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Alice',
-        'comment_content'  => 'Great post! Really enjoying the new inline comment experience.',
-        'comment_approved' => 1,
-        'comment_parent'   => 0,
-    ] );
+    // Helper: build the comment array for a registered user.
+    $comment_by = static function ( $slug, $content, $parent = 0 ) use ( $user_ids, $sample_users, $comments_post ) {
+        $uid  = $user_ids[ $slug ] ?? 0;
+        $name  = '';
+        $email = '';
+        foreach ( $sample_users as $u ) {
+            if ( $u['user_login'] === $slug ) {
+                $name  = $u['display_name'];
+                $email = $u['user_email'];
+                break;
+            }
+        }
+        return [
+            'comment_post_ID'      => $comments_post,
+            'user_id'              => $uid,
+            'comment_author'       => $name,
+            'comment_author_email' => $email,
+            'comment_content'      => $content,
+            'comment_approved'     => 1,
+            'comment_parent'       => $parent,
+        ];
+    };
 
-    $l1a = wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Bob',
-        'comment_content'  => 'Thanks! It was a fun one to build.',
-        'comment_approved' => 1,
-        'comment_parent'   => $l0a,
-    ] );
+    $l0a = wp_insert_comment( $comment_by( 'alice', 'Great post! Really enjoying the new inline comment experience.' ) );
+    $l1a = wp_insert_comment( $comment_by( 'bob',   'Thanks! It was a fun one to build.',                             $l0a ) );
+    $l2a = wp_insert_comment( $comment_by( 'carol', 'Agreed — much nicer than a full page reload.',                   $l1a ) );
+           wp_insert_comment( $comment_by( 'dave',  'Exactly what I was thinking. The animation is a nice touch.',    $l2a ) );
 
-    $l2a = wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Carol',
-        'comment_content'  => 'Agreed — much nicer than a full page reload.',
-        'comment_approved' => 1,
-        'comment_parent'   => $l1a,
-    ] );
+    $l0b = wp_insert_comment( $comment_by( 'eve',   'How does the live polling work under the hood?' ) );
+    $l1b = wp_insert_comment( $comment_by( 'alice', 'It calls GET /wp/v2/posts every 15 seconds and buffers new ones behind a banner.', $l0b ) );
+    $l2b = wp_insert_comment( $comment_by( 'eve',   'Smart. Does it back off if the request fails?',                  $l1b ) );
+           wp_insert_comment( $comment_by( 'bob',   'Not yet — @hank and @iris are looking at backoff strategies.',   $l2b ) );
 
-    wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Dave',
-        'comment_content'  => 'Exactly what I was thinking. The animation is a nice touch.',
-        'comment_approved' => 1,
-        'comment_parent'   => $l2a,
-    ] );
-
-    $l0b = wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Eve',
-        'comment_content'  => 'How does the live polling work under the hood?',
-        'comment_approved' => 1,
-        'comment_parent'   => 0,
-    ] );
-
-    $l1b = wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Alice',
-        'comment_content'  => 'It calls GET /wp/v2/posts every 15 seconds and buffers new ones behind a banner.',
-        'comment_approved' => 1,
-        'comment_parent'   => $l0b,
-    ] );
-
-    wp_insert_comment( [
-        'comment_post_ID'  => $comments_post,
-        'comment_author'   => 'Eve',
-        'comment_content'  => 'Smart. Does it back off if the request fails?',
-        'comment_approved' => 1,
-        'comment_parent'   => $l1b,
-    ] );
+    $l0c = wp_insert_comment( $comment_by( 'frank', 'Is anonymous commenting supported for guests?' ) );
+           wp_insert_comment( $comment_by( 'kate',  'Yes — @dave added it. Whether name/email are required follows the standard WordPress setting.', $l0c ) );
 }
 
 // Ensure the homepage shows the latest posts (not a static page), so the
