@@ -209,9 +209,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 		setEditingPost( postId );
 	}, [ postId, setEditingPost, closeMenu ] );
 
-	const [ copyLabel, setCopyLabel ] = useState(
-		__( 'Copy link', 'p2026' )
-	);
+	const [ copyLabel, setCopyLabel ] = useState( __( 'Copy link', 'p2026' ) );
 	const onCopyLink = useCallback( async () => {
 		closeMenu();
 		const url = getPermalink( postElement );

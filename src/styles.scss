@@ -17,7 +17,8 @@
 		border-color: #b0b0b0;
 	}
 
-	// Use :focus-within so the highlight fires when inner contenteditable is focused.
+	// Use :focus-within so the highlight fires when inner
+	// contenteditable is focused.
 	&:focus-within {
 		outline: none;
 		border-color: #0073aa;
@@ -81,13 +82,15 @@
 }
 
 @keyframes p2026EditorSlideIn {
+
 	from {
 		opacity: 0;
-		transform: translateY( -6px );
+		transform: translateY(-6px);
 	}
+
 	to {
 		opacity: 1;
-		transform: translateY( 0 );
+		transform: translateY(0);
 	}
 }
 
@@ -161,7 +164,6 @@
 
 // ---------------------------------------------------------------------------
 // Three-dots post menu
-//
 // Sits in the top-right corner of the post card via position:absolute.
 // The host post element receives position:relative from setupPostToolbar.
 // ---------------------------------------------------------------------------
@@ -169,7 +171,7 @@
 .p2026-menu-wrap {
 	position: absolute;
 	top: 10px;
-	right: calc( ( 100vw - var(--wp--style--global--content-size) ) / 2 );
+	right: calc(( 100vw - var(--wp--style--global--content-size) ) / 2);
 	z-index: 10;
 
 	// Remove the native <details> disclosure triangle.
@@ -198,8 +200,12 @@
 	font-weight: 700;
 	letter-spacing: 1px;
 	line-height: 1;
-	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-	// Browsers add their own focus ring to <summary>; replace with a consistent one.
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+	// Browsers add their own focus ring to <summary>; replace with a
+	// consistent one.
 	outline: none;
 
 	&:hover {

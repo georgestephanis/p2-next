@@ -105,10 +105,7 @@ export default function NewPostEditor() {
 								className="p2026-editor-canvas"
 								role="textbox"
 								aria-multiline="true"
-								aria-label={ __(
-									'New post content',
-									'p2026'
-								) }
+								aria-label={ __( 'New post content', 'p2026' ) }
 								tabIndex={ 0 }
 								onClick={ onCanvasClick }
 								onKeyDown={ onCanvasKeyDown }

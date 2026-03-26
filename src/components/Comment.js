@@ -143,10 +143,7 @@ export default function Comment( { comment, postId } ) {
 							<TextareaControl
 								label={ __( 'Your reply', 'p2026' ) }
 								hideLabelFromVision
-								placeholder={ __(
-									'Write a reply…',
-									'p2026'
-								) }
+								placeholder={ __( 'Write a reply…', 'p2026' ) }
 								value={ replyContent }
 								onChange={ setReplyContent }
 								rows={ 3 }

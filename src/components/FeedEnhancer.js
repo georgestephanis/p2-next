@@ -205,7 +205,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		fetch( window.location.href )
 			.then( ( r ) => r.text() )
 			.then( ( html ) => {
-				const doc = new DOMParser().parseFromString(
+				const doc = new window.DOMParser().parseFromString(
 					html,
 					'text/html'
 				);
@@ -256,10 +256,9 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 
 	// Remove injected elements on teardown.
 	useEffect( () => {
+		const injected = newPostElsRef.current;
 		return () => {
-			Object.values( newPostElsRef.current ).forEach( ( el ) =>
-				el.remove()
-			);
+			Object.values( injected ).forEach( ( el ) => el.remove() );
 		};
 	}, [] );
 

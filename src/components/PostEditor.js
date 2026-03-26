@@ -42,9 +42,7 @@ export default function PostEditor( { postId } ) {
 		apiFetch( { path: `/wp/v2/posts/${ postId }?context=edit` } )
 			.then( ( post ) => setBlocks( parse( post.content?.raw ?? '' ) ) )
 			.catch( ( err ) =>
-				setError(
-					err.message ?? __( 'Could not load post.', 'p2026' )
-				)
+				setError( err.message ?? __( 'Could not load post.', 'p2026' ) )
 			);
 	}, [ postId ] );
 
