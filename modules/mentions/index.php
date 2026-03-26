@@ -313,42 +313,149 @@ function p2026_mentions_linkify( $content ) {
 		return $content;
 	}
 
-	// Build a slug → user map for O(1) lookup inside the callback.
+	// Build a slug → user map for O(1) lookup.
 	$map = array();
 	foreach ( $users as $user ) {
 		$map[ strtolower( $user->user_login ) ] = $user;
 	}
 
-	// Split into HTML tags/comments (odd-indexed) and text nodes (even-indexed).
-	$parts = preg_split( '/(<[^>]+>|<!--.*?-->)/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE );
+	// Parse the HTML so we can only linkify safe text nodes and avoid nested anchors
+	// or modifying script/style/code/pre contents.
+	if ( '' === $content ) {
+		return $content;
+	}
 
-	$result = '';
-	foreach ( $parts as $part ) {
-		if ( '<' === ( $part[0] ?? '' ) ) {
-			// HTML tag or comment — pass through unchanged.
-			$result .= $part;
-			continue;
+	$dom = new DOMDocument();
+
+	// Suppress HTML parsing warnings for fragments.
+	$prev_use_errors = libxml_use_internal_errors( true );
+
+	// Convert to HTML entities to preserve UTF-8 correctly.
+	$loaded = $dom->loadHTML(
+		mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' )
+	);
+
+	libxml_clear_errors();
+	libxml_use_internal_errors( $prev_use_errors );
+
+	if ( ! $loaded ) {
+		// If parsing fails, fall back to the original content rather than risk mangling it.
+		return $content;
+	}
+
+	$body_list = $dom->getElementsByTagName( 'body' );
+	if ( 0 === $body_list->length ) {
+		return $content;
+	}
+
+	$body       = $body_list->item( 0 );
+	$forbidden  = array( 'a', 'script', 'style', 'code', 'pre' );
+	$mention_re = '/(?<![a-zA-Z0-9.@])@([a-zA-Z0-9_-]{2,60})/u';
+
+	$process_node = static function ( DOMNode $node ) use ( &$process_node, $dom, $map, $forbidden, $mention_re ) {
+		if ( ! $node->hasChildNodes() ) {
+			return;
 		}
 
-		// Text node — replace @mentions that resolve to real users.
-		$result .= preg_replace_callback(
-			'/(?<![a-zA-Z0-9.@])@([a-zA-Z0-9_-]{2,60})/u',
-			static function ( $m ) use ( $map ) {
-				$slug = strtolower( $m[1] );
-				if ( ! isset( $map[ $slug ] ) ) {
-					return $m[0];
+		// We need to iterate over a static list because we'll potentially replace nodes.
+		$children = array();
+		foreach ( $node->childNodes as $child ) {
+			$children[] = $child;
+		}
+
+		foreach ( $children as $child ) {
+			if ( XML_TEXT_NODE === $child->nodeType ) {
+				// Skip text nodes that live inside forbidden containers.
+				$ancestor = $child->parentNode;
+				$skip     = false;
+				while ( $ancestor instanceof DOMNode ) {
+					if ( XML_ELEMENT_NODE === $ancestor->nodeType ) {
+						$name = strtolower( $ancestor->nodeName );
+						if ( in_array( $name, $forbidden, true ) ) {
+							$skip = true;
+							break;
+						}
+					}
+					$ancestor = $ancestor->parentNode;
 				}
-				$user = $map[ $slug ];
-				return sprintf(
-					'<a class="p2026-mention" href="%s" data-user-id="%d" data-user-slug="%s">@%s</a>',
-					esc_url( get_author_posts_url( $user->ID ) ),
-					(int) $user->ID,
-					esc_attr( $user->user_login ),
-					esc_html( $user->user_login )
-				);
-			},
-			$part
-		);
+
+				if ( $skip ) {
+					continue;
+				}
+
+				$text = $child->nodeValue;
+
+				// Quick check to avoid regex work when there is no '@' at all.
+				if ( false === strpos( $text, '@' ) ) {
+					continue;
+				}
+
+				if ( ! preg_match_all( $mention_re, $text, $matches, PREG_OFFSET_CAPTURE ) ) {
+					continue;
+				}
+
+				$fragment = $dom->createDocumentFragment();
+				$last_pos = 0;
+
+				foreach ( $matches[0] as $index => $match ) {
+					$match_text   = $match[0];
+					$match_offset = $match[1];
+					$match_length = strlen( $match_text );
+
+					// Append text before the match.
+					if ( $match_offset > $last_pos ) {
+						$fragment->appendChild(
+							$dom->createTextNode( substr( $text, $last_pos, $match_offset - $last_pos ) )
+						);
+					}
+
+					$slug_original = $matches[1][ $index ][0];
+					$slug          = strtolower( $slug_original );
+
+					if ( ! isset( $map[ $slug ] ) ) {
+						// Unknown user: keep the original @text as plain text.
+						$fragment->appendChild( $dom->createTextNode( $match_text ) );
+					} else {
+						$user = $map[ $slug ];
+
+						$link = $dom->createElement( 'a' );
+						$link->setAttribute( 'class', 'p2026-mention' );
+						$link->setAttribute( 'href', esc_url( get_author_posts_url( $user->ID ) ) );
+						$link->setAttribute( 'data-user-id', (string) (int) $user->ID );
+						$link->setAttribute( 'data-user-slug', esc_attr( $user->user_login ) );
+						$link->appendChild(
+							$dom->createTextNode( '@' . $user->user_login )
+						);
+
+						$fragment->appendChild( $link );
+					}
+
+					$last_pos = $match_offset + $match_length;
+				}
+
+				// Append any trailing text after the last match.
+				$text_length = strlen( $text );
+				if ( $last_pos < $text_length ) {
+					$fragment->appendChild(
+						$dom->createTextNode( substr( $text, $last_pos ) )
+					);
+				}
+
+				if ( $child->parentNode ) {
+					$child->parentNode->replaceChild( $fragment, $child );
+				}
+			} elseif ( XML_ELEMENT_NODE === $child->nodeType ) {
+				$process_node( $child );
+			}
+		}
+	};
+
+	$process_node( $body );
+
+	// Serialize the body children back into an HTML fragment.
+	$result = '';
+	foreach ( $body->childNodes as $child ) {
+		$result .= $dom->saveHTML( $child );
 	}
 
 	return $result;
