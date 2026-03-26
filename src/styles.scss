@@ -285,7 +285,10 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	border-left: 3px solid #0073aa;
 	padding: 12px 16px;
 	margin-top: 4px;
+	margin-left: auto;
+	margin-right: auto;
 	border-radius: 0 4px 4px 0;
+	width: var(--wp--style--global--content-size);
 
 	.p2026-comment {
 		background-color: #fff;
