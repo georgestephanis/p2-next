@@ -18,6 +18,10 @@
         "url": "https://github.com/georgestephanis/p2026",
         "ref": "HEAD",
         "path": "/"
+      },
+      "options": {
+        "activate": true,
+        "targetFolderName": "p2026"
       }
     },
     {
