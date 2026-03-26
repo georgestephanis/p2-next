@@ -193,7 +193,14 @@ function scheduleHide() {
 		clearTimeout( showTimer );
 		showTimer = null;
 	}
-	hideTimer = setTimeout( hideHovercard, 200 );
+	if ( hideTimer ) {
+		clearTimeout( hideTimer );
+		hideTimer = null;
+	}
+	hideTimer = setTimeout( () => {
+		hideTimer = null;
+		hideHovercard();
+	}, 200 );
 }
 
 /** Cancel a pending hide (called when pointer enters the hovercard). */
