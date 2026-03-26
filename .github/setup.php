@@ -173,11 +173,27 @@ if ( empty( $base_content ) ) {
         }
     }
 
-    $parts = array_filter( [ $header_block, $query_loop, $footer_block ] );
-    $base_content = implode( "\n", $parts );
+    // In the fallback we built the template ourselves, so slot the new-post
+    // block between the header part and the query loop.
+    $parts       = array_filter( [ $header_block, '<!-- wp:p2026/new-post /-->', $query_loop, $footer_block ] );
+    $new_content = implode( "\n", $parts );
+} else {
+    // For an existing template, inject after the header template-part block
+    // if one is present, otherwise prepend to the whole content.
+    if ( preg_match(
+        '/<!-- wp:template-part [^\n]*"slug"\s*:\s*"header"[^\n]*\/-->/',
+        $base_content,
+        $match,
+        PREG_OFFSET_CAPTURE
+    ) ) {
+        $insert_at   = $match[0][1] + strlen( $match[0][0] );
+        $new_content = substr( $base_content, 0, $insert_at )
+            . "\n<!-- wp:p2026/new-post /-->"
+            . substr( $base_content, $insert_at );
+    } else {
+        $new_content = '<!-- wp:p2026/new-post /-->' . "\n" . $base_content;
+    }
 }
-
-$new_content = '<!-- wp:p2026/new-post /-->' . "\n" . $base_content;
 
 // Look for an existing user-customised DB record to update instead of insert.
 // WordPress stores template post_name as "{theme_slug}//home".
@@ -198,7 +214,7 @@ if ( $existing ) {
     $post_id = wp_insert_post( [
         'post_type'    => 'wp_template',
         'post_name'    => $template_name,
-        'post_title'   => 'Home',
+        'post_title'   => 'Blog Home',
         'post_content' => $new_content,
         'post_status'  => 'publish',
         'post_author'  => 1,
