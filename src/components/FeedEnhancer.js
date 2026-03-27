@@ -222,6 +222,11 @@ export default function FeedEnhancer( {
 		return map;
 	}, [ storePosts ] );
 
+	const activeModules = window.p2026Config?.activeModules;
+	const isPostStateActive =
+		! Array.isArray( activeModules ) ||
+		activeModules.includes( 'post-state' );
+
 	// Posts that arrived via createPost or revealed polling — not yet in the DOM.
 	const newPosts = useMemo(
 		() => storePosts.filter( ( p ) => ! staticIds.has( p.id ) ),
@@ -368,11 +373,6 @@ export default function FeedEnhancer( {
 
 	// Check if user is logged in; gate logged-in-only widgets to prevent 401s.
 	const isLoggedIn = window.p2026Config?.currentUser;
-
-	const activeModules = window.p2026Config?.activeModules;
-	const isPostStateActive =
-		! Array.isArray( activeModules ) ||
-		activeModules.includes( 'post-state' );
 
 	return (
 		<>
