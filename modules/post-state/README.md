@@ -1,5 +1,7 @@
 # P2026 Module: Post State
 
+Reviewed: March 27, 2026
+
 Adds workflow state to posts using a private taxonomy and REST integration.
 
 ## Features

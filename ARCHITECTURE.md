@@ -8,6 +8,7 @@ This plugin adds real-time P2/o2-style collaboration features by progressively e
 -   React portals add controls and editors into existing DOM nodes.
 -   A shared `@wordpress/data` store (`p2026`) drives posts/comments/editor UI state.
 -   REST API requests are authenticated with nonce + root URL from `window.p2026Config`.
+-   JS modules are loaded from `window.p2026Config.activeModules`.
 
 ## Runtime Request/Data Flow
 
@@ -87,6 +88,12 @@ flowchart TD
 ## Integration Boundaries
 
 -   Depends on WordPress REST endpoints under `/wp/v2`.
+-   Uses plugin REST endpoints under `/p2026/v1` for search, read-state, and optional modules.
 -   Depends on existing theme loop markup for post discovery.
 -   Header search/unread widgets are gated by main-query detection plus `window.p2026Config.isArchiveView`.
 -   Build output in `build/` is generated via `@wordpress/scripts` and block manifest support.
+
+## Search Behavior Note
+
+-   `GET /p2026/v1/search` is currently logged-in only.
+-   Current SQL filters scope results to content authored by the current user.

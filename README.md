@@ -7,7 +7,7 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 ## What It Does
 
 -   **Real-time feed** — Polls for new posts and surfaces them behind a reveal banner without auto-scrolling.
--   **Unified search** — Searches posts and comments with a debounced modal UI for logged-in users on main archive-like feeds.
+-   **Unified search** — Searches authored posts and comments with a debounced modal UI for logged-in users on main archive-like feeds.
 -   **Unread tracking** — Tracks per-user read state and shows an unread badge that reveals pending posts.
 -   **Inline threaded comments** — Expand comment threads per post; post top-level comments and replies without leaving the page.
 -   **Inline post editing** — Edit existing posts using the Block Editor directly on the front end.
@@ -15,8 +15,8 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 -   **New post creation** — A `p2026/new-post` dynamic block provides a front-end Block Editor for publishing posts. An admin bar "New Post" button opens the same editor in a modal when the block isn't on the page.
 -   **Capability-aware UX** — All controls are gated by WordPress capabilities (and an optional Abilities API), so guests, contributors, and editors each see the appropriate UI.
 -   **Mentions module** — `@username` autocomplete and hovercards, server-side linkification, and mention hook emission for downstream notifications.
--   **Optional notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
--   **Optional audit-log module** — Persists core audit events to JSONL in uploads or an internal custom post type backend.
+-   **Notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
+-   **Audit-log module** — Persists core audit events to JSONL in uploads or an internal custom post type backend.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
 ## Building a Company Intranet
@@ -93,6 +93,15 @@ p2026 uses progressive enhancement:
 -   Search header widgets mount only when the discovered loop is the main query and the current page is archive-like.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram and file-level responsibility map.
+
+## Search Notes
+
+Current search implementation details:
+
+-   Endpoint: `GET /p2026/v1/search`.
+-   Auth: logged-in users only.
+-   Scope: currently filters to authored posts/comments for the current user.
+-   Query model: SQL `LIKE` matching with pagination caps.
 
 ## Module System
 

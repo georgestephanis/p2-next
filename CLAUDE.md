@@ -25,7 +25,7 @@ It is intentionally not a complete SPA replacement.
 -   src/store/index.js: shared @wordpress/data store and async thunks.
 -   src/api/index.js: apiFetch middleware and polling helper.
 -   src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay; imports module stylesheets via `@use`.
--   src/modules/index.js: side-effect entry point that imports every active JS module; add a new module by creating `src/modules/{name}/index.js` and importing it here.
+-   src/modules/index.js: side-effect entry point that dynamically imports only modules listed in `window.p2026Config.activeModules`.
 -   src/modules/mentions/: JS mentions module — Block Editor autocomplete, textarea autocomplete (`MentionTextareaControl`), and hovercard host.
 -   src/modules/notifications/: JS notifications module — dock UI and item rendering.
 -   modules/: PHP modules directory; each subdirectory contains an `index.php` loaded by glob on init.
@@ -87,7 +87,7 @@ New post mount rendering in src/blocks/new-post/render.php is gated by p2026_can
 
 Unified search across posts and comments. Accessible to logged-in users.
 
--   `includes/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries, respects post/comment permissions.
+-   `includes/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries and currently filters to authored content for the current logged-in user.
 -   Results sorted newest-first, capped at 20 per request.
 -   `SearchWidget.js`: Debounced (300ms) input with modal results overlay; click navigates to post or comment and scrolls into view.
 -   Modal opens only after the first non-empty result set, and remains open while refining query.

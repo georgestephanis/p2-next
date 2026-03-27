@@ -31,13 +31,13 @@ A `@wordpress/rich-text` format type is registered under the name `p2026/mention
 <span class="p2026-mention" data-user-id="42" data-user-slug="jane">@jane</span>
 ```
 
-The format has no editor toolbar button — it is applied exclusively via the autocomplete completer. PHP is responsible for parsing `@slug` tokens in saved post content and converting them to the span markup on output.
+The format has no editor toolbar button. Autocomplete currently inserts plain `@slug` text; PHP parses and linkifies mentions on render. The format registration allows existing mention spans in editor content to be recognized and round-tripped.
 
 ### Block Editor autocomplete
 
 An `editor.Autocomplete.completers` filter adds an `@` trigger to Gutenberg's built-in autocomplete system. When a user types `@` followed by at least one character inside any `RichText` field, the completer calls `GET /p2026/v1/users?search=<query>&per_page=5` and displays matching users.
 
-Selecting a suggestion inserts `@slug` as plain text; the `p2026/mention` format is applied around it by the completer. The `isDebounced: true` flag delegates debouncing to `@wordpress/block-editor`.
+Selecting a suggestion inserts `@slug` as plain text. The `isDebounced: true` flag delegates debouncing to `@wordpress/block-editor`.
 
 Suggestions are only shown to logged-in users (`window.p2026Config.currentUser` must be set).
 
@@ -52,6 +52,7 @@ A standalone React component for use outside the Block Editor (e.g. comment form
 | `value` | `string` | — | Controlled textarea value |
 | `onChange` | `(string) => void` | — | Called with the new value on every change |
 | `label` | `string` | — | Optional visible label |
+| `hideLabelFromVision` | `boolean` | `false` | Applies visually hidden label style |
 | `placeholder` | `string` | — | Textarea placeholder |
 | `rows` | `number` | `4` | Visible row count |
 | `disabled` | `boolean` | `false` | Disables the textarea |
@@ -67,6 +68,8 @@ A standalone React component for use outside the Block Editor (e.g. comment form
 Accepting a suggestion replaces the `@partial` token with `@slug ` (trailing space included) and restores focus to the textarea.
 
 For guests (`window.p2026Config.currentUser` absent), the component behaves exactly like a plain `TextareaControl` — no fetch is made and no suggestion list is shown.
+
+The component generates per-instance textarea/listbox/option IDs, so multiple open forms do not conflict in ARIA relationships.
 
 **Usage:**
 

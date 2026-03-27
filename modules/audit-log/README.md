@@ -1,5 +1,7 @@
 # P2026 Module: Audit Log
 
+Reviewed: March 27, 2026
+
 Persists audit events emitted by other p2026 modules.
 
 ## Features

@@ -18,14 +18,14 @@ Do not convert this plugin into a full SPA. Preserve theme ownership of initial 
 ## Core Entry Points
 
 - p2026.php: bootstrap, abilities registration, permission helpers, config injection, block registration, admin bar node, PHP module glob-loader.
-- src/frontend.js: finds post list + post nodes, mounts FeedEnhancer, mounts NewPostModal root, wires admin bar button, imports all JS modules via `src/modules/index.js`.
+- src/frontend.js: finds post list + post nodes, mounts FeedEnhancer, mounts NewPostModal root, wires admin bar button, and loads modules via `src/modules/index.js`.
 - src/enhancer.js: exports `setupPostToolbar` (mounts PostEnhancement React root per post for menu/comments/editing) and `observePosts` (no-op stub kept for API compatibility).
 - src/blocks/new-post/render.php: server-gated mount point for new-post UI.
 - src/blocks/new-post/view.js: frontend mount for new-post editor.
 - src/store/index.js: canonical state/actions/selectors (includes newPostModalOpen).
 - src/components/FeedEnhancer.js: post polling + comment refresh scheduling.
 - src/components/NewPostModal.js: modal driven by newPostModalOpen store state; wraps NewPostEditor.
-- src/modules/index.js: side-effect imports for all active JS modules; add new modules here.
+- src/modules/index.js: dynamic loader for JS modules listed in `window.p2026Config.activeModules`.
 - modules/mentions/index.php: REST user-search + hovercard endpoints, @mention linkification on `the_content`/`comment_text`, `p2026_mentions_found` action hook for third-party notifications.
 - src/modules/mentions/: JS mentions module — `p2026/mention` rich-text format, Block Editor `@` completer, `MentionTextareaControl` for plain textareas, hovercard host.
 
@@ -46,6 +46,11 @@ Frontend capability flags come from window.p2026Config. Prefer these flags over 
 - requireNameEmail
 
 For logged-in users, currentUser includes canPublish/canUpdatePosts/canComment.
+
+Search contract:
+
+- `GET /p2026/v1/search` is logged-in only.
+- Current implementation scopes results to authored posts/comments.
 
 ## Comment UX Rules
 
