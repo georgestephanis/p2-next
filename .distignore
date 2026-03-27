@@ -1,0 +1,57 @@
+# .distignore — excludes files/folders from WordPress.org plugin distribution.
+# https://developer.wordpress.org/plugins/wordpress-org/server-side-hosted/#distignore
+
+# Development/build tools
+node_modules/
+package.json
+package-lock.json
+npm-shrinkwrap.json
+webpack.config.js
+.babelrc
+.eslintignore
+.eslintrc.json
+.stylelintrc.json
+tsconfig.json
+
+# Composer (PHP dependencies)
+composer.json
+composer.lock
+vendor/
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Documentation & planning
+README.md
+ARCHITECTURE.md
+CLAUDE.md
+IMPLEMENTATION_PLAN.md
+ideas/
+.github/
+
+# Testing & CI
+.phpcs.xml.dist
+phpcs.xml.dist
+.wp-env.json
+.wordpress-org/
+
+# Environment/IDE
+.DS_Store
+.env
+.env.local
+.env.*.local
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Build artifacts (but keep the build/ folder itself)
+# The build/ folder is committed and needed at runtime
+
+# Root-level cache/temp files
+*.log
+.cache/
+tmp/
