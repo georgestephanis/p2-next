@@ -3,7 +3,7 @@
  * P2026 Module: Notifications
  *
  * Module Name:        Notifications
- * Module Description: Persistent notifications dock for mentions, replies, and new posts.
+ * Module Description: Persistent notifications dock for mentions and comment replies.
  * Module Version:     0.1.0
  *
  * Provides a notification system:
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**cd
+/**
  * Create a new notification for a user.
  *
  * @param int    $user_id      Recipient user ID.

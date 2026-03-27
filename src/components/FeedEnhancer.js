@@ -23,7 +23,7 @@ import {
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
-import { sprintf, _n } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
 import { setupPostToolbar } from '../enhancer';
@@ -43,13 +43,21 @@ export default function FeedEnhancer( {
 	postElements,
 	isMainQuery = true,
 } ) {
-	const { fetchPosts, pollForNewPosts, revealPendingPosts, fetchComments } =
-		useDispatch( STORE_NAME );
+	const {
+		fetchPosts,
+		pollForNewPosts,
+		revealPendingPosts,
+		fetchComments,
+		setPostStateFilter,
+	} = useDispatch( STORE_NAME );
 	const pendingCount = useSelect( ( select ) =>
 		select( STORE_NAME ).getPendingCount()
 	);
 	const storePosts = useSelect( ( select ) =>
 		select( STORE_NAME ).getPosts()
+	);
+	const postStateFilter = useSelect( ( select ) =>
+		select( STORE_NAME ).getPostStateFilter()
 	);
 	const expandedPostIds = useSelect( ( select ) =>
 		select( STORE_NAME ).getExpandedPosts()
@@ -206,10 +214,28 @@ export default function FeedEnhancer( {
 		[ postElements ]
 	);
 
+	const postStateById = useMemo( () => {
+		const map = new Map();
+		storePosts.forEach( ( post ) => {
+			map.set( post.id, post?.p2026State?.slug ?? 'normal' );
+		} );
+		return map;
+	}, [ storePosts ] );
+
 	// Posts that arrived via createPost or revealed polling — not yet in the DOM.
 	const newPosts = useMemo(
 		() => storePosts.filter( ( p ) => ! staticIds.has( p.id ) ),
 		[ storePosts, staticIds ]
+	);
+
+	const shouldHidePost = useCallback(
+		( postId ) => {
+			if ( postStateFilter !== 'unresolved' ) {
+				return false;
+			}
+			return postStateById.get( postId ) !== 'unresolved';
+		},
+		[ postStateById, postStateFilter ]
 	);
 
 	// When new posts arrive, fetch the current page HTML and extract the
@@ -272,13 +298,33 @@ export default function FeedEnhancer( {
 					}
 
 					setupPostToolbar( post.id, li );
+					li.classList.toggle(
+						'p2026-post-filter-hidden',
+						shouldHidePost( post.id )
+					);
 				} );
 			} )
 			.catch( () => {
 				// Fetch failed — silently skip. The post is saved; a page
 				// reload or the next poll cycle will surface it.
 			} );
-	}, [ newPosts, feedContainer ] );
+	}, [ newPosts, feedContainer, shouldHidePost ] );
+
+	useEffect( () => {
+		postElements.forEach( ( postEl ) => {
+			postEl.element.classList.toggle(
+				'p2026-post-filter-hidden',
+				shouldHidePost( postEl.id )
+			);
+		} );
+
+		Object.entries( newPostElsRef.current ).forEach( ( [ id, el ] ) => {
+			el.classList.toggle(
+				'p2026-post-filter-hidden',
+				shouldHidePost( Number( id ) )
+			);
+		} );
+	}, [ postElements, shouldHidePost, storePosts ] );
 
 	// Remove injected elements on teardown.
 	useEffect( () => {
@@ -295,6 +341,11 @@ export default function FeedEnhancer( {
 	// Check if user is logged in; gate logged-in-only widgets to prevent 401s.
 	const isLoggedIn = window.p2026Config?.currentUser;
 
+	const activeModules = window.p2026Config?.activeModules;
+	const isPostStateActive =
+		! Array.isArray( activeModules ) ||
+		activeModules.includes( 'post-state' );
+
 	return (
 		<>
 			{ /* Header widgets portal — only for logged-in users */ }
@@ -302,6 +353,34 @@ export default function FeedEnhancer( {
 				headerContainerRef.current &&
 				createPortal(
 					<div className="p2026-header-widgets">
+						{ isPostStateActive && (
+							<div className="p2026-feed-filter" role="group">
+								<Button
+									variant={
+										postStateFilter === 'all'
+											? 'secondary'
+											: 'tertiary'
+									}
+									onClick={ () =>
+										setPostStateFilter( 'all' )
+									}
+								>
+									{ __( 'All posts', 'p2026' ) }
+								</Button>
+								<Button
+									variant={
+										postStateFilter === 'unresolved'
+											? 'secondary'
+											: 'tertiary'
+									}
+									onClick={ () =>
+										setPostStateFilter( 'unresolved' )
+									}
+								>
+									{ __( 'Open only', 'p2026' ) }
+								</Button>
+							</div>
+						) }
 						<SearchWidget />
 						<UnreadBadge />
 					</div>,

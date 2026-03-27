@@ -264,7 +264,7 @@ All three features will be developed on a single feature branch for cohesion:
 -   [ ] Mark as read works (local + server)
 -   [ ] Polling respects visibility (no polling when tab hidden)
 -   [ ] Performance: 100+ notifications load without lag
--   [ ] Module can be disabled via `p2026_active_modules` option
+-   [ ] Module can be disabled via `p2026_disabled_modules` option
 
 ---
 

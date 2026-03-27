@@ -3,10 +3,10 @@
  *
  * Modules are loaded based on window.p2026Config.activeModules, which is
  * managed by PHP. This prevents the frontend from mounting components for
- * modules disabled via p2026_active_modules option.
+ * modules explicitly disabled via the p2026_disabled_modules option.
  *
  * Add a new module by creating src/modules/{name}/index.js. Active modules
- * are determined by p2026_get_active_modules() from the server.
+ * are computed server-side as discovered modules minus disabled modules.
  */
 
 // Get list of active modules from server-provided config.

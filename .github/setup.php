@@ -154,7 +154,7 @@ $sample_posts = [
     ],
     [
         'post_title'   => 'Try the comments',
-        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu on any post and click the comments item to expand the thread and reply inline.</p><!-- /wp:paragraph -->'
+        'post_content' => '<!-- wp:paragraph --><p>Open the ⋯ menu on any post and click the comments item to expand the thread and reply inline. #todo</p><!-- /wp:paragraph -->'
             . "\n" . '<!-- wp:paragraph --><p>@carol designed the comment UI and @dave wired up the REST endpoints — give it a try and let them know what you think.</p><!-- /wp:paragraph -->',
         'post_status'  => 'publish',
         'post_author'  => $user_ids['frank'] ?? 1,

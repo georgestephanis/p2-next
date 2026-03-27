@@ -309,7 +309,7 @@ function p2026_enqueue_frontend() {
 				'canComment'       => $can_comment,
 				'requireNameEmail' => $require_name_email,
 				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
-				'activeModules'    => p2026_get_active_modules() !== null ? p2026_get_active_modules() : array_keys( p2026_discover_modules() ),
+				'activeModules'    => array_values( array_diff( array_keys( p2026_discover_modules() ), p2026_get_disabled_modules() ) ),
 			)
 		) . ';',
 		'before'
@@ -377,51 +377,65 @@ require_once P2026_DIR . 'includes/api/read-state.php';
 // Modules — self-contained feature extensions loaded from modules/*/index.php.
 // ---------------------------------------------------------------------------
 
+
 /**
- * Return the list of explicitly enabled module slugs, or null if the option
- * has never been saved (meaning all modules are active by default).
+ * Return the list of explicitly disabled module slugs.
  *
- * @return string[]|null
+ * An empty array (or unset option) means all discovered modules are active.
+ * Modules are active by default; only slugs in this list are inactive.
+ *
+ * @return string[]
  */
-function p2026_get_active_modules() {
-	$stored = get_option( 'p2026_active_modules', null );
-	return is_array( $stored ) ? $stored : null;
+function p2026_get_disabled_modules() {
+	$stored = get_option( 'p2026_disabled_modules', null );
+	return is_array( $stored ) ? $stored : array();
 }
 
 /**
  * Whether a given module slug is currently active.
  *
- * When the option has never been saved (null), every module is considered
- * active so new installs get the full feature set without any configuration.
+ * A module is active unless its slug appears in the explicit deny list
+ * (p2026_disabled_modules option). New modules default to active.
  *
- * @param string        $slug   Module directory slug.
- * @param string[]|null $active Cached active list, or null to fetch the option.
+ * @param string $slug Module directory slug.
  * @return bool
  */
-function p2026_is_module_active( $slug, $active = null ) {
-	if ( null === $active ) {
-		$active = p2026_get_active_modules();
-	}
-	// Option never saved → all modules are active.
-	if ( null === $active ) {
-		return true;
-	}
-	return in_array( $slug, $active, true );
+function p2026_is_module_active( $slug ) {
+	return ! in_array( $slug, p2026_get_disabled_modules(), true );
 }
 
 // Load each module whose slug is in the active list (all by default).
-$p2026_active = p2026_get_active_modules();
-$modules      = glob( P2026_DIR . 'modules/*/index.php' );
+$modules = glob( P2026_DIR . 'modules/*/index.php' );
 if ( ! $modules ) {
 	$modules = array();
 }
 foreach ( $modules as $p2026_module ) {
-	if ( p2026_is_module_active( basename( dirname( $p2026_module ) ), $p2026_active ) ) {
+	if ( p2026_is_module_active( basename( dirname( $p2026_module ) ) ) ) {
 		require_once $p2026_module;
 	}
 }
-unset( $p2026_active, $p2026_module );
+unset( $p2026_module );
 
+/**
+ * Migrate from the legacy opt-in (p2026_active_modules) schema to the
+ * current opt-out (p2026_disabled_modules) schema.
+ *
+ * On first run after upgrade the old allow-list is deleted and an empty
+ * deny-list is written, making all discovered modules active. Any module
+ * the admin had previously disabled will need to be re-toggled off via the
+ * settings page — a one-time inconvenience in exchange for correct
+ * default-active behaviour for newly added modules.
+ */
+function p2026_migrate_module_activation_schema() {
+	if ( null !== get_option( 'p2026_disabled_modules', null ) ) {
+		return; // Already on the new schema.
+	}
+	if ( null !== get_option( 'p2026_active_modules', null ) ) {
+		delete_option( 'p2026_active_modules' );
+	}
+	update_option( 'p2026_disabled_modules', array() );
+}
+add_action( 'init', 'p2026_migrate_module_activation_schema', 1 );
 // Admin settings page (menu registration, module management UI).
 if ( is_admin() ) {
 	require_once P2026_DIR . 'admin/settings.php';
