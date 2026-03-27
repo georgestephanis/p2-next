@@ -28,9 +28,11 @@ export default function SearchWidget() {
 		if ( ! value || value.length < 2 ) {
 			setResults( [] );
 			setIsLoading( false );
+			setIsOpen( false );
 			return;
 		}
 
+		setIsOpen( true );
 		setIsLoading( true );
 
 		timeoutRef.current = setTimeout( async () => {
@@ -77,7 +79,6 @@ export default function SearchWidget() {
 			<SearchControl
 				value={ query }
 				onChange={ handleSearch }
-				onFocus={ () => setIsOpen( true ) }
 				placeholder={ __( 'Search posts and comments…', 'p2026' ) }
 				className="p2026-search-input"
 			/>
