@@ -5,3 +5,4 @@
  * it here. Each module is responsible for its own initialization.
  */
 import './mentions';
+import './notifications';

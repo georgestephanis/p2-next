@@ -1,0 +1,160 @@
+/**
+ * NotificationDock — persistent notifications panel.
+ *
+ * Displays a sticky dock in the bottom-right corner with an unread count badge
+ * that expands to show recent notifications when clicked.
+ */
+import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
+import { useDispatch, useSelect } from '@wordpress/data';
+import { Button, Spinner } from '@wordpress/components';
+import { close, bell } from '@wordpress/icons';
+import { sprintf, _n, __ } from '@wordpress/i18n';
+import { STORE_NAME } from '../../store';
+import NotificationItem from './NotificationItem';
+import { startPolling } from '../../api';
+import './_notification-dock.scss';
+
+export default function NotificationDock() {
+	const [ isOpen, setIsOpen ] = useState( false );
+	const [ isLoading, setIsLoading ] = useState( false );
+	const stopPollingRef = useRef( null );
+
+	const { fetchNotifications, markAllAsRead } = useDispatch( STORE_NAME );
+	const notifications = useSelect( ( select ) =>
+		select( STORE_NAME ).getNotifications()
+	);
+	const unreadCount = useSelect( ( select ) =>
+		select( STORE_NAME ).getUnreadNotificationCount()
+	);
+
+	// Fetch notifications on mount and start polling.
+	useEffect( () => {
+		setIsLoading( true );
+		fetchNotifications().finally( () => setIsLoading( false ) );
+
+		// Poll for new notifications every 10-15 seconds when visible.
+		const pollFn = async () => {
+			await fetchNotifications();
+		};
+
+		const stopPolling = startPolling( pollFn, 10, {
+			minBackoffMultiplier: 1,
+			maxBackoffMultiplier: 3,
+			backoffFactor: 2,
+		} );
+
+		stopPollingRef.current = stopPolling;
+
+		return () => {
+			if ( stopPollingRef.current ) {
+				stopPollingRef.current();
+			}
+		};
+	}, [ fetchNotifications ] );
+
+	const handleMarkAllRead = useCallback( () => {
+		markAllAsRead();
+	}, [ markAllAsRead ] );
+
+	const handleToggleOpen = useCallback( () => {
+		setIsOpen( ! isOpen );
+		if ( ! isOpen ) {
+			// Opening dock — refresh notifications.
+			fetchNotifications();
+		}
+	}, [ isOpen, fetchNotifications ] );
+
+	return (
+		<div className="p2026-notification-dock-wrapper">
+			{/* Badge button in corner */ }
+			<Button
+				className="p2026-notification-dock-badge"
+				onClick={ handleToggleOpen }
+				icon={ bell }
+				aria-label={ sprintf(
+					/* translators: %d: number of unread notifications */
+					_n(
+						'%d unread notification',
+						'%d unread notifications',
+						unreadCount,
+						'p2026'
+					),
+					unreadCount
+				) }
+				aria-expanded={ isOpen }
+			>
+				{ unreadCount > 0 && (
+					<span className="p2026-notification-count">
+						{ unreadCount > 99 ? '99+' : unreadCount }
+					</span>
+				) }
+			</Button>
+
+			{/* Dock panel */ }
+			{ isOpen && (
+				<div className="p2026-notification-dock-panel">
+					<div className="p2026-notification-dock-header">
+						<h2>{ __( 'Notifications', 'p2026' ) }</h2>
+						<Button
+							onClick={ handleToggleOpen }
+							icon={ close }
+							label={ __( 'Close', 'p2026' ) }
+							isSmall
+						/>
+					</div>
+
+					{ isLoading && ! notifications.length ? (
+						<div className="p2026-notification-dock-loading">
+							<Spinner />
+						</div>
+					) : notifications.length === 0 ? (
+						<div className="p2026-notification-dock-empty">
+							<p>
+								{ __(
+									'No notifications yet.',
+									'p2026'
+								) }
+							</p>
+						</div>
+					) : (
+						<>
+							<div className="p2026-notification-dock-actions">
+								{ unreadCount > 0 && (
+									<Button
+										isSmall
+										isSecondary
+										onClick={
+											handleMarkAllRead
+										}
+									>
+										{ __(
+											'Mark all as read',
+											'p2026'
+										) }
+									</Button>
+								) }
+							</div>
+							<ul className="p2026-notification-dock-list">
+								{ notifications.map(
+									( notification ) => (
+										<li
+											key={
+												notification.meta_key
+											}
+										>
+											<NotificationItem
+												notification={
+													notification
+												}
+											/>
+										</li>
+									)
+								) }
+							</ul>
+						</>
+					) }
+				</div>
+			) }
+		</div>
+	);
+}

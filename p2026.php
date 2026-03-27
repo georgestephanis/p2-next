@@ -341,6 +341,16 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
 
 // ---------------------------------------------------------------------------
+// Core feature APIs (REST endpoints and backend logic).
+// ---------------------------------------------------------------------------
+
+// Search API — unified search across posts and comments.
+require_once P2026_DIR . 'src/api/search.php';
+
+// Read/Unread state tracking — per-user last activity and unread counts.
+require_once P2026_DIR . 'src/api/read-state.php';
+
+// ---------------------------------------------------------------------------
 // Modules — self-contained feature extensions loaded from modules/*/index.php.
 // ---------------------------------------------------------------------------
 

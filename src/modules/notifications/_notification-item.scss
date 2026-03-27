@@ -1,0 +1,68 @@
+// Notification item styling.
+
+.p2026-notification-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	background: #fff;
+	border: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+
+	&:hover,
+	&:focus {
+		background-color: #f9f9f9;
+	}
+
+	&.read {
+		opacity: 0.7;
+	}
+}
+
+.p2026-notification-item-avatar {
+	flex-shrink: 0;
+}
+
+.p2026-notification-placeholder-avatar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background-color: #e0e0e0;
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: #666;
+}
+
+.p2026-notification-item-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.p2026-notification-item-message {
+	margin: 0;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	color: #333;
+	word-break: break-word;
+}
+
+.p2026-notification-item-date {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.75rem;
+	color: #999;
+}
+
+.p2026-notification-item-unread-dot {
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: #0073aa;
+}

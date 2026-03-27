@@ -7,6 +7,10 @@
 // =============================================================================
 
 @use "modules/mentions/mentions";
+@use "modules/notifications/notification-dock";
+@use "modules/notifications/notification-item";
+@use "components/search";
+@use "components/unread-badge";
 
 // Editor containers
 .p2026-editor-canvas {
