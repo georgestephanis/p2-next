@@ -7,10 +7,11 @@ Add granular per-post read/unread state to complement the existing global `lastA
 ## Current State
 
 The existing system tracks only a **global** `lastActivity` timestamp:
-- Stored in user_meta as `p2026_last_activity` (ISO 8601 string)
-- Any post created **after** this timestamp is unread
-- Clicking the unread badge reveals pending posts and syncs `lastActivity` to now
-- No way to manually mark a post as unread after it's been revealed
+
+-   Stored in user_meta as `p2026_last_activity` (ISO 8601 string)
+-   Any post created **after** this timestamp is unread
+-   Clicking the unread badge reveals pending posts and syncs `lastActivity` to now
+-   No way to manually mark a post as unread after it's been revealed
 
 ## Proposed Feature
 
@@ -28,19 +29,23 @@ Allow users to toggle individual posts as read/unread via a menu action in `Post
 #### Backend Storage
 
 **Option A: User Meta Array (Recommended)**
+
 ```
 user_meta key: p2026_marked_unread_posts
 value: JSON-encoded array of post IDs
 Example: [1245, 1248, 1251]
 ```
+
 Pros: Simple, efficient queries, scales to hundreds of posts
 Cons: Need to manage array mutations carefully
 
 **Option B: Individual Meta Entries**
+
 ```
 user_meta key pattern: p2026_post_{post_id}_unread
 value: "1" (marked unread) or absent (read)
 ```
+
 Pros: Atomic updates, no array coordination
 Cons: Creates many meta rows, slower range queries
 
@@ -49,6 +54,7 @@ Cons: Creates many meta rows, slower range queries
 #### REST Endpoint
 
 New endpoint to manage per-post read state:
+
 ```
 POST /p2026/v1/posts/{post_id}/read-state
 Body: { "marked_unread": true|false }
@@ -60,6 +66,7 @@ Response: { "marked_unread_ids": [1245, 1248, ...], "lastActivity": "..." }
 ### Store Integration
 
 #### New State
+
 ```javascript
 // In src/store/index.js
 ui: {
@@ -69,55 +76,64 @@ ui: {
 ```
 
 #### New Actions
+
 ```javascript
 // Action creators:
-markPostUnread(postId)       // Toggle a post as unread
-syncMarkedUnreadPosts(ids)   // Sync from backend
+markPostUnread( postId ); // Toggle a post as unread
+syncMarkedUnreadPosts( ids ); // Sync from backend
 
 // Thunks:
-togglePostReadState(postId)  // POST to endpoint + update store
+togglePostReadState( postId ); // POST to endpoint + update store
 ```
 
 #### New Selectors
+
 ```javascript
-isPostMarkedUnread(select, postId)
-getMarkedUnreadPosts(select)
-getEffectiveUnreadCount(select)  // lastActivity-based + marked unread
+isPostMarkedUnread( select, postId );
+getMarkedUnreadPosts( select );
+getEffectiveUnreadCount( select ); // lastActivity-based + marked unread
 ```
 
 ### Frontend Implementation
 
 #### PostEnhancement Menu
-Add a new menu item in `PostEnhancement.js`:
-```javascript
-const isMarkedUnread = useSelect(s => s(STORE_NAME).isPostMarkedUnread(postId));
-const { togglePostReadState } = useDispatch(STORE_NAME);
 
-const onToggleReadState = useCallback(async () => {
-  closeMenu();
-  await togglePostReadState(postId);
-}, [postId, togglePostReadState, closeMenu]);
+Add a new menu item in `PostEnhancement.js`:
+
+```javascript
+const isMarkedUnread = useSelect( ( s ) =>
+	s( STORE_NAME ).isPostMarkedUnread( postId )
+);
+const { togglePostReadState } = useDispatch( STORE_NAME );
+
+const onToggleReadState = useCallback( async () => {
+	closeMenu();
+	await togglePostReadState( postId );
+}, [ postId, togglePostReadState, closeMenu ] );
 
 // In menu rendering:
-{!isEditing && (
-  <li role="none">
-    <button
-      type="button"
-      role="menuitem"
-      className="p2026-menu-item"
-      onClick={onToggleReadState}
-    >
-      {isMarkedUnread 
-        ? __('Mark as read', 'p2026')
-        : __('Mark as unread', 'p2026')
-      }
-    </button>
-  </li>
-)}
+{
+	! isEditing && (
+		<li role="none">
+			<button
+				type="button"
+				role="menuitem"
+				className="p2026-menu-item"
+				onClick={ onToggleReadState }
+			>
+				{ isMarkedUnread
+					? __( 'Mark as read', 'p2026' )
+					: __( 'Mark as unread', 'p2026' ) }
+			</button>
+		</li>
+	);
+}
 ```
 
 #### Unread Badge Update
+
 Update `UnreadBadge.js` to show combined count:
+
 ```javascript
 const unreadCount = useSelect(s => {
   const lastActivity = s(STORE_NAME).getReadState().lastActivity;
@@ -127,17 +143,19 @@ const unreadCount = useSelect(s => {
 ```
 
 #### Visual Indicator (Optional)
+
 Add a subtle unread dot or icon to posts marked unread:
+
 ```scss
 .p2026-post--marked-unread::before {
-  content: '';
-  position: absolute;
-  width: 3px;
-  height: 100%;
-  left: 0;
-  top: 0;
-  background: currentColor;
-  opacity: 0.5;
+	content: '';
+	position: absolute;
+	width: 3px;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background: currentColor;
+	opacity: 0.5;
 }
 ```
 
@@ -158,14 +176,14 @@ Add a subtle unread dot or icon to posts marked unread:
 
 ### Testing Checklist
 
-- [ ] Toggle unread for a single post
-- [ ] Verify unread count updates correctly
-- [ ] Verify state persists across page reload
-- [ ] Mark unread a post older than `lastActivity`
-- [ ] Unmark a post from the menu
-- [ ] Test with many marked posts (100+)
-- [ ] Verify marked unread posts appear in pending banner
-- [ ] Sync behavior when switching tabs
+-   [ ] Toggle unread for a single post
+-   [ ] Verify unread count updates correctly
+-   [ ] Verify state persists across page reload
+-   [ ] Mark unread a post older than `lastActivity`
+-   [ ] Unmark a post from the menu
+-   [ ] Test with many marked posts (100+)
+-   [ ] Verify marked unread posts appear in pending banner
+-   [ ] Sync behavior when switching tabs
 
 ### Implementation Priority
 
@@ -175,6 +193,6 @@ Add a subtle unread dot or icon to posts marked unread:
 
 ### Backward Compatibility
 
-- Existing `lastActivity` logic remains unchanged
-- New `marked_unread_posts` meta is independent and optional
-- No migration needed for existing users
+-   Existing `lastActivity` logic remains unchanged
+-   New `marked_unread_posts` meta is independent and optional
+-   No migration needed for existing users
