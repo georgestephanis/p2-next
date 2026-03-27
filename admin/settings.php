@@ -81,6 +81,12 @@ function p2026_render_settings_page() {
 		return;
 	}
 
+	$valid_tabs = array( 'modules', 'audit-log' );
+	$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'modules';
+	if ( ! in_array( $active_tab, $valid_tabs, true ) ) {
+		$active_tab = 'modules';
+	}
+
 	$modules = p2026_get_modules();
 	$saved   = false;
 	$audit_backend = get_option( 'p2026_audit_log_backend', 'file' );
@@ -90,24 +96,58 @@ function p2026_render_settings_page() {
 
 	// Process form submission.
 	if ( isset( $_POST['p2026_save_settings'] ) && check_admin_referer( 'p2026_settings_save' ) ) {
-		$posted  = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
-			? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
-			: array();
-		$disabled = array_values( array_diff( array_keys( $modules ), $posted ) );
-		$backend = isset( $_POST['p2026_audit_log_backend'] ) ? sanitize_key( wp_unslash( $_POST['p2026_audit_log_backend'] ) ) : 'file';
-		if ( ! in_array( $backend, array( 'file', 'cpt' ), true ) ) {
-			$backend = 'file';
+		$posted_tab = isset( $_POST['p2026_settings_tab'] ) ? sanitize_key( wp_unslash( $_POST['p2026_settings_tab'] ) ) : 'modules';
+		if ( ! in_array( $posted_tab, $valid_tabs, true ) ) {
+			$posted_tab = 'modules';
 		}
 
-		update_option( 'p2026_disabled_modules', $disabled );
-		update_option( 'p2026_audit_log_backend', $backend );
-		$audit_backend = $backend;
+		if ( 'modules' === $posted_tab ) {
+			$posted   = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
+				? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
+				: array();
+			$disabled = array_values( array_diff( array_keys( $modules ), $posted ) );
+			update_option( 'p2026_disabled_modules', $disabled );
+		} elseif ( 'audit-log' === $posted_tab ) {
+			$backend = isset( $_POST['p2026_audit_log_backend'] ) ? sanitize_key( wp_unslash( $_POST['p2026_audit_log_backend'] ) ) : 'file';
+			if ( ! in_array( $backend, array( 'file', 'cpt' ), true ) ) {
+				$backend = 'file';
+			}
+
+			update_option( 'p2026_audit_log_backend', $backend );
+			$audit_backend = $backend;
+		}
+
+		$active_tab = $posted_tab;
 		$saved = true;
 	}
+
+	$modules_tab_url = add_query_arg(
+		array(
+			'page' => 'p2026-settings',
+			'tab'  => 'modules',
+		),
+		admin_url( 'admin.php' )
+	);
+	$audit_tab_url = add_query_arg(
+		array(
+			'page' => 'p2026-settings',
+			'tab'  => 'audit-log',
+		),
+		admin_url( 'admin.php' )
+	);
 
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'P2026 Settings', 'p2026' ); ?></h1>
+
+		<h2 class="nav-tab-wrapper">
+			<a href="<?php echo esc_url( $modules_tab_url ); ?>" class="nav-tab <?php echo 'modules' === $active_tab ? 'nav-tab-active' : ''; ?>">
+				<?php esc_html_e( 'Modules', 'p2026' ); ?>
+			</a>
+			<a href="<?php echo esc_url( $audit_tab_url ); ?>" class="nav-tab <?php echo 'audit-log' === $active_tab ? 'nav-tab-active' : ''; ?>">
+				<?php esc_html_e( 'Audit Log', 'p2026' ); ?>
+			</a>
+		</h2>
 
 		<?php if ( $saved ) : ?>
 			<div class="notice notice-success is-dismissible">
@@ -117,92 +157,104 @@ function p2026_render_settings_page() {
 
 		<form method="post" action="">
 			<?php wp_nonce_field( 'p2026_settings_save' ); ?>
+			<input type="hidden" name="p2026_settings_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 
-			<h2 class="title"><?php esc_html_e( 'Modules', 'p2026' ); ?></h2>
-			<p class="description">
-				<?php esc_html_e( 'Enable or disable individual P2026 feature modules. All modules are active by default.', 'p2026' ); ?>
-			</p>
+			<?php if ( 'modules' === $active_tab ) : ?>
+				<h2 class="title"><?php esc_html_e( 'Modules', 'p2026' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Enable or disable individual P2026 feature modules. All modules are active by default.', 'p2026' ); ?>
+				</p>
 
-			<?php if ( empty( $modules ) ) : ?>
-				<p><?php esc_html_e( 'No modules found.', 'p2026' ); ?></p>
-			<?php else : ?>
-				<table class="wp-list-table widefat fixed striped plugins" style="margin-top:1em;">
-					<thead>
-						<tr>
-							<td class="manage-column check-column"></td>
-							<th class="manage-column column-name column-primary"><?php esc_html_e( 'Module', 'p2026' ); ?></th>
-							<th class="manage-column column-description"><?php esc_html_e( 'Description', 'p2026' ); ?></th>
-							<th class="manage-column" style="width:6em;"><?php esc_html_e( 'Version', 'p2026' ); ?></th>
-						</tr>
-					</thead>
-					<tbody id="the-list">
-						<?php foreach ( $modules as $slug => $module ) :
-							$is_active  = p2026_is_module_active( $slug );
-							$field_name = 'p2026_modules[' . esc_attr( $slug ) . ']';
-						?>
-						<tr class="<?php echo $is_active ? 'active' : 'inactive'; ?>">
-							<td class="check-column">
-								<input
-									type="checkbox"
-									id="module-<?php echo esc_attr( $slug ); ?>"
-									name="<?php echo esc_attr( $field_name ); ?>"
-									value="1"
-									<?php checked( $is_active ); ?>
-								/>
-							</td>
-							<td class="plugin-title column-primary">
-								<label for="module-<?php echo esc_attr( $slug ); ?>">
-									<strong><?php echo esc_html( $module['name'] ); ?></strong>
-								</label>
-								<div class="row-actions visible">
-									<?php if ( $is_active ) : ?>
-										<span class="active"><strong><?php esc_html_e( 'Active', 'p2026' ); ?></strong></span>
-									<?php else : ?>
-										<span class="inactive"><?php esc_html_e( 'Inactive', 'p2026' ); ?></span>
-									<?php endif; ?>
-								</div>
-							</td>
-							<td class="column-description desc">
-								<div class="plugin-description">
-									<?php echo esc_html( $module['description'] ); ?>
-								</div>
-							</td>
-							<td><?php echo esc_html( $module['version'] ); ?></td>
-						</tr>
-						<?php endforeach; ?>
-					</tbody>
+				<?php if ( empty( $modules ) ) : ?>
+					<p><?php esc_html_e( 'No modules found.', 'p2026' ); ?></p>
+				<?php else : ?>
+					<table class="wp-list-table widefat fixed striped plugins" style="margin-top:1em;">
+						<thead>
+							<tr>
+								<td class="manage-column check-column"></td>
+								<th class="manage-column column-name column-primary"><?php esc_html_e( 'Module', 'p2026' ); ?></th>
+								<th class="manage-column column-description"><?php esc_html_e( 'Description', 'p2026' ); ?></th>
+								<th class="manage-column" style="width:6em;"><?php esc_html_e( 'Version', 'p2026' ); ?></th>
+							</tr>
+						</thead>
+						<tbody id="the-list">
+							<?php foreach ( $modules as $slug => $module ) :
+								$is_active  = p2026_is_module_active( $slug );
+								$field_name = 'p2026_modules[' . esc_attr( $slug ) . ']';
+							?>
+							<tr class="<?php echo $is_active ? 'active' : 'inactive'; ?>">
+								<td class="check-column">
+									<input
+										type="checkbox"
+										id="module-<?php echo esc_attr( $slug ); ?>"
+										name="<?php echo esc_attr( $field_name ); ?>"
+										value="1"
+										<?php checked( $is_active ); ?>
+									/>
+								</td>
+								<td class="plugin-title column-primary">
+									<label for="module-<?php echo esc_attr( $slug ); ?>">
+										<strong><?php echo esc_html( $module['name'] ); ?></strong>
+									</label>
+									<div class="row-actions visible">
+										<?php if ( $is_active ) : ?>
+											<span class="active"><strong><?php esc_html_e( 'Active', 'p2026' ); ?></strong></span>
+										<?php else : ?>
+											<span class="inactive"><?php esc_html_e( 'Inactive', 'p2026' ); ?></span>
+										<?php endif; ?>
+									</div>
+								</td>
+								<td class="column-description desc">
+									<div class="plugin-description">
+										<?php echo esc_html( $module['description'] ); ?>
+									</div>
+								</td>
+								<td><?php echo esc_html( $module['version'] ); ?></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+
+				<p class="submit">
+					<input
+						type="submit"
+						name="p2026_save_settings"
+						class="button button-primary"
+						value="<?php esc_attr_e( 'Save Changes', 'p2026' ); ?>"
+					/>
+				</p>
+			<?php elseif ( 'audit-log' === $active_tab ) : ?>
+				<h2 class="title"><?php esc_html_e( 'Audit Log', 'p2026' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Choose where audit events are persisted when the Audit Log module is enabled.', 'p2026' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">
+							<label for="p2026_audit_log_backend"><?php esc_html_e( 'Audit backend', 'p2026' ); ?></label>
+						</th>
+						<td>
+							<select id="p2026_audit_log_backend" name="p2026_audit_log_backend">
+								<option value="file" <?php selected( 'file', $audit_backend ); ?>><?php esc_html_e( 'Uploads file (JSONL)', 'p2026' ); ?></option>
+								<option value="cpt" <?php selected( 'cpt', $audit_backend ); ?>><?php esc_html_e( 'Custom post type', 'p2026' ); ?></option>
+							</select>
+							<p class="description">
+								<?php esc_html_e( 'File backend appends newline-delimited JSON in uploads. CPT backend stores each event as an internal post.', 'p2026' ); ?>
+							</p>
+						</td>
+					</tr>
 				</table>
+
+				<p class="submit">
+					<input
+						type="submit"
+						name="p2026_save_settings"
+						class="button button-primary"
+						value="<?php esc_attr_e( 'Save Changes', 'p2026' ); ?>"
+					/>
+				</p>
 			<?php endif; ?>
-
-			<p class="submit">
-				<input
-					type="submit"
-					name="p2026_save_settings"
-					class="button button-primary"
-					value="<?php esc_attr_e( 'Save Changes', 'p2026' ); ?>"
-				/>
-			</p>
-
-			<h2 class="title"><?php esc_html_e( 'Audit Log', 'p2026' ); ?></h2>
-			<p class="description">
-				<?php esc_html_e( 'Choose where audit events are persisted when the Audit Log module is enabled.', 'p2026' ); ?>
-			</p>
-			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row">
-						<label for="p2026_audit_log_backend"><?php esc_html_e( 'Audit backend', 'p2026' ); ?></label>
-					</th>
-					<td>
-						<select id="p2026_audit_log_backend" name="p2026_audit_log_backend">
-							<option value="file" <?php selected( 'file', $audit_backend ); ?>><?php esc_html_e( 'Uploads file (JSONL)', 'p2026' ); ?></option>
-							<option value="cpt" <?php selected( 'cpt', $audit_backend ); ?>><?php esc_html_e( 'Custom post type', 'p2026' ); ?></option>
-						</select>
-						<p class="description">
-							<?php esc_html_e( 'File backend appends newline-delimited JSON in uploads. CPT backend stores each event as an internal post.', 'p2026' ); ?>
-						</p>
-					</td>
-				</tr>
-			</table>
 		</form>
 	</div>
 	<?php
