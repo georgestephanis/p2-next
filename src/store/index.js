@@ -17,6 +17,12 @@ const DEFAULT_STATE = {
 	lastFetched: null, // ISO string — used as `?after=` for polling
 	pendingCount: 0, // new posts received but not yet shown
 	pendingPosts: [], // buffer of polled posts awaiting reveal
+	readState: {
+		lastActivity: null, // ISO string — user's last activity timestamp
+		unreadCount: 0, // count of posts created after lastActivity
+	},
+	notifications: [], // array of notification objects
+	unreadNotificationCount: 0, // count of unread notifications
 	ui: {
 		expandedPosts: [], // post IDs whose comment thread is visible
 		editingPost: null, // post ID currently being edited inline
@@ -71,6 +77,22 @@ export const actions = {
 	},
 	closeNewPostModal() {
 		return { type: 'CLOSE_NEW_POST_MODAL' };
+	},
+
+	setReadState( readState ) {
+		return { type: 'SET_READ_STATE', readState };
+	},
+
+	setUnreadCount( count ) {
+		return { type: 'SET_UNREAD_COUNT', count };
+	},
+
+	setNotifications( notifications, unreadCount ) {
+		return { type: 'SET_NOTIFICATIONS', notifications, unreadCount };
+	},
+
+	setUnreadNotificationCount( count ) {
+		return { type: 'SET_UNREAD_NOTIFICATION_COUNT', count };
 	},
 
 	// Async thunks -------------------------------------------------------
@@ -194,6 +216,93 @@ export const actions = {
 				dispatch( actions.createCommentSuccess( postId, comment ) );
 			} finally {
 				dispatch( actions.setSavingComment( false ) );
+			}
+		};
+	},
+
+	fetchReadState() {
+		return async ( { dispatch } ) => {
+			try {
+				const response = await apiFetch( {
+					path: '/p2026/v1/read-state',
+				} );
+				dispatch(
+					actions.setReadState( {
+						lastActivity: response.lastActivity,
+						unreadCount: response.unreadCount,
+					} )
+				);
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to fetch read state:', error );
+			}
+		};
+	},
+
+	syncReadState() {
+		return async ( { dispatch } ) => {
+			try {
+				const response = await apiFetch( {
+					path: '/p2026/v1/read-state/sync',
+					method: 'POST',
+				} );
+				dispatch( actions.setUnreadCount( response.unreadCount ) );
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to sync read state:', error );
+			}
+		};
+	},
+
+	fetchNotifications() {
+		return async ( { dispatch } ) => {
+			try {
+				const response = await apiFetch( {
+					path: '/p2026/v1/notifications?limit=20',
+				} );
+				dispatch(
+					actions.setNotifications(
+						response.notifications,
+						response.unreadCount
+					)
+				);
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to fetch notifications:', error );
+			}
+		};
+	},
+
+	markNotificationAsRead( metaKey ) {
+		return async ( { dispatch } ) => {
+			try {
+				const id = metaKey.replace( 'p2026_notification_', '' );
+				const response = await apiFetch( {
+					path: `/p2026/v1/notifications/${ id }/read`,
+					method: 'POST',
+				} );
+				dispatch(
+					actions.setUnreadNotificationCount( response.unreadCount )
+				);
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to mark notification as read:', error );
+			}
+		};
+	},
+
+	markAllAsRead() {
+		return async ( { dispatch } ) => {
+			try {
+				await apiFetch( {
+					path: '/p2026/v1/notifications/read-all',
+					method: 'POST',
+				} );
+				dispatch( actions.setUnreadNotificationCount( 0 ) );
+				dispatch( actions.fetchNotifications() );
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to mark all as read:', error );
 			}
 		};
 	},
@@ -327,6 +436,34 @@ function reducer( state = DEFAULT_STATE, action ) {
 				ui: { ...state.ui, newPostModalOpen: false },
 			};
 
+		case 'SET_READ_STATE':
+			return {
+				...state,
+				readState: action.readState,
+			};
+
+		case 'SET_UNREAD_COUNT':
+			return {
+				...state,
+				readState: {
+					...state.readState,
+					unreadCount: action.count,
+				},
+			};
+
+		case 'SET_NOTIFICATIONS':
+			return {
+				...state,
+				notifications: action.notifications,
+				unreadNotificationCount: action.unreadCount,
+			};
+
+		case 'SET_UNREAD_NOTIFICATION_COUNT':
+			return {
+				...state,
+				unreadNotificationCount: action.count,
+			};
+
 		default:
 			return state;
 	}
@@ -350,6 +487,10 @@ export const selectors = {
 	isNewPostModalOpen: ( state ) => state.ui.newPostModalOpen,
 	getPostCommentCount: ( state, postId ) =>
 		state.posts.find( ( p ) => p.id === postId )?.comment_count ?? 0,
+	getReadState: ( state ) => state.readState,
+	getUnreadCount: ( state ) => state.readState?.unreadCount ?? 0,
+	getNotifications: ( state ) => state.notifications,
+	getUnreadNotificationCount: ( state ) => state.unreadNotificationCount,
 };
 
 // ---------------------------------------------------------------------------

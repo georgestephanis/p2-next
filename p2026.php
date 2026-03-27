@@ -220,6 +220,24 @@ function p2026_register_blocks() {
 add_action( 'init', 'p2026_register_blocks' );
 
 /**
+ * Discover all available p2026 modules by scanning the modules directory.
+ *
+ * @return array Associative array of module slug => module dir path.
+ */
+function p2026_discover_modules() {
+	$modules = glob( P2026_DIR . 'modules/*/index.php' );
+	if ( ! $modules ) {
+		return array();
+	}
+	$discovered = array();
+	foreach ( $modules as $module_file ) {
+		$slug                = basename( dirname( $module_file ) );
+		$discovered[ $slug ] = dirname( $module_file );
+	}
+	return $discovered;
+}
+
+/**
  * Enqueue the frontend enhancement script on all public pages.
  *
  * This script progressively enhances whatever post list the theme renders
@@ -263,6 +281,7 @@ function p2026_enqueue_frontend() {
 	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
 	$require_name_email = get_option( 'require_name_email' ) === '1';
 	$debug_telemetry    = defined( 'WP_DEBUG' ) && WP_DEBUG;
+	$is_archive_view    = is_home() || is_front_page() || is_archive() || is_search();
 
 	if ( $current_user->ID ) {
 		$user_data = array(
@@ -282,6 +301,7 @@ function p2026_enqueue_frontend() {
 				'nonce'            => wp_create_nonce( 'wp_rest' ),
 				'restUrl'          => esc_url_raw( rest_url() ),
 				'siteTitle'        => get_bloginfo( 'name' ),
+				'isArchiveView'    => $is_archive_view,
 				'debugTelemetry'   => $debug_telemetry,
 				'currentUser'      => $user_data,
 				'canCreatePosts'   => $can_publish,
@@ -289,6 +309,7 @@ function p2026_enqueue_frontend() {
 				'canComment'       => $can_comment,
 				'requireNameEmail' => $require_name_email,
 				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
+				'activeModules'    => p2026_get_active_modules() !== null ? p2026_get_active_modules() : array_keys( p2026_discover_modules() ),
 			)
 		) . ';',
 		'before'
@@ -339,6 +360,18 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 	);
 }
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
+
+
+
+// ---------------------------------------------------------------------------
+// Core feature APIs (REST endpoints and backend logic).
+// ---------------------------------------------------------------------------
+
+// Search API — unified search across posts and comments.
+require_once P2026_DIR . 'includes/api/search.php';
+
+// Read/Unread state tracking — per-user last activity and unread counts.
+require_once P2026_DIR . 'includes/api/read-state.php';
 
 // ---------------------------------------------------------------------------
 // Modules — self-contained feature extensions loaded from modules/*/index.php.

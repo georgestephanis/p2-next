@@ -134,6 +134,24 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		return; // Not a page with a post list — nothing to enhance.
 	}
 
+	// Check if this is likely the main query by looking for data-wp-interactive
+	// or data-wp-query-index attributes on the Query Loop block. Only Mount
+	// FeedEnhancer (with search field) on the main query (index 0).
+	const isMainQuery =
+		! feedContainer ||
+		! feedContainer.getAttribute ||
+		feedContainer.getAttribute( 'data-wp-query-index' ) === '0' ||
+		! feedContainer.hasAttribute( 'data-wp-query-index' );
+	const isArchiveView = !! window.p2026Config?.isArchiveView;
+	const shouldShowHeader = isMainQuery && isArchiveView;
+
+	// eslint-disable-next-line no-console
+	console.log( '[p2026] query/header flags', {
+		isMainQuery,
+		isArchiveView,
+		shouldShowHeader,
+	} );
+
 	// Append a plain-DOM toolbar to every post and start observing for
 	// scroll-based cleanup.
 	postElements.forEach( ( { id, element } ) =>
@@ -148,6 +166,10 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	document.body.appendChild( mountPoint );
 
 	createRoot( mountPoint ).render(
-		createElement( FeedEnhancer, { feedContainer, postElements } )
+		createElement( FeedEnhancer, {
+			feedContainer,
+			postElements,
+			isMainQuery: shouldShowHeader,
+		} )
 	);
 } );

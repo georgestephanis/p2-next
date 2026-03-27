@@ -7,6 +7,11 @@
 // =============================================================================
 
 @use "modules/mentions/mentions";
+@use "modules/notifications/notification-dock";
+@use "modules/notifications/notification-item";
+@use "components/search";
+@use "components/unread-badge";
+@use "styles/layout";
 
 // Editor containers
 .p2026-editor-canvas {
@@ -177,7 +182,8 @@
 .p2026-menu-wrap {
 	position: absolute;
 	top: max(10px, var(--wp--preset--spacing--60));
-	right: max(10px, calc(( 100% - var(--wp--style--global--content-size) ) / 2));
+
+	@include layout.align-to-content-right();
 	z-index: 10;
 
 	// Remove the native <details> disclosure triangle.
@@ -294,7 +300,8 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	margin-left: auto;
 	margin-right: auto;
 	border-radius: 0 4px 4px 0;
-	width: var(--wp--style--global--content-size);
+
+	@include layout.content-constrained-block();
 
 	.p2026-comment {
 		background-color: #fff;
@@ -374,6 +381,11 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 }
 
 // New posts banner
+.p2026-banner-container {
+
+	@include layout.content-constrained-container();
+}
+
 .p2026-new-posts-banner {
 	background-color: #e8f4fa;
 	border: 1px solid #0073aa;
@@ -390,6 +402,19 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	&:hover {
 		background-color: #d4ecf7;
 	}
+}
+
+// Header widgets (search + unread badge)
+.p2026-header-container {
+
+	@include layout.content-constrained-container();
+}
+
+.p2026-header-widgets {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
 }
 
 // Comment thread nesting
@@ -447,7 +472,7 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	border-radius: 6px;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 	width: 100%;
-	max-width: 680px;
+	max-width: min(100%, layout.dialog-size(680px));
 	margin: 0 16px 60px;
 	outline: none; // focus ring suppressed; we move focus inside
 

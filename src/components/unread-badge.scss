@@ -1,0 +1,23 @@
+// Unread badge styling.
+
+.p2026-unread-badge {
+	position: relative;
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	background-color: #e74c3c;
+	color: #fff;
+	border: none;
+	border-radius: 20px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+
+	&:hover,
+	&:focus {
+		background-color: #c0392b;
+	}
+
+	&:active {
+		transform: scale(0.98);
+	}
+}
