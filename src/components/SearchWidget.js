@@ -27,6 +27,7 @@ export default function SearchWidget() {
 
 		if ( ! value || value.length < 2 ) {
 			setResults( [] );
+			setIsLoading( false );
 			return;
 		}
 
