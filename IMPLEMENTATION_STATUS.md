@@ -109,15 +109,15 @@
 
 1. **Build Assets**
 
-    - Run `npm run build` to compile React components and SCSS
-    - Verify build/frontend.js and build/frontend.css include all changes
-    - Verify block manifest updates
+    - [x] Run `npm run build` to compile React components and SCSS
+    - [x] Verify build/frontend.js and build/frontend.css include all changes
+    - [x] Verify block manifest updates
 
 2. **Mount Components in FeedEnhancer**
 
-    - Update `src/components/FeedEnhancer.js` to render SearchWidget and UnreadBadge in header
-    - Create header container portal if not present
-    - Position widgets in top-bar area
+    - [x] Update `src/components/FeedEnhancer.js` to render SearchWidget and UnreadBadge in header
+    - [x] Create header container portal if not present
+    - [x] Position widgets in top-bar area
 
 3. **Testing Smoke Tests**
 
@@ -128,9 +128,9 @@
     - [ ] Performance: No lag with 100+ notifications, search <500ms
 
 4. **Documentation**
-    - Update `CLAUDE.md` with new modules/features
-    - Verify notifications module shown in module table
-    - Document cache warming for search (post_meta indexing)
+    - [ ] Update `CLAUDE.md` with new modules/features
+    - [ ] Verify notifications module shown in module table
+    - [ ] Document cache warming for search (post_meta indexing)
 
 ### Future Optimizations (Not Blocking)
 

@@ -76,6 +76,46 @@ New post mount rendering in src/blocks/new-post/render.php is gated by p2026_can
 - Name/email requirements follow WordPress require_name_email.
 - Expanded threads refresh on a jittered interval to reduce synchronized polling.
 
+## Core Features
+
+### Search (Core)
+
+Unified search across posts and comments. Accessible to logged-in users.
+
+- `src/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries, respects post/comment permissions.
+- Results sorted newest-first, capped at 20 per request.
+- `SearchWidget.js`: Debounced (300ms) input with modal results overlay; click navigates to post or comment and scrolls into view.
+- Styling: `src/components/search.scss`.
+
+### Read/Unread Tracking (Core)
+
+Per-user activity tracking to surface new content. Accessible to logged-in users.
+
+- `src/api/read-state.php`: Manages user's last-activity timestamp in user_meta (`p2026_last_activity`, ISO-8601).
+- REST endpoints:
+  - `GET /p2026/v1/read-state` — returns `{ lastActivity, unreadCount }` (count capped at 100, includes posts after lastActivity).
+  - `POST /p2026/v1/read-state/sync` — updates lastActivity to current UTC timestamp.
+- `UnreadBadge.js`: Displays red pill badge with unread count when > 0. Click syncs read state and reveals pending posts via store action `revealPendingPosts()`.
+- Auto-syncs read state when page loses focus (via `beforeunload`).
+- Styling: `src/components/unread-badge.scss`.
+
+### Notifications Module (Independent)
+
+Optional real-time notifications dock for mentions and comment replies.
+
+- `modules/notifications/index.php`: Notification CRUD system using user_meta (UUID-keyed entries). Stores `type` (mention, reply), `post_id`, `comment_id`, `from_user`, `created_at`, `unread`.
+- Auto-creates notifications:
+  - On @mentions via `p2026_mentions_found` hook (when mentions module is active).
+  - On comment replies via `wp_insert_comment` hook (detects replies to user's comments).
+- REST endpoints:
+  - `GET /p2026/v1/notifications?limit=20&offset=0` — paginated notifications list.
+  - `POST /p2026/v1/notifications/{meta_key}/read` — mark single notification as read.
+  - `POST /p2026/v1/notifications/read-all` — bulk mark all as read.
+- `NotificationDock.js`: Fixed bottom-right dock with badge showing unread count. Expands on click to show paginated list. Real-time polling every 10s with exponential backoff (1-8s) on error. Visibility-aware (stops polling when tab hidden).
+- `NotificationItem.js`: Individual notification card with type badge, message, date, and navigation to source post/comment.
+- Styling: `src/modules/notifications/_notification-dock.scss`, `src/modules/notifications/_notification-item.scss`.
+- Module readme with full API docs: `modules/notifications/README.md`.
+
 ## Store and REST Boundaries
 
 Store name: p2026.
@@ -88,6 +128,9 @@ Key state:
 - expandedPosts / editingPost
 - savingPost (null | postId | 'new') / savingComment
 - newPostModalOpen
+- readState (lastActivity, unreadCount)
+- notifications
+- unreadNotificationCount
 
 REST endpoints in use:
 
@@ -95,6 +138,12 @@ REST endpoints in use:
 - POST /wp/v2/posts (create/update)
 - GET /wp/v2/comments (thread fetch)
 - POST /wp/v2/comments (top-level + reply)
+- GET /p2026/v1/search (unified search)
+- GET /p2026/v1/read-state (fetch read state)
+- POST /p2026/v1/read-state/sync (sync activity timestamp)
+- GET /p2026/v1/notifications (list notifications)
+- POST /p2026/v1/notifications/{id}/read (mark notification as read)
+- POST /p2026/v1/notifications/read-all (bulk mark as read)
 
 ## Module System
 
@@ -109,6 +158,7 @@ p2026 has a lightweight module system for self-contained features.
 | Module | PHP | JS |
 |---|---|---|
 | mentions | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard |
+| notifications | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling |
 
 ## Build and Validation
 
