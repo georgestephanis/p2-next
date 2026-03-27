@@ -381,6 +381,11 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 }
 
 // New posts banner
+.p2026-banner-container {
+
+	@include layout.content-constrained-container();
+}
+
 .p2026-new-posts-banner {
 	background-color: #e8f4fa;
 	border: 1px solid #0073aa;
@@ -467,7 +472,7 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	border-radius: 6px;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 	width: 100%;
-	max-width: 680px;
+	max-width: min(100%, layout.dialog-size(680px));
 	margin: 0 16px 60px;
 	outline: none; // focus ring suppressed; we move focus inside
 

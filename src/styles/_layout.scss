@@ -14,6 +14,11 @@
 	@return var(--p2026-layout-gutter, var(--wp--preset--spacing--30, 20px));
 }
 
+@function dialog-size($fallback: 680px) {
+
+	@return var(--p2026-layout-dialog-size, #{$fallback});
+}
+
 @mixin content-constrained-container() {
 	width: min(100%, content-size());
 	margin-left: auto;
