@@ -359,40 +359,7 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 }
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
 
-/**
- * Render a server-side search/header mount point before the main post loop.
- *
- * This reserves layout space before frontend JS loads, reducing visual shift
- * when React mounts SearchWidget and UnreadBadge.
- *
- * @param WP_Query $query Current loop query object.
- */
-function p2026_render_header_mount_before_loop( $query ) {
-	if ( is_admin() || ! ( $query instanceof WP_Query ) || ! $query->is_main_query() ) {
-		return;
-	}
 
-	if ( ! is_home() && ! is_front_page() ) {
-		return;
-	}
-
-	if ( ! is_user_logged_in() ) {
-		return;
-	}
-
-	echo '<div class="p2026-header-container" data-p2026-header-root="1">';
-	echo '<div class="p2026-header-widgets">';
-	echo '<div class="p2026-search-widget p2026-search-widget--server">';
-	echo '<label class="screen-reader-text" for="p2026-search-preload">' . esc_html__( 'Search posts and comments', 'p2026' ) . '</label>';
-	echo '<input id="p2026-search-preload" class="p2026-search-preload-input" type="search" placeholder="' . esc_attr__( 'Search posts and comments…', 'p2026' ) . '" aria-hidden="true" tabindex="-1" disabled />';
-	echo '</div>';
-	echo '</div>';
-	echo '</div>';
-
-	// Render only once for the main loop.
-	remove_action( 'loop_start', 'p2026_render_header_mount_before_loop', 10 );
-}
-add_action( 'loop_start', 'p2026_render_header_mount_before_loop', 10, 1 );
 
 // ---------------------------------------------------------------------------
 // Core feature APIs (REST endpoints and backend logic).
