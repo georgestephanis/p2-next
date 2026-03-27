@@ -60,7 +60,7 @@ export default function UnreadBadge() {
 				unreadCount
 			) }
 		>
-			{ unreadCount > 100 ? '99+' : unreadCount }
+			{ unreadCount >= 100 ? '99+' : unreadCount }
 		</Button>
 	);
 }
