@@ -63,6 +63,7 @@ Runtime config includes:
 -   canUpdatePosts
 -   canComment
 -   requireNameEmail
+-   isArchiveView
 -   currentUser (logged-in metadata when available)
 
 New post mount rendering in src/blocks/new-post/render.php is gated by p2026_can_create_posts().
@@ -85,6 +86,11 @@ Unified search across posts and comments. Accessible to logged-in users.
 -   `includes/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries, respects post/comment permissions.
 -   Results sorted newest-first, capped at 20 per request.
 -   `SearchWidget.js`: Debounced (300ms) input with modal results overlay; click navigates to post or comment and scrolls into view.
+-   Modal opens only after the first non-empty result set, and remains open while refining query.
+-   While refining, previous results stay visible with a loading overlay until fresh results arrive.
+-   Search header mounts only when both conditions are true:
+    -   discovered loop is the main query (`data-wp-query-index === 0` or equivalent classic fallback)
+    -   `window.p2026Config.isArchiveView` is true (`is_home`, `is_front_page`, `is_archive`, or `is_search`)
 -   State management: Uses local component state (useState) for query, results, and loading; does not persist to global store (search is transient UX).
 -   Styling: `src/components/search.scss`.
 
@@ -112,7 +118,7 @@ Optional real-time notifications dock for mentions and comment replies.
     -   `GET /p2026/v1/notifications?limit=20&offset=0` — paginated notifications list.
     -   `POST /p2026/v1/notifications/{meta_key}/read` — mark single notification as read.
     -   `POST /p2026/v1/notifications/read-all` — bulk mark all as read.
--   `NotificationDock.js`: Fixed bottom-right dock with badge showing unread count. Expands on click to show paginated list. Real-time polling every 10s with exponential backoff (1-8s) on error. Visibility-aware (stops polling when tab hidden).
+-   `NotificationDock.js`: Fixed bottom-right dock (viewport-edge anchored) with badge showing unread count. Expands on click to show paginated list. Real-time polling every 10s with exponential backoff (1-8s) on error. Visibility-aware polling via shared `startPolling` helper.
 -   `NotificationItem.js`: Individual notification card with type badge, message, date, and navigation to source post/comment.
 -   Styling: `src/modules/notifications/_notification-dock.scss`, `src/modules/notifications/_notification-item.scss`.
 -   Module readme with full API docs: `modules/notifications/README.md`.
@@ -187,6 +193,12 @@ Validation expectations after functional changes:
     - new-post block visibility matches capabilities,
     - admin bar "New Post" button opens modal when block is absent; scrolls to block when present,
     - new-post banner and comment refresh behavior are sane.
+
+## Playground Seed Data
+
+-   `.github/setup.php` seeds sample users, posts, and nested comments for local/demo environments.
+-   Setup also seeds starter notifications for the default Playground login user (`admin`) using `p2026_create_notification()`.
+-   Notification seeding is idempotent via user meta marker `p2026_seed_notifications_v1`.
 
 ## Working Conventions
 

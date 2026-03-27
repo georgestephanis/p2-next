@@ -7,10 +7,13 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 ## What It Does
 
 -   **Real-time feed** — Polls for new posts and surfaces them behind a reveal banner without auto-scrolling.
+-   **Unified search** — Searches posts and comments with a debounced modal UI for logged-in users on main archive-like feeds.
+-   **Unread tracking** — Tracks per-user read state and shows an unread badge that reveals pending posts.
 -   **Inline threaded comments** — Expand comment threads per post; post top-level comments and replies without leaving the page.
 -   **Inline post editing** — Edit existing posts using the Block Editor directly on the front end.
 -   **New post creation** — A `p2026/new-post` dynamic block provides a front-end Block Editor for publishing posts. An admin bar "New Post" button opens the same editor in a modal when the block isn't on the page.
 -   **Capability-aware UX** — All controls are gated by WordPress capabilities (and an optional Abilities API), so guests, contributors, and editors each see the appropriate UI.
+-   **Optional notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
 ## Building a Company Intranet
@@ -84,6 +87,7 @@ p2026 uses progressive enhancement:
 -   A shared `@wordpress/data` store (`p2026`) manages posts, comments, and editor state.
 -   All data flows through the WordPress REST API (`/wp/v2/posts`, `/wp/v2/comments`).
 -   PHP injects `window.p2026Config` at page load with capability flags, nonce, and current user data.
+-   Search header widgets mount only when the discovered loop is the main query and the current page is archive-like.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram and file-level responsibility map.
 
@@ -96,12 +100,18 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram an
 | `src/store/index.js`                        | Redux-style store: state, actions, selectors, async thunks                   |
 | `src/api/index.js`                          | `apiFetch` middleware setup and polling utility                              |
 | `src/components/FeedEnhancer.js`            | Polling orchestration and new-posts banner                                   |
+| `src/components/SearchWidget.js`            | Debounced post/comment search modal                                          |
+| `src/components/UnreadBadge.js`             | Per-user unread count badge and read-state sync                              |
 | `src/components/PostEnhancement.js`         | Per-post controls (comments toggle, edit/delete)                             |
 | `src/components/Comments.js` + `Comment.js` | Threaded comment tree and reply forms                                        |
 | `src/components/PostEditor.js`              | Inline Block Editor for editing existing posts                               |
 | `src/components/NewPostEditor.js`           | Block Editor for creating new posts                                          |
 | `src/components/NewPostModal.js`            | Modal wrapper opened by the admin bar "New Post" button                      |
 | `src/blocks/new-post/`                      | Dynamic block metadata, server render gate, and frontend mount               |
+| `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                   |
+| `src/modules/notifications/`                | Notification dock frontend UI                                                |
+
+Playground note: `.github/setup.php` seeds sample users, posts, comments, and starter notifications for the default logged-in `admin` user.
 
 ## Permission Model
 
@@ -115,7 +125,7 @@ If the WordPress Abilities API is available, the plugin registers:
 -   `p2026/post-create`
 -   `p2026/post-update`
 
-Frontend gating uses `window.p2026Config` flags: `canCreatePosts`, `canUpdatePosts`, `canComment`, `requireNameEmail`, `currentUser`.
+Frontend gating uses `window.p2026Config` flags: `canCreatePosts`, `canUpdatePosts`, `canComment`, `requireNameEmail`, `isArchiveView`, `currentUser`.
 
 ## License
 

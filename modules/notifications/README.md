@@ -1,15 +1,16 @@
 # P2026 Module: Notifications
 
-Provides a persistent notification dock for mentions, comment replies, and new posts. Includes real-time polling and marking notifications as read.
+Provides a persistent notification dock for mentions and comment replies. Includes polling-based updates and read management.
 
 ## Features
 
 -   **Persistent Notification Dock** — Users see an unread count badge in the corner; click to expand and view recent notifications.
--   **Real-time Polling** — Polls for new notifications every 10 seconds when the tab is visible, with exponential backoff on error.
+-   **Viewport-edge Positioning** — Dock is fixed at the bottom-right edge of the viewport.
+-   **Polling with Backoff** — Polls every 10 seconds via the shared polling helper with visibility-aware scheduling and exponential backoff.
 -   **Notification Types:**
     -   **mention** — User was @mentioned in a post or comment.
     -   **reply** — User's post or comment received a reply.
--   **Mark as Read** — Individual notifications and bulk "mark all as read" actions.
+-   **Mark as Read** — Click a notification item to mark it read and navigate to its source, or use bulk "mark all as read".
 
 ## REST Endpoints
 
@@ -46,6 +47,9 @@ Retrieve user's notifications.
 
 Mark a specific notification as read.
 
+-   `id` is the UUID suffix from the notification meta key.
+-   Example: for `p2026_notification_abc123`, use `/notifications/abc123/read`.
+
 **Response:**
 
 ```json
@@ -74,6 +78,10 @@ Mark all notifications as read.
 
 Programmatically create a notification for a user. Called automatically for mentions and replies.
 
+### `p2026_mentions_found`
+
+Notifications module listens to this hook and creates `mention` notifications for mentioned users.
+
 ## Configuration
 
 Notifications are enabled by default. To disable the notifications module:
@@ -83,6 +91,12 @@ update_option( 'p2026_active_modules', array( 'mentions' ) ); // excludes 'notif
 ```
 
 This can be set in code or via the settings page if available.
+
+## Frontend Mount
+
+-   JS entrypoint: `src/modules/notifications/index.js`
+-   Mount target: `#p2026-notification-dock-root` appended to `document.body`
+-   Component: `src/modules/notifications/NotificationDock.js`
 
 ## Future Enhancements
 

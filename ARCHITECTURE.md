@@ -4,10 +4,10 @@ This plugin adds real-time P2/o2-style collaboration features by progressively e
 
 ## Core Ideas
 
-- Theme HTML remains the source of truth for initial rendering.
-- React portals add controls and editors into existing DOM nodes.
-- A shared `@wordpress/data` store (`p2026`) drives posts/comments/editor UI state.
-- REST API requests are authenticated with nonce + root URL from `window.p2026Config`.
+-   Theme HTML remains the source of truth for initial rendering.
+-   React portals add controls and editors into existing DOM nodes.
+-   A shared `@wordpress/data` store (`p2026`) drives posts/comments/editor UI state.
+-   REST API requests are authenticated with nonce + root URL from `window.p2026Config`.
 
 ## Runtime Request/Data Flow
 
@@ -21,13 +21,17 @@ flowchart TD
 
     D --> E[initApiFetch middleware]
     D --> F[find feed container + collect post elements]
+    D --> AF[Load active JS modules]
+    AF --> AG[Notifications dock mount]
     D --> AB[Mount NewPostModal root]
     D --> AC[Wire admin bar New Post button]
     AC -->|block on page| AD[Scroll + focus existing editor]
     AC -->|no block| AE[openNewPostModal dispatch]
     AE --> AB
-    F --> G[Mount FeedEnhancer hidden root]
+    F --> AH[Compute query/header eligibility]
+    AH --> G[Mount FeedEnhancer hidden root]
 
+    G --> AI[Mount Search + Unread header only when main query AND archive-like view]
     G --> H[Seed lastFetched from newest visible post]
     G --> I[startPolling every 15s]
 
@@ -54,20 +58,25 @@ flowchart TD
 
 ## File-Level Responsibilities
 
-- `p2026.php`: block registration, frontend enqueue, config injection, auto-title filter, admin bar node.
-- `src/frontend.js`: enhancement bootstrap, portal mounting, modal root, admin bar button wiring.
-- `src/store/index.js`: post/comment/polling/editor/modal state and async actions.
-- `src/api/index.js`: `apiFetch` middleware and polling utility.
-- `src/components/FeedEnhancer.js`: polling orchestration and banner handling.
-- `src/components/PostEnhancement.js`: comments/edit controls per post.
-- `src/components/Comments.js` + `src/components/Comment.js`: threaded comment UI and replies.
-- `src/components/PostEditor.js`: inline edit existing posts with block editor.
-- `src/blocks/new-post/view.js` + `src/components/NewPostEditor.js`: frontend new post editor (also used inside modal).
-- `src/components/NewPostModal.js`: modal wrapper for new-post editor; driven by `newPostModalOpen` store state.
-- `src/blocks/new-post/render.php`: mount point output gated by `publish_posts`.
+-   `p2026.php`: block registration, frontend enqueue, config injection, auto-title filter, admin bar node.
+-   `src/frontend.js`: enhancement bootstrap, archive/main-query header gating, modal root, admin bar button wiring.
+-   `src/store/index.js`: post/comment/polling/editor/modal state and async actions.
+-   `src/api/index.js`: `apiFetch` middleware and polling utility.
+-   `src/components/FeedEnhancer.js`: polling orchestration, banner handling, and conditional search/unread header portal.
+-   `src/components/SearchWidget.js`: debounced unified post/comment search modal with request-staleness protection.
+-   `src/components/UnreadBadge.js`: read-state display and sync trigger.
+-   `src/components/PostEnhancement.js`: comments/edit controls per post.
+-   `src/components/Comments.js` + `src/components/Comment.js`: threaded comment UI and replies.
+-   `src/components/PostEditor.js`: inline edit existing posts with block editor.
+-   `src/blocks/new-post/view.js` + `src/components/NewPostEditor.js`: frontend new post editor (also used inside modal).
+-   `src/components/NewPostModal.js`: modal wrapper for new-post editor; driven by `newPostModalOpen` store state.
+-   `src/blocks/new-post/render.php`: mount point output gated by `publish_posts`.
+-   `src/modules/index.js`: loads active JS modules from `window.p2026Config.activeModules`.
+-   `src/modules/notifications/`: notification dock UI mounted into `document.body`.
 
 ## Integration Boundaries
 
-- Depends on WordPress REST endpoints under `/wp/v2`.
-- Depends on existing theme loop markup for post discovery.
-- Build output in `build/` is generated via `@wordpress/scripts` and block manifest support.
+-   Depends on WordPress REST endpoints under `/wp/v2`.
+-   Depends on existing theme loop markup for post discovery.
+-   Header search/unread widgets are gated by main-query detection plus `window.p2026Config.isArchiveView`.
+-   Build output in `build/` is generated via `@wordpress/scripts` and block manifest support.
