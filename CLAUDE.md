@@ -82,7 +82,7 @@ New post mount rendering in src/blocks/new-post/render.php is gated by p2026_can
 
 Unified search across posts and comments. Accessible to logged-in users.
 
-- `src/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries, respects post/comment permissions.
+- `includes/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries, respects post/comment permissions.
 - Results sorted newest-first, capped at 20 per request.
 - `SearchWidget.js`: Debounced (300ms) input with modal results overlay; click navigates to post or comment and scrolls into view.
 - Styling: `src/components/search.scss`.
@@ -91,7 +91,7 @@ Unified search across posts and comments. Accessible to logged-in users.
 
 Per-user activity tracking to surface new content. Accessible to logged-in users.
 
-- `src/api/read-state.php`: Manages user's last-activity timestamp in user_meta (`p2026_last_activity`, ISO-8601).
+- `includes/api/read-state.php`: Manages user's last-activity timestamp in user_meta (`p2026_last_activity`, ISO-8601).
 - REST endpoints:
   - `GET /p2026/v1/read-state` — returns `{ lastActivity, unreadCount }` (count capped at 100, includes posts after lastActivity).
   - `POST /p2026/v1/read-state/sync` — updates lastActivity to current UTC timestamp.

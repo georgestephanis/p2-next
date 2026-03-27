@@ -18,7 +18,7 @@
 
 **PHP Backend:**
 
--   [x] `/src/api/search.php` — REST endpoint `GET /p2026/v1/search?q={query}`
+-   [x] `/includes/api/search.php` — REST endpoint `GET /p2026/v1/search?q={query}`
 -   [x] Search logic: combines posts + comments, respects permissions
 -   [x] Results sorted newest first, capped at 20, paginated with offset
 -   [x] Returns enriched data (excerpt, author, source type, links)
@@ -35,7 +35,7 @@
 
 **PHP Backend:**
 
--   [x] `/src/api/read-state.php` — manages per-user read state
+-   [x] `/includes/api/read-state.php` — manages per-user read state
 -   [x] User meta key: `p2026_last_activity` (ISO timestamp)
 -   [x] REST endpoint `GET /p2026/v1/read-state` — fetch user's read state
 -   [x] REST endpoint `POST /p2026/v1/read-state/sync` — update activity timestamp
@@ -160,8 +160,8 @@
 
 ### New PHP Files
 
--   `src/api/search.php`
--   `src/api/read-state.php`
+-   `includes/api/search.php`
+-   `includes/api/read-state.php`
 -   `modules/notifications/index.php`
 -   `modules/notifications/README.md`
 

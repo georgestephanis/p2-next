@@ -345,10 +345,10 @@ add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
 // ---------------------------------------------------------------------------
 
 // Search API — unified search across posts and comments.
-require_once P2026_DIR . 'src/api/search.php';
+require_once P2026_DIR . 'includes/api/search.php';
 
 // Read/Unread state tracking — per-user last activity and unread counts.
-require_once P2026_DIR . 'src/api/read-state.php';
+require_once P2026_DIR . 'includes/api/read-state.php';
 
 // ---------------------------------------------------------------------------
 // Modules — self-contained feature extensions loaded from modules/*/index.php.

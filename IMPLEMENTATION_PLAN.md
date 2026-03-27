@@ -24,7 +24,7 @@ This plan addresses the three highest-impact enhancements for p2026:
 
 **Implementation:**
 
--   Create `src/api/search.php` with:
+-   Create `includes/api/search.php` with:
     -   `p2026_register_search_route()` — registers REST endpoint
     -   `p2026_search_posts_and_comments()` — unified search callback
     -   `p2026_index_post_for_search()` — hook into post save to maintain index (use post_meta or custom table later)
@@ -83,7 +83,7 @@ This plan addresses the three highest-impact enhancements for p2026:
 **Implementation:**
 
 -   In `p2026.php`, hook `wp_login` to reset `p2026_last_activity` on login
--   Create `src/api/read-state.php` with:
+-   Create `includes/api/read-state.php` with:
     -   `p2026_get_user_last_activity()` — fetch user meta
     -   `p2026_update_last_activity()` — update on REST calls (hook `rest_post_dispatch`)
     -   REST route `GET /wp-json/p2026/v1/read-state` — returns user's last_activity + unread count
@@ -281,7 +281,7 @@ All three features will be developed on a single feature branch for cohesion:
 
 **New Files:**
 
--   `src/api/search.php`
+-   `includes/api/search.php`
 -   `src/components/SearchWidget.js`
 -   `src/components/UnreadBadge.js`
 -   `modules/notifications/index.php`
