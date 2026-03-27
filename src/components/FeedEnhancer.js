@@ -38,7 +38,11 @@ const COMMENT_REFRESH_MAX_BACKOFF = 8;
 const COMMENT_REFRESH_BACKOFF_FACTOR = 2;
 const COMMENT_REFRESH_CONCURRENCY = 3;
 
-export default function FeedEnhancer( { feedContainer, postElements } ) {
+export default function FeedEnhancer( {
+	feedContainer,
+	postElements,
+	isMainQuery = true,
+} ) {
 	const { fetchPosts, pollForNewPosts, revealPendingPosts, fetchComments } =
 		useDispatch( STORE_NAME );
 	const pendingCount = useSelect( ( select ) =>
@@ -72,7 +76,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 	}, [ feedContainer ] );
 
 	useEffect( () => {
-		if ( ! feedContainer || ! feedContainer.parentNode ) {
+		if ( ! isMainQuery || ! feedContainer || ! feedContainer.parentNode ) {
 			return;
 		}
 
@@ -95,7 +99,7 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		headerContainerRef.current = header;
 
 		return () => header.remove();
-	}, [ feedContainer ] );
+	}, [ feedContainer, isMainQuery ] );
 
 	// Tracks injected <li> elements by post ID.
 	const newPostElsRef = useRef( {} );
