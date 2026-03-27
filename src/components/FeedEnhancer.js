@@ -76,10 +76,22 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 			return;
 		}
 
-		// Header container for search and unread badge — sits at the top.
+		// Reuse a server-rendered header mount when available to avoid layout
+		// shift on first paint. Fallback to creating it client-side.
+		const parent = feedContainer.parentNode;
+		const existingHeader = Array.from( parent.children ).find( ( node ) =>
+			node.classList?.contains( 'p2026-header-container' )
+		);
+
+		if ( existingHeader ) {
+			existingHeader.innerHTML = '';
+			headerContainerRef.current = existingHeader;
+			return;
+		}
+
 		const header = document.createElement( 'div' );
 		header.className = 'p2026-header-container';
-		feedContainer.parentNode.insertBefore( header, feedContainer );
+		parent.insertBefore( header, feedContainer );
 		headerContainerRef.current = header;
 
 		return () => header.remove();

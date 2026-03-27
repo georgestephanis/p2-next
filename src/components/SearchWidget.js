@@ -16,10 +16,14 @@ export default function SearchWidget() {
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ isOpen, setIsOpen ] = useState( false );
 	const timeoutRef = useRef( null );
+	const requestIdRef = useRef( 0 );
+	const modalSearchRef = useRef( null );
 
 	// Debounced search.
 	const handleSearch = useCallback( ( value ) => {
 		setQuery( value );
+		requestIdRef.current += 1;
+		const requestId = requestIdRef.current;
 
 		if ( timeoutRef.current ) {
 			clearTimeout( timeoutRef.current );
@@ -28,11 +32,10 @@ export default function SearchWidget() {
 		if ( ! value || value.length < 2 ) {
 			setResults( [] );
 			setIsLoading( false );
-			setIsOpen( false );
+			setIsOpen( ( prev ) => prev );
 			return;
 		}
 
-		setIsOpen( true );
 		setIsLoading( true );
 
 		timeoutRef.current = setTimeout( async () => {
@@ -42,13 +45,29 @@ export default function SearchWidget() {
 						value
 					) }&limit=20`,
 				} );
-				setResults( data || [] );
+
+				if ( requestId !== requestIdRef.current ) {
+					return;
+				}
+
+				const nextResults = Array.isArray( data ) ? data : [];
+				setResults( nextResults );
+				// Open only on first successful non-empty result set. Once
+				// opened, keep it open while the user refines the query.
+				setIsOpen( ( prev ) => prev || nextResults.length > 0 );
 			} catch ( error ) {
+				if ( requestId !== requestIdRef.current ) {
+					return;
+				}
+
 				// eslint-disable-next-line no-console
 				console.error( 'Search failed:', error );
 				setResults( [] );
+				setIsOpen( ( prev ) => prev );
 			} finally {
-				setIsLoading( false );
+				if ( requestId === requestIdRef.current ) {
+					setIsLoading( false );
+				}
 			}
 		}, 300 );
 	}, [] );
@@ -72,7 +91,28 @@ export default function SearchWidget() {
 		};
 	}, [] );
 
-	const emptyState = ! isLoading && results.length === 0 && query.length >= 2;
+	const noResultsState =
+		! isLoading && results.length === 0 && query.length >= 2;
+	const modalTitle = noResultsState
+		? __( 'Search Results - No results', 'p2026' )
+		: __( 'Search Results', 'p2026' );
+
+	useEffect( () => {
+		if ( ! isOpen ) {
+			return;
+		}
+
+		const rafId = window.requestAnimationFrame( () => {
+			const inputEl = modalSearchRef.current?.querySelector( 'input' );
+			if ( inputEl ) {
+				inputEl.focus();
+				const end = inputEl.value?.length ?? 0;
+				inputEl.setSelectionRange( end, end );
+			}
+		} );
+
+		return () => window.cancelAnimationFrame( rafId );
+	}, [ isOpen ] );
 
 	return (
 		<div className="p2026-search-widget">
@@ -85,23 +125,31 @@ export default function SearchWidget() {
 
 			{ isOpen && (
 				<Modal
-					title={ query ? __( 'Search Results', 'p2026' ) : '' }
+					title={ modalTitle }
 					onRequestClose={ () => setIsOpen( false ) }
 					className="p2026-search-modal"
 					isFullScreen={ false }
 				>
 					<div className="p2026-search-modal-content">
+						<div
+							className="p2026-search-modal-input"
+							ref={ modalSearchRef }
+						>
+							<SearchControl
+								value={ query }
+								onChange={ handleSearch }
+								placeholder={ __(
+									'Search posts and comments…',
+									'p2026'
+								) }
+							/>
+						</div>
+
 						{ isLoading && (
 							<div className="p2026-search-loading">
 								<Spinner />
 								<p>{ __( 'Searching…', 'p2026' ) }</p>
 							</div>
-						) }
-
-						{ emptyState && (
-							<p className="p2026-search-empty">
-								{ __( 'No results found.', 'p2026' ) }
-							</p>
 						) }
 
 						{ ! isLoading && results.length > 0 && (
@@ -139,6 +187,12 @@ export default function SearchWidget() {
 									</li>
 								) ) }
 							</ul>
+						) }
+
+						{ noResultsState && (
+							<p className="p2026-search-empty">
+								{ __( 'No results found.', 'p2026' ) }
+							</p>
 						) }
 					</div>
 				</Modal>

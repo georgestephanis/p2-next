@@ -13,6 +13,25 @@
 	}
 }
 
+// Server-rendered placeholder input used to reserve space before React mounts.
+.p2026-search-widget--server {
+	width: 100%;
+}
+
+.p2026-search-preload-input {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 40px;
+	padding: 8px 10px;
+	font-size: 0.9rem;
+	line-height: 1.5;
+	border: 1px solid #8c8f94;
+	border-radius: 2px;
+	background: #fff;
+	color: #2c3338;
+	opacity: 1;
+}
+
 .p2026-search-modal {
 
 	.components-modal__content {
@@ -24,6 +43,10 @@
 
 .p2026-search-modal-content {
 	padding: 1.5rem 1rem;
+}
+
+.p2026-search-modal-input {
+	margin-bottom: 1rem;
 }
 
 .p2026-search-loading,
