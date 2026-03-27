@@ -338,6 +338,30 @@ export const actions = {
 			}
 		};
 	},
+
+	setPostState( postId, targetState ) {
+		return async ( { dispatch } ) => {
+			try {
+				const response = await apiFetch( {
+					path: `/p2026/v1/posts/${ postId }/state`,
+					method: 'POST',
+					data: {
+						state: targetState,
+						source: 'menu',
+					},
+				} );
+				dispatch(
+					actions.updatePostStateSuccess(
+						postId,
+						response.p2026State
+					)
+				);
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to set post state:', error );
+			}
+		};
+	},
 };
 
 // ---------------------------------------------------------------------------

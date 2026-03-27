@@ -59,7 +59,7 @@ export default function PostEnhancement( { postId, postElement } ) {
 		collapsePost,
 		setEditingPost,
 		fetchComments,
-		cyclePostState,
+		setPostState,
 	} = useDispatch( STORE_NAME );
 
 	const isExpanded = useSelect( ( s ) =>
@@ -269,20 +269,19 @@ export default function PostEnhancement( { postId, postElement } ) {
 
 	const stateSlug = post?.p2026State?.slug ?? 'normal';
 	let currentStateLabel = __( 'Normal', 'p2026' );
-	let nextStateLabel = __( 'Mark unresolved', 'p2026' );
-
 	if ( stateSlug === 'unresolved' ) {
 		currentStateLabel = __( 'Unresolved', 'p2026' );
-		nextStateLabel = __( 'Mark resolved', 'p2026' );
 	} else if ( stateSlug === 'resolved' ) {
 		currentStateLabel = __( 'Resolved', 'p2026' );
-		nextStateLabel = __( 'Reset to normal', 'p2026' );
 	}
 
-	const onCycleState = useCallback( () => {
-		closeMenu();
-		cyclePostState( postId );
-	}, [ closeMenu, cyclePostState, postId ] );
+	const onSetState = useCallback(
+		( targetState ) => {
+			closeMenu();
+			setPostState( postId, targetState );
+		},
+		[ closeMenu, setPostState, postId ]
+	);
 
 	const [ copyLabel, setCopyLabel ] = useState( __( 'Copy link', 'p2026' ) );
 	const onCopyLink = useCallback( async () => {
@@ -378,18 +377,78 @@ export default function PostEnhancement( { postId, postElement } ) {
 						</li>
 					) }
 
-					{ isPostStateActive && canEdit && (
-						<li role="none">
-							<button
-								type="button"
-								role="menuitem"
-								className="p2026-menu-item"
-								onClick={ onCycleState }
-							>
-								{ nextStateLabel }
-							</button>
-						</li>
-					) }
+					{ isPostStateActive &&
+						canEdit &&
+						stateSlug === 'normal' && (
+							<li role="none">
+								<button
+									type="button"
+									role="menuitem"
+									className="p2026-menu-item"
+									onClick={ () => onSetState( 'unresolved' ) }
+								>
+									{ __( 'Flag as unresolved', 'p2026' ) }
+								</button>
+							</li>
+						) }
+
+					{ isPostStateActive &&
+						canEdit &&
+						stateSlug === 'unresolved' && (
+							<>
+								<li role="none">
+									<button
+										type="button"
+										role="menuitem"
+										className="p2026-menu-item"
+										onClick={ () =>
+											onSetState( 'resolved' )
+										}
+									>
+										{ __( 'Mark resolved', 'p2026' ) }
+									</button>
+								</li>
+								<li role="none">
+									<button
+										type="button"
+										role="menuitem"
+										className="p2026-menu-item"
+										onClick={ () => onSetState( 'normal' ) }
+									>
+										{ __( 'Reset to normal', 'p2026' ) }
+									</button>
+								</li>
+							</>
+						) }
+
+					{ isPostStateActive &&
+						canEdit &&
+						stateSlug === 'resolved' && (
+							<>
+								<li role="none">
+									<button
+										type="button"
+										role="menuitem"
+										className="p2026-menu-item"
+										onClick={ () =>
+											onSetState( 'unresolved' )
+										}
+									>
+										{ __( 'Reopen', 'p2026' ) }
+									</button>
+								</li>
+								<li role="none">
+									<button
+										type="button"
+										role="menuitem"
+										className="p2026-menu-item"
+										onClick={ () => onSetState( 'normal' ) }
+									>
+										{ __( 'Reset to normal', 'p2026' ) }
+									</button>
+								</li>
+							</>
+						) }
 
 					<li role="none">
 						<button

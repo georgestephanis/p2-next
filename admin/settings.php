@@ -93,19 +93,18 @@ function p2026_render_settings_page() {
 		$posted  = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
 			? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
 			: array();
-		$active  = array_values( array_intersect( array_keys( $modules ), $posted ) );
+		$disabled = array_values( array_diff( array_keys( $modules ), $posted ) );
 		$backend = isset( $_POST['p2026_audit_log_backend'] ) ? sanitize_key( wp_unslash( $_POST['p2026_audit_log_backend'] ) ) : 'file';
 		if ( ! in_array( $backend, array( 'file', 'cpt' ), true ) ) {
 			$backend = 'file';
 		}
 
-		update_option( 'p2026_active_modules', $active );
+		update_option( 'p2026_disabled_modules', $disabled );
 		update_option( 'p2026_audit_log_backend', $backend );
 		$audit_backend = $backend;
 		$saved = true;
 	}
 
-	$active = p2026_get_active_modules();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'P2026 Settings', 'p2026' ); ?></h1>
@@ -138,7 +137,7 @@ function p2026_render_settings_page() {
 					</thead>
 					<tbody id="the-list">
 						<?php foreach ( $modules as $slug => $module ) :
-							$is_active  = p2026_is_module_active( $slug, $active );
+							$is_active  = p2026_is_module_active( $slug );
 							$field_name = 'p2026_modules[' . esc_attr( $slug ) . ']';
 						?>
 						<tr class="<?php echo $is_active ? 'active' : 'inactive'; ?>">
