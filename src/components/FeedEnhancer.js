@@ -27,6 +27,8 @@ import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
 import { setupPostToolbar } from '../enhancer';
+import SearchWidget from './SearchWidget';
+import UnreadBadge from './UnreadBadge';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
 const POLL_INTERVAL = window.p2026Config?.pollInterval ?? 15;
@@ -52,6 +54,9 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 	// Container for the "new posts" banner — injected before the post list.
 	const bannerContainerRef = useRef( null );
 
+	// Container for the header widgets (search + unread badge).
+	const headerContainerRef = useRef( null );
+
 	useEffect( () => {
 		if ( ! feedContainer || ! feedContainer.parentNode ) {
 			return;
@@ -64,6 +69,20 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		bannerContainerRef.current = banner;
 
 		return () => banner.remove();
+	}, [ feedContainer ] );
+
+	useEffect( () => {
+		if ( ! feedContainer || ! feedContainer.parentNode ) {
+			return;
+		}
+
+		// Header container for search and unread badge — sits at the top.
+		const header = document.createElement( 'div' );
+		header.className = 'p2026-header-container';
+		feedContainer.parentNode.insertBefore( header, feedContainer );
+		headerContainerRef.current = header;
+
+		return () => header.remove();
 	}, [ feedContainer ] );
 
 	// Tracks injected <li> elements by post ID.
@@ -259,6 +278,15 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 
 	return (
 		<>
+			{ /* Header widgets portal */ }
+			{ headerContainerRef.current &&
+				createPortal(
+					<div className="p2026-header-widgets">
+						<SearchWidget />
+						<UnreadBadge />
+					</div>,
+					headerContainerRef.current
+				) }
 			{ /* Banner portal */ }
 			{ bannerContainerRef.current &&
 				createPortal(
