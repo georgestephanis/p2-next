@@ -54,13 +54,19 @@ function getPermalink( postElement ) {
 }
 
 export default function PostEnhancement( { postId, postElement } ) {
-	const { expandPost, collapsePost, setEditingPost, fetchComments } =
-		useDispatch( STORE_NAME );
+	const {
+		expandPost,
+		collapsePost,
+		setEditingPost,
+		fetchComments,
+		cyclePostState,
+	} = useDispatch( STORE_NAME );
 
 	const isExpanded = useSelect( ( s ) =>
 		s( STORE_NAME ).isPostExpanded( postId )
 	);
 	const editingPost = useSelect( ( s ) => s( STORE_NAME ).getEditingPost() );
+	const post = useSelect( ( s ) => s( STORE_NAME ).getPostById( postId ) );
 	const comments = useSelect( ( s ) =>
 		s( STORE_NAME ).getComments( postId )
 	);
@@ -74,6 +80,11 @@ export default function PostEnhancement( { postId, postElement } ) {
 	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
 		currentUser && ( currentUser.canUpdatePosts || currentUser.canPublish );
+
+	const activeModules = window.p2026Config?.activeModules;
+	const isPostStateActive =
+		! Array.isArray( activeModules ) ||
+		activeModules.includes( 'post-state' );
 
 	// -----------------------------------------------------------------------
 	// <details> open / close behaviour
@@ -256,6 +267,23 @@ export default function PostEnhancement( { postId, postElement } ) {
 		setEditingPost( postId );
 	}, [ postId, setEditingPost, closeMenu ] );
 
+	const stateSlug = post?.p2026State?.slug ?? 'normal';
+	let currentStateLabel = __( 'Normal', 'p2026' );
+	let nextStateLabel = __( 'Mark unresolved', 'p2026' );
+
+	if ( stateSlug === 'unresolved' ) {
+		currentStateLabel = __( 'Unresolved', 'p2026' );
+		nextStateLabel = __( 'Mark resolved', 'p2026' );
+	} else if ( stateSlug === 'resolved' ) {
+		currentStateLabel = __( 'Resolved', 'p2026' );
+		nextStateLabel = __( 'Reset to normal', 'p2026' );
+	}
+
+	const onCycleState = useCallback( () => {
+		closeMenu();
+		cyclePostState( postId );
+	}, [ closeMenu, cyclePostState, postId ] );
+
 	const [ copyLabel, setCopyLabel ] = useState( __( 'Copy link', 'p2026' ) );
 	const onCopyLink = useCallback( async () => {
 		closeMenu();
@@ -317,6 +345,15 @@ export default function PostEnhancement( { postId, postElement } ) {
 				</summary>
 
 				<ul className="p2026-menu-dropdown" role="menu">
+					{ isPostStateActive && (
+						<li role="none">
+							<span className="p2026-menu-label">
+								{ __( 'State:', 'p2026' ) }{ ' ' }
+								{ currentStateLabel }
+							</span>
+						</li>
+					) }
+
 					<li role="none">
 						<button
 							type="button"
@@ -337,6 +374,19 @@ export default function PostEnhancement( { postId, postElement } ) {
 								onClick={ onEdit }
 							>
 								{ __( 'Edit', 'p2026' ) }
+							</button>
+						</li>
+					) }
+
+					{ isPostStateActive && canEdit && (
+						<li role="none">
+							<button
+								type="button"
+								role="menuitem"
+								className="p2026-menu-item"
+								onClick={ onCycleState }
+							>
+								{ nextStateLabel }
 							</button>
 						</li>
 					) }

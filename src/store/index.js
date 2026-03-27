@@ -29,6 +29,7 @@ const DEFAULT_STATE = {
 		savingPost: null, // post ID being saved, 'new' for new-post, null when idle
 		savingComment: false,
 		newPostModalOpen: false,
+		postStateFilter: 'all',
 	},
 };
 
@@ -77,6 +78,14 @@ export const actions = {
 	},
 	closeNewPostModal() {
 		return { type: 'CLOSE_NEW_POST_MODAL' };
+	},
+
+	setPostStateFilter( filter ) {
+		return { type: 'SET_POST_STATE_FILTER', filter };
+	},
+
+	updatePostStateSuccess( postId, p2026State ) {
+		return { type: 'UPDATE_POST_STATE_SUCCESS', postId, p2026State };
 	},
 
 	setReadState( readState ) {
@@ -306,6 +315,29 @@ export const actions = {
 			}
 		};
 	},
+
+	cyclePostState( postId ) {
+		return async ( { dispatch } ) => {
+			try {
+				const response = await apiFetch( {
+					path: `/p2026/v1/posts/${ postId }/state`,
+					method: 'POST',
+					data: {
+						source: 'menu',
+					},
+				} );
+				dispatch(
+					actions.updatePostStateSuccess(
+						postId,
+						response.p2026State
+					)
+				);
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to cycle post state:', error );
+			}
+		};
+	},
 };
 
 // ---------------------------------------------------------------------------
@@ -436,6 +468,26 @@ function reducer( state = DEFAULT_STATE, action ) {
 				ui: { ...state.ui, newPostModalOpen: false },
 			};
 
+		case 'SET_POST_STATE_FILTER':
+			return {
+				...state,
+				ui: {
+					...state.ui,
+					postStateFilter:
+						action.filter === 'unresolved' ? 'unresolved' : 'all',
+				},
+			};
+
+		case 'UPDATE_POST_STATE_SUCCESS':
+			return {
+				...state,
+				posts: state.posts.map( ( post ) =>
+					post.id === action.postId
+						? { ...post, p2026State: action.p2026State }
+						: post
+				),
+			};
+
 		case 'SET_READ_STATE':
 			return {
 				...state,
@@ -474,6 +526,17 @@ function reducer( state = DEFAULT_STATE, action ) {
 // ---------------------------------------------------------------------------
 export const selectors = {
 	getPosts: ( state ) => state.posts,
+	getPostById: ( state, postId ) =>
+		state.posts.find( ( post ) => post.id === postId ) ?? null,
+	getVisiblePosts: ( state ) => {
+		if ( state.ui.postStateFilter !== 'unresolved' ) {
+			return state.posts;
+		}
+
+		return state.posts.filter(
+			( post ) => post.p2026State?.slug === 'unresolved'
+		);
+	},
 	getComments: ( state, postId ) => state.comments[ postId ] ?? [],
 	getLastFetched: ( state ) => state.lastFetched,
 	getPendingCount: ( state ) => state.pendingCount,
@@ -485,6 +548,7 @@ export const selectors = {
 	isSavingPost: ( state, context ) => state.ui.savingPost === context,
 	isSavingComment: ( state ) => state.ui.savingComment,
 	isNewPostModalOpen: ( state ) => state.ui.newPostModalOpen,
+	getPostStateFilter: ( state ) => state.ui.postStateFilter,
 	getPostCommentCount: ( state, postId ) =>
 		state.posts.find( ( p ) => p.id === postId )?.comment_count ?? 0,
 	getReadState: ( state ) => state.readState,

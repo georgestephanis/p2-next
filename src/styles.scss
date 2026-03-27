@@ -307,6 +307,16 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	}
 }
 
+.p2026-menu-label {
+	display: block;
+	padding: 8px 16px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: #666;
+}
+
 // Comments section
 .p2026-comments {
 	background-color: #f8f9fa;
@@ -431,6 +441,15 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	align-items: center;
 	gap: 0.75rem;
 	width: 100%;
+}
+
+.p2026-feed-filter {
+	display: inline-flex;
+	gap: 0.35rem;
+}
+
+.p2026-post-filter-hidden {
+	display: none !important;
 }
 
 // Comment thread nesting

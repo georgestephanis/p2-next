@@ -83,6 +83,10 @@ function p2026_render_settings_page() {
 
 	$modules = p2026_get_modules();
 	$saved   = false;
+	$audit_backend = get_option( 'p2026_audit_log_backend', 'file' );
+	if ( ! in_array( $audit_backend, array( 'file', 'cpt' ), true ) ) {
+		$audit_backend = 'file';
+	}
 
 	// Process form submission.
 	if ( isset( $_POST['p2026_save_settings'] ) && check_admin_referer( 'p2026_settings_save' ) ) {
@@ -90,8 +94,14 @@ function p2026_render_settings_page() {
 			? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
 			: array();
 		$active  = array_values( array_intersect( array_keys( $modules ), $posted ) );
+		$backend = isset( $_POST['p2026_audit_log_backend'] ) ? sanitize_key( wp_unslash( $_POST['p2026_audit_log_backend'] ) ) : 'file';
+		if ( ! in_array( $backend, array( 'file', 'cpt' ), true ) ) {
+			$backend = 'file';
+		}
 
 		update_option( 'p2026_active_modules', $active );
+		update_option( 'p2026_audit_log_backend', $backend );
+		$audit_backend = $backend;
 		$saved = true;
 	}
 
@@ -173,6 +183,27 @@ function p2026_render_settings_page() {
 					value="<?php esc_attr_e( 'Save Changes', 'p2026' ); ?>"
 				/>
 			</p>
+
+			<h2 class="title"><?php esc_html_e( 'Audit Log', 'p2026' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Choose where audit events are persisted when the Audit Log module is enabled.', 'p2026' ); ?>
+			</p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row">
+						<label for="p2026_audit_log_backend"><?php esc_html_e( 'Audit backend', 'p2026' ); ?></label>
+					</th>
+					<td>
+						<select id="p2026_audit_log_backend" name="p2026_audit_log_backend">
+							<option value="file" <?php selected( 'file', $audit_backend ); ?>><?php esc_html_e( 'Uploads file (JSONL)', 'p2026' ); ?></option>
+							<option value="cpt" <?php selected( 'cpt', $audit_backend ); ?>><?php esc_html_e( 'Custom post type', 'p2026' ); ?></option>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'File backend appends newline-delimited JSON in uploads. CPT backend stores each event as an internal post.', 'p2026' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
 		</form>
 	</div>
 	<?php
