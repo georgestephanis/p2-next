@@ -1,9 +1,12 @@
 // Notification dock styling.
 
+@use "../../styles/layout";
+
 .p2026-notification-dock-wrapper {
 	position: fixed;
 	bottom: 2rem;
-	right: 2rem;
+
+	@include layout.pin-fixed-to-content-right(2rem);
 	z-index: 9999;
 	font-family:
 		-apple-system,

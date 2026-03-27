@@ -1,0 +1,38 @@
+// Shared layout tokens and mixins for core and module styles.
+// Themes can override these custom properties globally to tune p2026 layout
+// behavior without touching plugin CSS:
+// - --p2026-layout-content-size
+// - --p2026-layout-gutter
+
+@function content-size() {
+
+	@return var(--p2026-layout-content-size, var(--wp--style--global--content-size, 645px));
+}
+
+@function gutter() {
+
+	@return var(--p2026-layout-gutter, var(--wp--preset--spacing--30, 20px));
+}
+
+@mixin content-constrained-container() {
+	width: min(100%, content-size());
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: gutter();
+	padding-right: gutter();
+	box-sizing: border-box;
+}
+
+@mixin content-constrained-block() {
+	width: content-size();
+	margin-left: auto;
+	margin-right: auto;
+}
+
+@mixin align-to-content-right($edge-gap: 10px) {
+	right: max(#{$edge-gap}, calc((100% - #{content-size()}) / 2));
+}
+
+@mixin pin-fixed-to-content-right($edge-gap: 10px) {
+	right: max(#{$edge-gap}, calc((100vw - #{content-size()}) / 2));
+}
