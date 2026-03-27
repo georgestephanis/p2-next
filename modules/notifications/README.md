@@ -5,8 +5,7 @@ Provides a persistent notification dock for mentions, comment replies, and new p
 ## Features
 
 -   **Persistent Notification Dock** — Users see an unread count badge in the corner; click to expand and view recent notifications.
--   **Real-time Polling** — Polls for new notifications every 10-15 seconds when the tab is visible.
--   **Flash Notifications** — Transient toast popups for high-priority events (e.g., mentions).
+-   **Real-time Polling** — Polls for new notifications every 10 seconds when the tab is visible, with exponential backoff on error.
 -   **Notification Types:**
     -   **mention** — User was @mentioned in a post or comment.
     -   **reply** — User's post or comment received a reply.
@@ -77,17 +76,13 @@ Programmatically create a notification for a user. Called automatically for ment
 
 ## Configuration
 
-Notifications are enabled by default. To disable:
+Notifications are enabled by default. To disable the notifications module:
 
 ```php
 update_option( 'p2026_active_modules', array( 'mentions' ) ); // excludes 'notifications'
 ```
 
-Or add to `wp-config.php`:
-
-```php
-define( 'P2026_NOTIFICATIONS_DISABLED', true );
-```
+This can be set in code or via the settings page if available.
 
 ## Future Enhancements
 
