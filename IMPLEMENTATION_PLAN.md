@@ -117,14 +117,14 @@ This plan addresses the three highest-impact enhancements for p2026:
 **Store Actions:**
 
 -   `fetchReadState()` — async thunk, calls `GET /wp-json/p2026/v1/read-state`
--   `syncReadState()` — async thunk, calls `POST /wp-json/p2026/v1/read-state/sync` when user reveals posts or navigates away
+-   `syncReadState()` — async thunk, calls `POST /wp-json/p2026/v1/read-state/sync` when user reveals posts or tab becomes hidden
 -   `setUnreadCount(count)` — update local state
 
 **Lifecycle Integration:**
 
 -   `FeedEnhancer` mounts → calls `fetchReadState()` once to get initial count
 -   On `revealPendingPosts()` → call `syncReadState()` to mark posts as read
--   On page `beforeunload`/tab `visibilitychange` to 'hidden' → call `syncReadState()`
+-   On `visibilitychange` to 'hidden' (tab loses focus) → call `syncReadState()`
 
 **Styling:**
 
