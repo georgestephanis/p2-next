@@ -20,14 +20,14 @@ const activeModules =
 // If activeModules is not provided (null), fallback to loading all modules.
 // This maintains backwards compatibility if config is not injected.
 if ( ! activeModules ) {
-	import( './mentions' );
-	import( './notifications' );
+	import( /* webpackChunkName: "mentions" */ './mentions' );
+	import( /* webpackChunkName: "notifications" */ './notifications' );
 } else {
 	// Only load modules that are in the active list.
 	if ( activeModules.includes( 'mentions' ) ) {
-		import( './mentions' );
+		import( /* webpackChunkName: "mentions" */ './mentions' );
 	}
 	if ( activeModules.includes( 'notifications' ) ) {
-		import( './notifications' );
+		import( /* webpackChunkName: "notifications" */ './notifications' );
 	}
 }
