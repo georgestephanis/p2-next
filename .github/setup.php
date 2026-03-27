@@ -180,6 +180,8 @@ foreach ( $sample_posts as $data ) {
     $post_ids[] = wp_insert_post( $data );
 }
 
+$seed_comment_ids = [];
+
 // ---------------------------------------------------------------------------
 // Sample comments on "Try the comments" (index 1) — tied to real user accounts.
 // Thread structure:
@@ -226,6 +228,9 @@ if ( ! empty( $post_ids[1] ) ) {
     $l2a = wp_insert_comment( $comment_by( 'carol', 'Agreed — much nicer than a full page reload.',                   $l1a ) );
            wp_insert_comment( $comment_by( 'dave',  'Exactly what I was thinking. The animation is a nice touch.',    $l2a ) );
 
+    $seed_comment_ids['thread_a_root']  = (int) $l0a;
+    $seed_comment_ids['thread_a_reply'] = (int) $l1a;
+
     $l0b = wp_insert_comment( $comment_by( 'eve',   'How does the live polling work under the hood?' ) );
     $l1b = wp_insert_comment( $comment_by( 'alice', 'It calls GET /wp/v2/posts every 15 seconds and buffers new ones behind a banner.', $l0b ) );
     $l2b = wp_insert_comment( $comment_by( 'eve',   'Smart. Does it back off if the request fails?',                  $l1b ) );
@@ -233,6 +238,59 @@ if ( ! empty( $post_ids[1] ) ) {
 
     $l0c = wp_insert_comment( $comment_by( 'frank', 'Is anonymous commenting supported for guests?' ) );
            wp_insert_comment( $comment_by( 'kate',  'Yes — @dave added it. Whether name/email are required follows the standard WordPress setting.', $l0c ) );
+
+    $seed_comment_ids['thread_c_root'] = (int) $l0c;
+}
+
+// ---------------------------------------------------------------------------
+// Seed notifications for the default Playground login user (admin).
+// Include both post-level and comment-level notifications so the dock has
+// realistic starter items on first load.
+// ---------------------------------------------------------------------------
+
+$starter_user = get_user_by( 'login', 'admin' );
+if ( $starter_user && function_exists( 'p2026_create_notification' ) ) {
+    $seed_marker_key = 'p2026_seed_notifications_v1';
+    $already_seeded  = get_user_meta( $starter_user->ID, $seed_marker_key, true );
+
+    if ( empty( $already_seeded ) ) {
+        $seed_notifications = [
+            [
+                'type'       => 'mention',
+                'post_id'    => (int) ( $post_ids[0] ?? 0 ),
+                'comment_id' => 0,
+                'from_user'  => (int) ( $user_ids['kate'] ?? 0 ),
+            ],
+            [
+                'type'       => 'reply',
+                'post_id'    => (int) ( $post_ids[1] ?? 0 ),
+                'comment_id' => (int) ( $seed_comment_ids['thread_a_reply'] ?? 0 ),
+                'from_user'  => (int) ( $user_ids['bob'] ?? 0 ),
+            ],
+            [
+                'type'       => 'reply',
+                'post_id'    => (int) ( $post_ids[1] ?? 0 ),
+                'comment_id' => (int) ( $seed_comment_ids['thread_c_root'] ?? 0 ),
+                'from_user'  => (int) ( $user_ids['frank'] ?? 0 ),
+            ],
+        ];
+
+        foreach ( $seed_notifications as $notification ) {
+            if ( $notification['post_id'] <= 0 || $notification['from_user'] <= 0 ) {
+                continue;
+            }
+
+            p2026_create_notification(
+                (int) $starter_user->ID,
+                $notification['type'],
+                $notification['post_id'],
+                $notification['comment_id'],
+                $notification['from_user']
+            );
+        }
+
+        update_user_meta( $starter_user->ID, $seed_marker_key, current_time( 'c' ) );
+    }
 }
 
 // Ensure the homepage shows the latest posts (not a static page), so the
