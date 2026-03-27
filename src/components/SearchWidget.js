@@ -36,6 +36,7 @@ export default function SearchWidget() {
 			return;
 		}
 
+		// Mark that we're updating, but keep showing old results.
 		setIsLoading( true );
 
 		timeoutRef.current = setTimeout( async () => {
@@ -145,48 +146,53 @@ export default function SearchWidget() {
 							/>
 						</div>
 
-						{ isLoading && (
-							<div className="p2026-search-loading">
-								<Spinner />
-								<p>{ __( 'Searching…', 'p2026' ) }</p>
-							</div>
-						) }
-
-						{ ! isLoading && results.length > 0 && (
-							<ul className="p2026-search-results">
-								{ results.map( ( result ) => (
-									<li
-										key={ `${ result.type }-${ result.id }` }
-									>
-										<button
-											onClick={ () =>
-												handleResultClick( result )
-											}
-											className="p2026-search-result-item"
+						{ results.length > 0 && (
+							<div className="p2026-search-results-wrapper">
+								{ isLoading && (
+									<div className="p2026-search-results-overlay">
+										<Spinner />
+										<p>{ __( 'Searching…', 'p2026' ) }</p>
+									</div>
+								) }
+								<ul className="p2026-search-results">
+									{ results.map( ( result ) => (
+										<li
+											key={ `${ result.type }-${ result.id }` }
+											className={ `p2026-search-result-entering` }
 										>
-											<div className="p2026-search-result-type-tag">
-												{ 'post' === result.type
-													? __( 'Post', 'p2026' )
-													: __( 'Comment', 'p2026' ) }
-											</div>
-											<div className="p2026-search-result-body">
-												<h3 className="p2026-search-result-title">
-													{ result.title }
-												</h3>
-												<p className="p2026-search-result-excerpt">
-													{ result.excerpt }
-												</p>
-												<small className="p2026-search-result-meta">
-													{ result.author } •{ ' ' }
-													{ new Date(
-														result.date
-													).toLocaleDateString() }
-												</small>
-											</div>
-										</button>
-									</li>
-								) ) }
-							</ul>
+											<button
+												onClick={ () =>
+													handleResultClick( result )
+												}
+												className="p2026-search-result-item"
+											>
+												<div className="p2026-search-result-type-tag">
+													{ 'post' === result.type
+														? __( 'Post', 'p2026' )
+														: __(
+																'Comment',
+																'p2026'
+														  ) }
+												</div>
+												<div className="p2026-search-result-body">
+													<h3 className="p2026-search-result-title">
+														{ result.title }
+													</h3>
+													<p className="p2026-search-result-excerpt">
+														{ result.excerpt }
+													</p>
+													<small className="p2026-search-result-meta">
+														{ result.author } •{ ' ' }
+														{ new Date(
+															result.date
+														).toLocaleDateString() }
+													</small>
+												</div>
+											</button>
+										</li>
+									) ) }
+								</ul>
+							</div>
 						) }
 
 						{ noResultsState && (
