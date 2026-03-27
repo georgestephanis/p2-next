@@ -238,6 +238,31 @@ export default function FeedEnhancer( {
 		[ postStateById, postStateFilter ]
 	);
 
+	const applyPostStateClass = useCallback(
+		( postId, element ) => {
+			if ( ! element ) {
+				return;
+			}
+
+			element.classList.remove(
+				'p2026-post-state-unresolved',
+				'p2026-post-state-resolved'
+			);
+
+			if ( ! isPostStateActive ) {
+				return;
+			}
+
+			const state = postStateById.get( postId ) ?? 'normal';
+			if ( state === 'unresolved' ) {
+				element.classList.add( 'p2026-post-state-unresolved' );
+			} else if ( state === 'resolved' ) {
+				element.classList.add( 'p2026-post-state-resolved' );
+			}
+		},
+		[ isPostStateActive, postStateById ]
+	);
+
 	// When new posts arrive, fetch the current page HTML and extract the
 	// server-rendered <li> for each. Prepend into feedContainer so injected
 	// markup is identical to what the theme renders. Mount a PostEnhancement
@@ -298,6 +323,7 @@ export default function FeedEnhancer( {
 					}
 
 					setupPostToolbar( post.id, li );
+					applyPostStateClass( post.id, li );
 					li.classList.toggle(
 						'p2026-post-filter-hidden',
 						shouldHidePost( post.id )
@@ -308,10 +334,11 @@ export default function FeedEnhancer( {
 				// Fetch failed — silently skip. The post is saved; a page
 				// reload or the next poll cycle will surface it.
 			} );
-	}, [ newPosts, feedContainer, shouldHidePost ] );
+	}, [ newPosts, feedContainer, shouldHidePost, applyPostStateClass ] );
 
 	useEffect( () => {
 		postElements.forEach( ( postEl ) => {
+			applyPostStateClass( postEl.id, postEl.element );
 			postEl.element.classList.toggle(
 				'p2026-post-filter-hidden',
 				shouldHidePost( postEl.id )
@@ -319,12 +346,13 @@ export default function FeedEnhancer( {
 		} );
 
 		Object.entries( newPostElsRef.current ).forEach( ( [ id, el ] ) => {
+			applyPostStateClass( Number( id ), el );
 			el.classList.toggle(
 				'p2026-post-filter-hidden',
 				shouldHidePost( Number( id ) )
 			);
 		} );
-	}, [ postElements, shouldHidePost, storePosts ] );
+	}, [ postElements, shouldHidePost, storePosts, applyPostStateClass ] );
 
 	// Remove injected elements on teardown.
 	useEffect( () => {

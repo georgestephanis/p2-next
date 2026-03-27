@@ -452,6 +452,22 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	display: none !important;
 }
 
+// Post-state accents: give unresolved/resolved posts a subtle left-edge
+// treatment without replacing theme card styles.
+.wp-block-post.p2026-post-state-unresolved,
+.post.p2026-post-state-unresolved {
+	border-left: 0.5em solid #c5352f;
+	background-image: linear-gradient(90deg, rgba(197, 53, 47, 0.14) 0, rgba(197, 53, 47, 0) 2.25rem);
+	background-repeat: no-repeat;
+}
+
+.wp-block-post.p2026-post-state-resolved,
+.post.p2026-post-state-resolved {
+	border-left: 0.5em solid #2f8f4e;
+	background-image: linear-gradient(90deg, rgba(47, 143, 78, 0.13) 0, rgba(47, 143, 78, 0) 2.25rem);
+	background-repeat: no-repeat;
+}
+
 // Comment thread nesting
 .p2026-comment-thread {
 
