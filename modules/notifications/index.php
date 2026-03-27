@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
+/**cd
  * Create a new notification for a user.
  *
  * @param int    $user_id      Recipient user ID.
@@ -64,12 +64,18 @@ function p2026_create_notification( $user_id, $type, $post_id, $comment_id, $fro
 function p2026_get_notifications( $user_id, $unread_only = false, $limit = 20, $offset = 0 ) {
 	global $wpdb;
 
-	// Query notifications meta directly with proper LIMIT/OFFSET without loading all meta.
+	$unread_sql = '';
+	if ( $unread_only ) {
+		$unread_sql = " AND meta_value LIKE '%\"unread\":true%'";
+	}
+
+	// Query notifications meta directly with proper filtering and LIMIT/OFFSET in SQL.
 	$notifications = $wpdb->get_results(
 		$wpdb->prepare(
 			"SELECT meta_key, meta_value FROM {$wpdb->usermeta}
-			WHERE user_id = %d AND meta_key LIKE 'p2026_notification_%'
-			ORDER BY meta_key DESC
+			WHERE user_id = %d
+			AND meta_key LIKE 'p2026_notification_%'{$unread_sql}
+			ORDER BY umeta_id DESC
 			LIMIT %d OFFSET %d",
 			$user_id,
 			$limit,
@@ -87,20 +93,9 @@ function p2026_get_notifications( $user_id, $unread_only = false, $limit = 20, $
 		if ( ! is_array( $notification ) ) {
 			continue;
 		}
-		if ( $unread_only && ! $notification['unread'] ) {
-			continue;
-		}
 		$notification['meta_key'] = $row->meta_key;
 		$result[] = $notification;
 	}
-
-	// Sort by created_at descending (most recent first).
-	usort(
-		$result,
-		function ( $a, $b ) {
-			return strcmp( $b['created_at'], $a['created_at'] );
-		}
-	);
 
 	return $result;
 }
