@@ -142,9 +142,15 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		! feedContainer.getAttribute ||
 		feedContainer.getAttribute( 'data-wp-query-index' ) === '0' ||
 		! feedContainer.hasAttribute( 'data-wp-query-index' );
+	const isArchiveView = !! window.p2026Config?.isArchiveView;
+	const shouldShowHeader = isMainQuery && isArchiveView;
 
 	// eslint-disable-next-line no-console
-	console.log( '[p2026] isMainQuery:', isMainQuery );
+	console.log( '[p2026] query/header flags', {
+		isMainQuery,
+		isArchiveView,
+		shouldShowHeader,
+	} );
 
 	// Append a plain-DOM toolbar to every post and start observing for
 	// scroll-based cleanup.
@@ -163,7 +169,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		createElement( FeedEnhancer, {
 			feedContainer,
 			postElements,
-			isMainQuery,
+			isMainQuery: shouldShowHeader,
 		} )
 	);
 } );

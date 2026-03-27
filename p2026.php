@@ -281,6 +281,7 @@ function p2026_enqueue_frontend() {
 	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
 	$require_name_email = get_option( 'require_name_email' ) === '1';
 	$debug_telemetry    = defined( 'WP_DEBUG' ) && WP_DEBUG;
+	$is_archive_view    = is_home() || is_front_page() || is_archive() || is_search();
 
 	if ( $current_user->ID ) {
 		$user_data = array(
@@ -300,6 +301,7 @@ function p2026_enqueue_frontend() {
 				'nonce'            => wp_create_nonce( 'wp_rest' ),
 				'restUrl'          => esc_url_raw( rest_url() ),
 				'siteTitle'        => get_bloginfo( 'name' ),
+				'isArchiveView'    => $is_archive_view,
 				'debugTelemetry'   => $debug_telemetry,
 				'currentUser'      => $user_data,
 				'canCreatePosts'   => $can_publish,
