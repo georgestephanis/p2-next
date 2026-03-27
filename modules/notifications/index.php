@@ -26,31 +26,30 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param int    $post_id      Source post ID.
  * @param int    $comment_id   Source comment ID (0 if post-level).
  * @param int    $from_user_id User who triggered the notification.
- * @return int|false Notification ID on success, false on failure.
+ * @return int|false Notification meta ID on success, false on failure.
  */
 function p2026_create_notification( $user_id, $type, $post_id, $comment_id, $from_user_id ) {
-	global $wpdb;
-
-	$result = $wpdb->insert(
-		"{$wpdb->usermeta}",
+	$meta_key   = 'p2026_notification_' . wp_generate_uuid4();
+	$meta_value = wp_json_encode(
 		array(
-			'user_id'     => (int) $user_id,
-			'meta_key'    => 'p2026_notification_' . wp_generate_uuid4(),
-			'meta_value'  => wp_json_encode(
-				array(
-					'type'        => $type,
-					'post_id'     => (int) $post_id,
-					'comment_id'  => (int) $comment_id,
-					'from_user'   => (int) $from_user_id,
-					'unread'      => true,
-					'created_at'  => current_time( 'c' ),
-				)
-			),
-		),
-		array( '%d', '%s', '%s' )
+			'type'        => sanitize_text_field( $type ),
+			'post_id'     => (int) $post_id,
+			'comment_id'  => (int) $comment_id,
+			'from_user'   => (int) $from_user_id,
+			'unread'      => true,
+			'created_at'  => current_time( 'c' ),
+		)
 	);
 
-	return $result ? true : false;
+	// Bail if JSON encoding failed.
+	if ( false === $meta_value ) {
+		return false;
+	}
+
+	$meta_id = add_user_meta( (int) $user_id, $meta_key, $meta_value, false );
+
+	// add_user_meta returns false on failure, int meta_id on success.
+	return $meta_id ? (int) $meta_id : false;
 }
 
 /**
