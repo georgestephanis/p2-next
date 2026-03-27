@@ -29,6 +29,62 @@ function p2026_admin_menu() {
 add_action( 'admin_menu', 'p2026_admin_menu' );
 
 /**
+ * Return settings tabs, including module-provided tabs.
+ *
+ * @return array<string, string> Tab slug => label.
+ */
+function p2026_get_settings_tabs() {
+	$tabs = array(
+		'modules' => __( 'Modules', 'p2026' ),
+	);
+
+	/**
+	 * Filter the list of settings tabs shown on the P2026 settings screen.
+	 *
+	 * Modules can use this filter to register additional tabs by returning an
+	 * associative array of tab slugs mapped to human‑readable labels:
+	 * `array<string, string> $tabs { $tab_slug => $label }`.
+	 *
+	 * For each registered tab slug, modules are expected to:
+	 * - Hook into `p2026_settings_save_tab_{$tab_slug}` to handle saving any
+	 *   submitted settings when that tab is active.
+	 * - Hook into `p2026_settings_render_tab_{$tab_slug}` to render the tab's
+	 *   settings UI on the settings page.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, string> $tabs Associative array of tab slugs to labels.
+	 */
+	$tabs = apply_filters( 'p2026_settings_tabs', $tabs );
+	if ( ! is_array( $tabs ) ) {
+		return array(
+			'modules' => __( 'Modules', 'p2026' ),
+		);
+	}
+
+	$normalized = array();
+	foreach ( $tabs as $slug => $label ) {
+		$key = sanitize_key( (string) $slug );
+		if ( '' === $key ) {
+			continue;
+		}
+
+		$normalized[ $key ] = is_string( $label ) && '' !== $label
+			? $label
+			: ucfirst( $key );
+	}
+
+	if ( ! isset( $normalized['modules'] ) ) {
+		$normalized = array_merge(
+			array( 'modules' => __( 'Modules', 'p2026' ) ),
+			$normalized
+		);
+	}
+
+	return $normalized;
+}
+
+/**
  * Discover all modules and read their file-header metadata.
  *
  * Reads the following doc-block headers from each modules/whatever/index.php:
@@ -72,6 +128,53 @@ function p2026_get_modules() {
 }
 
 /**
+ * Handle settings saves via admin-post endpoint.
+ */
+function p2026_handle_settings_save() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'p2026' ) );
+	}
+
+	check_admin_referer( 'p2026_settings_save' );
+
+	$tabs       = p2026_get_settings_tabs();
+	$valid_tabs = array_keys( $tabs );
+	$posted_tab = isset( $_POST['p2026_settings_tab'] ) ? sanitize_key( wp_unslash( $_POST['p2026_settings_tab'] ) ) : 'modules';
+	if ( ! in_array( $posted_tab, $valid_tabs, true ) ) {
+		$posted_tab = 'modules';
+	}
+
+	if ( 'modules' === $posted_tab ) {
+		$modules  = p2026_get_modules();
+		$posted   = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
+			? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
+			: array();
+		$disabled = array_values( array_diff( array_keys( $modules ), $posted ) );
+		update_option( 'p2026_disabled_modules', $disabled );
+	} else {
+		/**
+		 * Allow module tabs to process saves for their own settings.
+		 *
+		 * @param string $posted_tab Active tab slug being saved.
+		 */
+		do_action( 'p2026_settings_save_tab_' . $posted_tab, $posted_tab );
+	}
+
+	$redirect_url = add_query_arg(
+		array(
+			'page'             => 'p2026-settings',
+			'tab'              => $posted_tab,
+			'settings-updated' => '1',
+		),
+		admin_url( 'admin.php' )
+	);
+
+	wp_safe_redirect( $redirect_url );
+	exit;
+}
+add_action( 'admin_post_p2026_save_settings', 'p2026_handle_settings_save' );
+
+/**
  * Render the P2026 settings page.
  *
  * Handles the module-toggle form (save on POST) then outputs the UI.
@@ -81,72 +184,35 @@ function p2026_render_settings_page() {
 		return;
 	}
 
-	$valid_tabs = array( 'modules', 'audit-log' );
+	$tabs       = p2026_get_settings_tabs();
+	$valid_tabs = array_keys( $tabs );
 	$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'modules';
 	if ( ! in_array( $active_tab, $valid_tabs, true ) ) {
 		$active_tab = 'modules';
 	}
 
 	$modules = p2026_get_modules();
-	$saved   = false;
-	$audit_backend = get_option( 'p2026_audit_log_backend', 'file' );
-	if ( ! in_array( $audit_backend, array( 'file', 'cpt' ), true ) ) {
-		$audit_backend = 'file';
-	}
-
-	// Process form submission.
-	if ( isset( $_POST['p2026_save_settings'] ) && check_admin_referer( 'p2026_settings_save' ) ) {
-		$posted_tab = isset( $_POST['p2026_settings_tab'] ) ? sanitize_key( wp_unslash( $_POST['p2026_settings_tab'] ) ) : 'modules';
-		if ( ! in_array( $posted_tab, $valid_tabs, true ) ) {
-			$posted_tab = 'modules';
-		}
-
-		if ( 'modules' === $posted_tab ) {
-			$posted   = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
-				? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
-				: array();
-			$disabled = array_values( array_diff( array_keys( $modules ), $posted ) );
-			update_option( 'p2026_disabled_modules', $disabled );
-		} elseif ( 'audit-log' === $posted_tab ) {
-			$backend = isset( $_POST['p2026_audit_log_backend'] ) ? sanitize_key( wp_unslash( $_POST['p2026_audit_log_backend'] ) ) : 'file';
-			if ( ! in_array( $backend, array( 'file', 'cpt' ), true ) ) {
-				$backend = 'file';
-			}
-
-			update_option( 'p2026_audit_log_backend', $backend );
-			$audit_backend = $backend;
-		}
-
-		$active_tab = $posted_tab;
-		$saved = true;
-	}
-
-	$modules_tab_url = add_query_arg(
-		array(
-			'page' => 'p2026-settings',
-			'tab'  => 'modules',
-		),
-		admin_url( 'admin.php' )
-	);
-	$audit_tab_url = add_query_arg(
-		array(
-			'page' => 'p2026-settings',
-			'tab'  => 'audit-log',
-		),
-		admin_url( 'admin.php' )
-	);
+	$saved   = isset( $_GET['settings-updated'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['settings-updated'] ) );
 
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'P2026 Settings', 'p2026' ); ?></h1>
 
 		<h2 class="nav-tab-wrapper">
-			<a href="<?php echo esc_url( $modules_tab_url ); ?>" class="nav-tab <?php echo 'modules' === $active_tab ? 'nav-tab-active' : ''; ?>">
-				<?php esc_html_e( 'Modules', 'p2026' ); ?>
-			</a>
-			<a href="<?php echo esc_url( $audit_tab_url ); ?>" class="nav-tab <?php echo 'audit-log' === $active_tab ? 'nav-tab-active' : ''; ?>">
-				<?php esc_html_e( 'Audit Log', 'p2026' ); ?>
-			</a>
+			<?php foreach ( $tabs as $tab_slug => $tab_label ) : ?>
+				<?php
+				$tab_url = add_query_arg(
+					array(
+						'page' => 'p2026-settings',
+						'tab'  => $tab_slug,
+					),
+					admin_url( 'admin.php' )
+				);
+				?>
+				<a href="<?php echo esc_url( $tab_url ); ?>" class="nav-tab <?php echo $tab_slug === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php echo esc_html( $tab_label ); ?>
+				</a>
+			<?php endforeach; ?>
 		</h2>
 
 		<?php if ( $saved ) : ?>
@@ -155,8 +221,9 @@ function p2026_render_settings_page() {
 			</div>
 		<?php endif; ?>
 
-		<form method="post" action="">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'p2026_settings_save' ); ?>
+			<input type="hidden" name="action" value="p2026_save_settings" />
 			<input type="hidden" name="p2026_settings_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 
 			<?php if ( 'modules' === $active_tab ) : ?>
@@ -216,44 +283,18 @@ function p2026_render_settings_page() {
 					</table>
 				<?php endif; ?>
 
-				<p class="submit">
-					<input
-						type="submit"
-						name="p2026_save_settings"
-						class="button button-primary"
-						value="<?php esc_attr_e( 'Save Changes', 'p2026' ); ?>"
-					/>
-				</p>
-			<?php elseif ( 'audit-log' === $active_tab ) : ?>
-				<h2 class="title"><?php esc_html_e( 'Audit Log', 'p2026' ); ?></h2>
-				<p class="description">
-					<?php esc_html_e( 'Choose where audit events are persisted when the Audit Log module is enabled.', 'p2026' ); ?>
-				</p>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row">
-							<label for="p2026_audit_log_backend"><?php esc_html_e( 'Audit backend', 'p2026' ); ?></label>
-						</th>
-						<td>
-							<select id="p2026_audit_log_backend" name="p2026_audit_log_backend">
-								<option value="file" <?php selected( 'file', $audit_backend ); ?>><?php esc_html_e( 'Uploads file (JSONL)', 'p2026' ); ?></option>
-								<option value="cpt" <?php selected( 'cpt', $audit_backend ); ?>><?php esc_html_e( 'Custom post type', 'p2026' ); ?></option>
-							</select>
-							<p class="description">
-								<?php esc_html_e( 'File backend appends newline-delimited JSON in uploads. CPT backend stores each event as an internal post.', 'p2026' ); ?>
-							</p>
-						</td>
-					</tr>
-				</table>
-
-				<p class="submit">
-					<input
-						type="submit"
-						name="p2026_save_settings"
-						class="button button-primary"
-						value="<?php esc_attr_e( 'Save Changes', 'p2026' ); ?>"
-					/>
-				</p>
+				<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
+			<?php else : ?>
+				<?php
+				$render_hook = 'p2026_settings_render_tab_' . $active_tab;
+				if ( has_action( $render_hook ) ) {
+					do_action( $render_hook, $active_tab );
+				} else {
+					?>
+					<p><?php esc_html_e( 'This settings tab is not available.', 'p2026' ); ?></p>
+					<?php
+				}
+				?>
 			<?php endif; ?>
 		</form>
 	</div>

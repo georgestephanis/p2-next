@@ -75,6 +75,82 @@ function p2026_audit_log_handle_event( $event_type, $payload ) {
 add_action( 'p2026_audit_log_event', 'p2026_audit_log_handle_event', 10, 2 );
 
 /**
+ * Register Audit Log tab on the shared P2026 settings screen.
+ *
+ * @param array<string, string> $tabs Existing settings tabs.
+ * @return array<string, string>
+ */
+function p2026_audit_log_register_settings_tab( $tabs ) {
+	if ( ! is_array( $tabs ) ) {
+		$tabs = array();
+	}
+
+	$tabs['audit-log'] = __( 'Audit Log', 'p2026' );
+	return $tabs;
+}
+add_filter( 'p2026_settings_tabs', 'p2026_audit_log_register_settings_tab' );
+
+/**
+ * Save Audit Log tab settings.
+ */
+function p2026_audit_log_save_settings_tab() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	$nonce = isset( $_POST['p2026_audit_log_settings_nonce'] )
+		? sanitize_text_field( wp_unslash( $_POST['p2026_audit_log_settings_nonce'] ) )
+		: '';
+	if ( ! wp_verify_nonce( $nonce, 'p2026_audit_log_settings_save' ) ) {
+		return;
+	}
+
+	$backend = isset( $_POST['p2026_audit_log_backend'] )
+		? sanitize_key( wp_unslash( $_POST['p2026_audit_log_backend'] ) )
+		: 'file';
+
+	if ( ! in_array( $backend, array( 'file', 'cpt' ), true ) ) {
+		$backend = 'file';
+	}
+
+	update_option( P2026_AUDIT_LOG_BACKEND_OPTION, $backend );
+}
+add_action( 'p2026_settings_save_tab_audit-log', 'p2026_audit_log_save_settings_tab' );
+
+/**
+ * Render Audit Log tab settings.
+ */
+function p2026_audit_log_render_settings_tab() {
+	$audit_backend = p2026_audit_log_get_backend();
+	?>
+	<?php wp_nonce_field( 'p2026_audit_log_settings_save', 'p2026_audit_log_settings_nonce' ); ?>
+	<h2 class="title"><?php esc_html_e( 'Audit Log', 'p2026' ); ?></h2>
+	<p class="description">
+		<?php esc_html_e( 'Choose where audit events are persisted when the Audit Log module is enabled.', 'p2026' ); ?>
+	</p>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row">
+				<label for="p2026_audit_log_backend"><?php esc_html_e( 'Audit backend', 'p2026' ); ?></label>
+			</th>
+			<td>
+				<select id="p2026_audit_log_backend" name="p2026_audit_log_backend">
+					<option value="file" <?php selected( 'file', $audit_backend ); ?>><?php esc_html_e( 'Uploads file (JSONL)', 'p2026' ); ?></option>
+					<option value="cpt" <?php selected( 'cpt', $audit_backend ); ?>><?php esc_html_e( 'Custom post type', 'p2026' ); ?></option>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'File backend appends newline-delimited JSON in uploads. CPT backend stores each event as an internal post.', 'p2026' ); ?>
+				</p>
+			</td>
+		</tr>
+	</table>
+
+	<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
+	<?php
+}
+add_action( 'p2026_settings_render_tab_audit-log', 'p2026_audit_log_render_settings_tab' );
+
+/**
  * Write an audit entry to uploads JSONL.
  *
  * @param string $event_type Event type slug.
