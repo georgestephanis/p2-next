@@ -323,14 +323,16 @@ function p2026_notifications_on_mentions_found( $users, $object_type, $object_id
 add_action( 'p2026_mentions_found', 'p2026_notifications_on_mentions_found', 10, 4 );
 
 /**
- * Hook into comment creation to notify parent comment authors.
+ * Hook into comment creation to notify parent comment authors and post authors.
+ *
+ * Uses comment_post hook which provides comment approval status directly.
  *
  * @param int       $comment_id       Comment ID.
- * @param int|bool  $comment_approved Comment approval status.
- * @param array     $commentdata      Comment data.
+ * @param int|bool  $comment_approved Comment approval status (1 = approved, 0 = pending, 'spam' = spam).
+ * @param array     $commentdata      Comment data array.
  */
 function p2026_notifications_on_comment_created( $comment_id, $comment_approved, $commentdata ) {
-	if ( $comment_approved !== 1 ) {
+	if ( 1 !== $comment_approved ) {
 		return; // Only notify for approved comments.
 	}
 
@@ -372,4 +374,4 @@ function p2026_notifications_on_comment_created( $comment_id, $comment_approved,
 		);
 	}
 }
-add_action( 'wp_insert_comment', 'p2026_notifications_on_comment_created', 10, 3 );
+add_action( 'comment_post', 'p2026_notifications_on_comment_created', 10, 3 );
