@@ -276,10 +276,14 @@ export default function FeedEnhancer( { feedContainer, postElements } ) {
 		revealPendingPosts();
 	}, [ revealPendingPosts ] );
 
+	// Check if user is logged in; gate logged-in-only widgets to prevent 401s.
+	const isLoggedIn = window.p2026Config?.currentUser;
+
 	return (
 		<>
-			{ /* Header widgets portal */ }
-			{ headerContainerRef.current &&
+			{ /* Header widgets portal — only for logged-in users */ }
+			{ isLoggedIn &&
+				headerContainerRef.current &&
 				createPortal(
 					<div className="p2026-header-widgets">
 						<SearchWidget />
