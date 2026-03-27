@@ -220,6 +220,24 @@ function p2026_register_blocks() {
 add_action( 'init', 'p2026_register_blocks' );
 
 /**
+ * Discover all available p2026 modules by scanning the modules directory.
+ *
+ * @return array Associative array of module slug => module dir path.
+ */
+function p2026_discover_modules() {
+	$modules = glob( P2026_DIR . 'modules/*/index.php' );
+	if ( ! $modules ) {
+		return array();
+	}
+	$discovered = array();
+	foreach ( $modules as $module_file ) {
+		$slug                = basename( dirname( $module_file ) );
+		$discovered[ $slug ] = dirname( $module_file );
+	}
+	return $discovered;
+}
+
+/**
  * Enqueue the frontend enhancement script on all public pages.
  *
  * This script progressively enhances whatever post list the theme renders
@@ -289,6 +307,7 @@ function p2026_enqueue_frontend() {
 				'canComment'       => $can_comment,
 				'requireNameEmail' => $require_name_email,
 				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
+				'activeModules'    => p2026_get_active_modules() !== null ? p2026_get_active_modules() : array_keys( p2026_discover_modules() ),
 			)
 		) . ';',
 		'before'
