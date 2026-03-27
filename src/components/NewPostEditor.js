@@ -5,29 +5,21 @@
  * user gets the full block-authoring experience without the admin chrome.
  */
 import { useState, useCallback } from '@wordpress/element';
-import {
-	BlockEditorProvider,
-	BlockList,
-	BlockTools,
-	WritingFlow,
-	ObserveTyping,
-	BlockEditorKeyboardShortcuts,
-} from '@wordpress/block-editor';
 import { createBlock } from '@wordpress/blocks';
 import { Button, TextControl } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
+import FrontendBlockEditorShell from './editor/FrontendBlockEditorShell';
+import useCanvasBlockSelection from './editor/useCanvasBlockSelection';
+import { getEditorSettings } from './editor/settings';
 
 // Minimal editor settings — disable features not needed on the frontend.
-const EDITOR_SETTINGS = {
-	hasFixedToolbar: false,
-	focusMode: false,
-	isRTL: document.documentElement.dir === 'rtl',
+const EDITOR_SETTINGS = getEditorSettings( {
 	__experimentalFeatures: {
 		typography: { dropCap: false },
 	},
-};
+} );
 
 export default function NewPostEditor( { onAfterPublish } ) {
 	const [ title, setTitle ] = useState( '' );
@@ -36,51 +28,10 @@ export default function NewPostEditor( { onAfterPublish } ) {
 		createBlock( 'core/paragraph' ),
 	] );
 	const { createPost } = useDispatch( STORE_NAME );
-	const { selectBlock } = useDispatch( 'core/block-editor' );
 	const isSaving = useSelect( ( select ) =>
 		select( STORE_NAME ).isSavingPost( 'new' )
 	);
-
-	// Clicking or pressing Enter/Space on the canvas backdrop (not a block)
-	// selects the nearest block (click) or the first block (keyboard).
-	const onCanvasKeyDown = useCallback(
-		( e ) => {
-			if ( e.target !== e.currentTarget ) {
-				return;
-			}
-			if ( e.key !== 'Enter' && e.key !== ' ' ) {
-				return;
-			}
-			const first = e.currentTarget.querySelector( '[data-block]' );
-			if ( first ) {
-				selectBlock( first.dataset.block );
-			}
-		},
-		[ selectBlock ]
-	);
-
-	const onCanvasClick = useCallback(
-		( e ) => {
-			if ( e.target !== e.currentTarget ) {
-				return;
-			}
-			const blockEls = [
-				...e.currentTarget.querySelectorAll( '[data-block]' ),
-			];
-			if ( ! blockEls.length ) {
-				return;
-			}
-			const { clientY } = e;
-			const nearest = blockEls.reduce( ( best, el ) => {
-				const { top, height } = el.getBoundingClientRect();
-				const dist = Math.abs( clientY - ( top + height / 2 ) );
-				const { top: bt, height: bh } = best.getBoundingClientRect();
-				return dist < Math.abs( clientY - ( bt + bh / 2 ) ) ? el : best;
-			} );
-			selectBlock( nearest.dataset.block );
-		},
-		[ selectBlock ]
-	);
+	const { onCanvasClick, onCanvasKeyDown } = useCanvasBlockSelection();
 
 	const onPublish = useCallback( async () => {
 		if ( ! blocks.length ) {
@@ -122,35 +73,14 @@ export default function NewPostEditor( { onAfterPublish } ) {
 					disabled={ isSaving }
 				/>
 			) }
-			<BlockEditorProvider
-				value={ blocks }
-				onInput={ setBlocks }
-				onChange={ setBlocks }
+			<FrontendBlockEditorShell
+				blocks={ blocks }
+				setBlocks={ setBlocks }
 				settings={ EDITOR_SETTINGS }
-			>
-				<BlockEditorKeyboardShortcuts.Register />
-				<BlockTools>
-					<WritingFlow>
-						<ObserveTyping>
-							<div
-								className="p2026-editor-canvas"
-								role="textbox"
-								aria-multiline="true"
-								aria-label={ __( 'New post content', 'p2026' ) }
-								tabIndex={ 0 }
-								onClick={ onCanvasClick }
-								onKeyDown={ onCanvasKeyDown }
-							>
-								<BlockList
-									renderAppender={
-										BlockList.ButtonBlockAppender
-									}
-								/>
-							</div>
-						</ObserveTyping>
-					</WritingFlow>
-				</BlockTools>
-			</BlockEditorProvider>
+				ariaLabel={ __( 'New post content', 'p2026' ) }
+				onCanvasClick={ onCanvasClick }
+				onCanvasKeyDown={ onCanvasKeyDown }
+			/>
 
 			<div className="p2026-editor-toolbar">
 				<Button
