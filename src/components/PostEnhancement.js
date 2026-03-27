@@ -29,7 +29,22 @@ import Comments from './Comments';
 import PostEditor from './PostEditor';
 
 const CONTENT_SELECTOR = '.wp-block-post-content, .entry-content';
+const TITLE_SELECTOR =
+	'.wp-block-post-title, .entry-title, .post-title, h1.wp-block-post-title, h2.wp-block-post-title, h1.entry-title, h2.entry-title';
 const TRANSITION = 'height 0.25s ease, opacity 0.25s ease';
+
+function isVisibleElement( el ) {
+	if ( ! el ) {
+		return false;
+	}
+	const style = window.getComputedStyle( el );
+	return (
+		style.display !== 'none' &&
+		style.visibility !== 'hidden' &&
+		style.opacity !== '0' &&
+		el.offsetParent !== null
+	);
+}
 
 function getPermalink( postElement ) {
 	return (
@@ -131,12 +146,25 @@ export default function PostEnhancement( { postId, postElement } ) {
 	// container in its place. On unmount, restore the content.
 	// -----------------------------------------------------------------------
 	const [ editorContainer, setEditorContainer ] = useState( null );
+	const [ showTitleField, setShowTitleField ] = useState( false );
 	const contentElRef = useRef( null );
 	const savedHeightRef = useRef( 0 );
+	const titleElRef = useRef( null );
+	const titleWasHiddenRef = useRef( null );
 
 	useEffect( () => {
 		if ( ! postElement || ! isEditing ) {
 			return;
+		}
+
+		const titleEl = postElement.querySelector( TITLE_SELECTOR );
+		const hasVisibleTitle = isVisibleElement( titleEl );
+		titleElRef.current = hasVisibleTitle ? titleEl : null;
+		setShowTitleField( hasVisibleTitle );
+
+		if ( hasVisibleTitle ) {
+			titleWasHiddenRef.current = !! titleEl.hidden;
+			titleEl.hidden = true;
 		}
 
 		const contentEl = postElement.querySelector( CONTENT_SELECTOR );
@@ -155,14 +183,23 @@ export default function PostEnhancement( { postId, postElement } ) {
 
 		const container = document.createElement( 'div' );
 		container.className = 'p2026-editor-container';
-		if ( contentEl?.parentNode ) {
-			contentEl.parentNode.insertBefore( container, contentEl );
+		const anchorEl = hasVisibleTitle ? titleEl : contentEl;
+		if ( anchorEl?.parentNode ) {
+			anchorEl.parentNode.insertBefore( container, anchorEl );
 		} else {
 			postElement.appendChild( container );
 		}
 		setEditorContainer( container );
 
 		return () => {
+			const titleNode = titleElRef.current;
+			if ( titleNode ) {
+				titleNode.hidden = !! titleWasHiddenRef.current;
+				titleElRef.current = null;
+				titleWasHiddenRef.current = null;
+			}
+			setShowTitleField( false );
+
 			const el = contentElRef.current;
 			if ( el ) {
 				el.style.transition = TRANSITION;
@@ -334,7 +371,10 @@ export default function PostEnhancement( { postId, postElement } ) {
 			{ isEditing &&
 				editorContainer &&
 				createPortal(
-					<PostEditor postId={ postId } />,
+					<PostEditor
+						postId={ postId }
+						showTitleField={ showTitleField }
+					/>,
 					editorContainer
 				) }
 
