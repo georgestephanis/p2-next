@@ -54,71 +54,79 @@ function p2026_create_notification( $user_id, $type, $post_id, $comment_id, $fro
 }
 
 /**
- * Get the user's notifications.
+ * Get the user's notifications with efficient database queries.
  *
- * @param int    $user_id  User ID.
- * @param bool   $unread_only Whether to return only unread notifications.
- * @param int    $limit    Maximum number of notifications to return.
- * @param int    $offset   Offset for pagination.
+ * @param int    $user_id      User ID.
+ * @param bool   $unread_only  Whether to return only unread notifications.
+ * @param int    $limit        Maximum number of notifications to return.
+ * @param int    $offset       Offset for pagination.
  * @return array
  */
 function p2026_get_notifications( $user_id, $unread_only = false, $limit = 20, $offset = 0 ) {
-	$meta_values = get_user_meta( $user_id );
-	$notifications = array();
+	global $wpdb;
 
-	if ( ! empty( $meta_values ) ) {
-		foreach ( $meta_values as $meta_key => $meta_value ) {
-			if ( strpos( $meta_key, 'p2026_notification_' ) === 0 ) {
-				$notification = json_decode( $meta_value[0], true );
-				if ( ! is_array( $notification ) ) {
-					continue;
-				}
-				if ( $unread_only && ! $notification['unread'] ) {
-					continue;
-				}
-				$notification['meta_key'] = $meta_key;
-				$notifications[] = $notification;
-			}
-		}
+	// Query notifications meta directly with proper LIMIT/OFFSET without loading all meta.
+	$notifications = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT meta_key, meta_value FROM {$wpdb->usermeta}
+			WHERE user_id = %d AND meta_key LIKE 'p2026_notification_%'
+			ORDER BY meta_key DESC
+			LIMIT %d OFFSET %d",
+			$user_id,
+			$limit,
+			$offset
+		)
+	);
+
+	if ( ! $notifications ) {
+		return array();
 	}
 
-	// Sort by created_at descending (newest first).
+	$result = array();
+	foreach ( $notifications as $row ) {
+		$notification = json_decode( $row->meta_value, true );
+		if ( ! is_array( $notification ) ) {
+			continue;
+		}
+		if ( $unread_only && ! $notification['unread'] ) {
+			continue;
+		}
+		$notification['meta_key'] = $row->meta_key;
+		$result[] = $notification;
+	}
+
+	// Sort by created_at descending (most recent first).
 	usort(
-		$notifications,
+		$result,
 		function ( $a, $b ) {
 			return strcmp( $b['created_at'], $a['created_at'] );
 		}
 	);
 
-	// Apply pagination.
-	return array_slice( $notifications, $offset, $limit );
+	return $result;
 }
 
 /**
- * Count total unread notifications for a user.
+ * Count total unread notifications for a user with an efficient database query.
  *
  * @param int $user_id User ID.
  * @return int
  */
 function p2026_count_unread_notifications( $user_id ) {
-	$meta_values = get_user_meta( $user_id );
-	$count       = 0;
+	global $wpdb;
 
-	if ( ! empty( $meta_values ) ) {
-		foreach ( $meta_values as $meta_key => $meta_value ) {
-			if ( strpos( $meta_key, 'p2026_notification_' ) === 0 ) {
-				$notification = json_decode( $meta_value[0], true );
-				if ( ! is_array( $notification ) ) {
-					continue;
-				}
-				if ( $notification['unread'] ) {
-					$count++;
-				}
-			}
-		}
-	}
+	// Count unread notifications directly using wpdb, without loading all meta.
+	$count = $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT COUNT(*) FROM {$wpdb->usermeta}
+			WHERE user_id = %d
+			AND meta_key LIKE 'p2026_notification_%'
+			AND meta_value LIKE '%\"unread\":true%'",
+			$user_id
+		)
+	);
 
-	return $count;
+	return (int) $count;
 }
 
 /**
