@@ -14,7 +14,7 @@ import {
 	BlockEditorKeyboardShortcuts,
 } from '@wordpress/block-editor';
 import { createBlock } from '@wordpress/blocks';
-import { Button } from '@wordpress/components';
+import { Button, TextControl } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
@@ -30,6 +30,8 @@ const EDITOR_SETTINGS = {
 };
 
 export default function NewPostEditor( { onAfterPublish } ) {
+	const [ title, setTitle ] = useState( '' );
+	const [ isTitleEditing, setIsTitleEditing ] = useState( false );
 	const [ blocks, setBlocks ] = useState( [
 		createBlock( 'core/paragraph' ),
 	] );
@@ -84,14 +86,42 @@ export default function NewPostEditor( { onAfterPublish } ) {
 		if ( ! blocks.length ) {
 			return;
 		}
-		await createPost( { blocks } );
+		await createPost( { blocks, title } );
 		// Reset editor to a fresh paragraph after successful save.
+		setTitle( '' );
+		setIsTitleEditing( false );
 		setBlocks( [ createBlock( 'core/paragraph' ) ] );
 		onAfterPublish?.();
-	}, [ blocks, createPost, onAfterPublish ] );
+	}, [ blocks, createPost, onAfterPublish, title ] );
 
 	return (
 		<div className="p2026-new-post-editor">
+			<div className="p2026-new-post-header">
+				<span className="p2026-new-post-prompt">
+					{ __( "What's on your mind?", 'p2026' ) }
+				</span>
+				{ ! isTitleEditing && (
+					<Button
+						variant="tertiary"
+						icon="edit"
+						className="p2026-editor-title-toggle"
+						onClick={ () => setIsTitleEditing( true ) }
+						disabled={ isSaving }
+						label={ __( 'Add title', 'p2026' ) }
+						showTooltip
+					/>
+				) }
+			</div>
+			{ isTitleEditing && (
+				<TextControl
+					label={ __( 'Title', 'p2026' ) }
+					value={ title }
+					onChange={ setTitle }
+					className="p2026-editor-title"
+					placeholder={ __( 'Add a title (optional)', 'p2026' ) }
+					disabled={ isSaving }
+				/>
+			) }
 			<BlockEditorProvider
 				value={ blocks }
 				onInput={ setBlocks }
@@ -125,9 +155,11 @@ export default function NewPostEditor( { onAfterPublish } ) {
 			<div className="p2026-editor-toolbar">
 				<Button
 					variant="tertiary"
-					onClick={ () =>
-						setBlocks( [ createBlock( 'core/paragraph' ) ] )
-					}
+					onClick={ () => {
+						setTitle( '' );
+						setIsTitleEditing( false );
+						setBlocks( [ createBlock( 'core/paragraph' ) ] );
+					} }
 					disabled={ isSaving }
 				>
 					{ __( 'Cancel', 'p2026' ) }

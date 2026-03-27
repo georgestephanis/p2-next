@@ -15,7 +15,7 @@ import {
 	BlockEditorKeyboardShortcuts,
 } from '@wordpress/block-editor';
 import { parse } from '@wordpress/blocks';
-import { Button, Spinner } from '@wordpress/components';
+import { Button, Spinner, TextControl } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
@@ -27,8 +27,9 @@ const EDITOR_SETTINGS = {
 	isRTL: document.documentElement.dir === 'rtl',
 };
 
-export default function PostEditor( { postId } ) {
+export default function PostEditor( { postId, showTitleField = false } ) {
 	const [ blocks, setBlocks ] = useState( null ); // null = loading
+	const [ title, setTitle ] = useState( '' );
 	const [ error, setError ] = useState( null );
 
 	const { updatePost, setEditingPost } = useDispatch( STORE_NAME );
@@ -41,7 +42,10 @@ export default function PostEditor( { postId } ) {
 	// Fetch raw post content for editing (requires ?context=edit).
 	useEffect( () => {
 		apiFetch( { path: `/wp/v2/posts/${ postId }?context=edit` } )
-			.then( ( post ) => setBlocks( parse( post.content?.raw ?? '' ) ) )
+			.then( ( post ) => {
+				setTitle( post.title?.raw ?? '' );
+				setBlocks( parse( post.content?.raw ?? '' ) );
+			} )
 			.catch( ( err ) =>
 				setError( err.message ?? __( 'Could not load post.', 'p2026' ) )
 			);
@@ -51,8 +55,8 @@ export default function PostEditor( { postId } ) {
 		if ( ! blocks ) {
 			return;
 		}
-		await updatePost( postId, { blocks } );
-	}, [ postId, blocks, updatePost ] );
+		await updatePost( postId, { blocks, title } );
+	}, [ postId, blocks, updatePost, title ] );
 
 	const onCancel = useCallback( () => {
 		setEditingPost( null );
@@ -109,6 +113,15 @@ export default function PostEditor( { postId } ) {
 
 	return (
 		<div className="p2026-post-editor">
+			{ showTitleField && (
+				<TextControl
+					label={ __( 'Title', 'p2026' ) }
+					value={ title }
+					onChange={ setTitle }
+					className="p2026-editor-title"
+					disabled={ isSaving }
+				/>
+			) }
 			<BlockEditorProvider
 				value={ blocks }
 				onInput={ setBlocks }

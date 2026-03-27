@@ -109,6 +109,15 @@
 .p2026-post-editor {
 	margin-top: 12px;
 
+	.p2026-editor-title {
+		margin-bottom: 12px;
+	}
+
+	.p2026-editor-title-toggle {
+		margin-bottom: 6px;
+		padding-left: 0;
+	}
+
 	.p2026-editor-canvas {
 		margin: 12px 0;
 	}
@@ -134,16 +143,30 @@
 	padding: 16px;
 	transition: box-shadow 0.2s ease;
 
-	// Prompt shown above the canvas so users know what to do here.
-	&::before {
-		content: "What's on your mind?";
+	.p2026-new-post-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 10px;
+	}
+
+	.p2026-new-post-prompt {
 		display: block;
 		font-size: 0.85em;
 		font-weight: 600;
 		color: #888;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		margin-bottom: 10px;
+	}
+
+	.p2026-editor-title {
+		margin-bottom: 12px;
+	}
+
+	.p2026-editor-title-toggle {
+		min-width: 32px;
+		min-height: 32px;
+		padding: 0;
 	}
 
 	// Lift the card when the canvas has focus.
@@ -177,8 +200,6 @@
 // Three-dots post menu
 // Sits in the top-right corner of the post card via position:absolute.
 // The host post element receives position:relative from setupPostToolbar.
-// ---------------------------------------------------------------------------
-
 .p2026-menu-wrap {
 	position: absolute;
 	top: max(10px, var(--wp--preset--spacing--60));
