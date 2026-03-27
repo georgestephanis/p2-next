@@ -6,8 +6,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
-import { Button, Spinner } from '@wordpress/components';
-import { close, bell } from '@wordpress/icons';
+import { Button, Spinner, Dashicon } from '@wordpress/components';
 import { sprintf, _n, __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../../store';
 import NotificationItem from './NotificationItem';
@@ -66,11 +65,10 @@ export default function NotificationDock() {
 
 	return (
 		<div className="p2026-notification-dock-wrapper">
-			{/* Badge button in corner */ }
+			{ /* Badge button in corner */ }
 			<Button
 				className="p2026-notification-dock-badge"
 				onClick={ handleToggleOpen }
-				icon={ bell }
 				aria-label={ sprintf(
 					/* translators: %d: number of unread notifications */
 					_n(
@@ -83,6 +81,7 @@ export default function NotificationDock() {
 				) }
 				aria-expanded={ isOpen }
 			>
+				<Dashicon icon="bell" />
 				{ unreadCount > 0 && (
 					<span className="p2026-notification-count">
 						{ unreadCount > 99 ? '99+' : unreadCount }
@@ -90,66 +89,52 @@ export default function NotificationDock() {
 				) }
 			</Button>
 
-			{/* Dock panel */ }
+			{ /* Dock panel */ }
 			{ isOpen && (
 				<div className="p2026-notification-dock-panel">
 					<div className="p2026-notification-dock-header">
 						<h2>{ __( 'Notifications', 'p2026' ) }</h2>
 						<Button
 							onClick={ handleToggleOpen }
-							icon={ close }
+							icon="no"
 							label={ __( 'Close', 'p2026' ) }
 							isSmall
 						/>
 					</div>
 
-					{ isLoading && ! notifications.length ? (
+					{ ! isLoading && notifications.length === 0 && (
+						<div className="p2026-notification-dock-empty">
+							<p>{ __( 'No notifications yet.', 'p2026' ) }</p>
+						</div>
+					) }
+
+					{ isLoading && ! notifications.length && (
 						<div className="p2026-notification-dock-loading">
 							<Spinner />
 						</div>
-					) : notifications.length === 0 ? (
-						<div className="p2026-notification-dock-empty">
-							<p>
-								{ __(
-									'No notifications yet.',
-									'p2026'
-								) }
-							</p>
-						</div>
-					) : (
+					) }
+
+					{ ! isLoading && notifications.length > 0 && (
 						<>
 							<div className="p2026-notification-dock-actions">
 								{ unreadCount > 0 && (
 									<Button
 										isSmall
 										isSecondary
-										onClick={
-											handleMarkAllRead
-										}
+										onClick={ handleMarkAllRead }
 									>
-										{ __(
-											'Mark all as read',
-											'p2026'
-										) }
+										{ __( 'Mark all as read', 'p2026' ) }
 									</Button>
 								) }
 							</div>
 							<ul className="p2026-notification-dock-list">
-								{ notifications.map(
-									( notification ) => (
-										<li
-											key={
-												notification.meta_key
-											}
-										>
-											<NotificationItem
-												notification={
-													notification
-												}
-											/>
-										</li>
-									)
-								) }
+								{ notifications.map( ( notification ) => (
+									<li key={ notification.meta_key }>
+										<NotificationItem
+											notification={ notification }
+										/>
+									</li>
+								) ) }
 							</ul>
 						</>
 					) }

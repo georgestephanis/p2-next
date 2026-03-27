@@ -12,9 +12,8 @@ import { STORE_NAME } from '../store';
 import './unread-badge.scss';
 
 export default function UnreadBadge() {
-	const { fetchReadState, revealPendingPosts, syncReadState } = useDispatch(
-		STORE_NAME
-	);
+	const { fetchReadState, revealPendingPosts, syncReadState } =
+		useDispatch( STORE_NAME );
 	const unreadCount = useSelect( ( select ) =>
 		select( STORE_NAME ).getUnreadCount()
 	);

@@ -5,8 +5,16 @@
 	bottom: 2rem;
 	right: 2rem;
 	z-index: 9999;
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans,
-		Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+	font-family:
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		Roboto,
+		Oxygen-Sans,
+		Ubuntu,
+		Cantarell,
+		"Helvetica Neue",
+		sans-serif;
 }
 
 .p2026-notification-dock-badge {
@@ -22,17 +30,17 @@
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	box-shadow: 0 2px 8px rgba( 0, 0, 0, 0.15 );
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 	transition: all 0.2s ease;
 
 	&:hover,
 	&:focus {
 		background-color: #005a87;
-		box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.2 );
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	&:active {
-		transform: scale( 0.95 );
+		transform: scale(0.95);
 	}
 
 	svg {
@@ -67,19 +75,21 @@
 	background: #fff;
 	border: 1px solid #ddd;
 	border-radius: 4px;
-	box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.15 );
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	display: flex;
 	flex-direction: column;
 	animation: slideUp 0.2s ease;
 
 	@keyframes slideUp {
+
 		from {
 			opacity: 0;
-			transform: translateY( 10px );
+			transform: translateY(10px);
 		}
+
 		to {
 			opacity: 1;
-			transform: translateY( 0 );
+			transform: translateY(0);
 		}
 	}
 }

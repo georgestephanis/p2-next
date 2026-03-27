@@ -282,9 +282,7 @@ export const actions = {
 					method: 'POST',
 				} );
 				dispatch(
-					actions.setUnreadNotificationCount(
-						response.unreadCount
-					)
+					actions.setUnreadNotificationCount( response.unreadCount )
 				);
 			} catch ( error ) {
 				// eslint-disable-next-line no-console

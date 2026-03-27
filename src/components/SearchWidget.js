@@ -4,7 +4,7 @@
  * Provides a searchable input that queries posts and comments via REST API.
  * Results are displayed in a modal overlay.
  */
-import { useState, useCallback, useMemo, useRef, useEffect } from '@wordpress/element';
+import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { SearchControl, Modal, Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
@@ -77,7 +77,7 @@ export default function SearchWidget() {
 				value={ query }
 				onChange={ handleSearch }
 				onFocus={ () => setIsOpen( true ) }
-				placeholder={ __( 'Search posts and comments...', 'p2026' ) }
+				placeholder={ __( 'Search posts and comments…', 'p2026' ) }
 				className="p2026-search-input"
 			/>
 
@@ -92,9 +92,7 @@ export default function SearchWidget() {
 						{ isLoading && (
 							<div className="p2026-search-loading">
 								<Spinner />
-								<p>
-									{ __( 'Searching...', 'p2026' ) }
-								</p>
+								<p>{ __( 'Searching…', 'p2026' ) }</p>
 							</div>
 						) }
 
@@ -107,7 +105,9 @@ export default function SearchWidget() {
 						{ ! isLoading && results.length > 0 && (
 							<ul className="p2026-search-results">
 								{ results.map( ( result ) => (
-									<li key={ `${ result.type }-${ result.id }` }>
+									<li
+										key={ `${ result.type }-${ result.id }` }
+									>
 										<button
 											onClick={ () =>
 												handleResultClick( result )
@@ -115,37 +115,22 @@ export default function SearchWidget() {
 											className="p2026-search-result-item"
 										>
 											<div className="p2026-search-result-type-tag">
-												{ 'post' ===
-													result.type
-													? __(
-															'Post',
-															'p2026'
-													  )
-													: __(
-															'Comment',
-															'p2026'
-													  ) }
+												{ 'post' === result.type
+													? __( 'Post', 'p2026' )
+													: __( 'Comment', 'p2026' ) }
 											</div>
 											<div className="p2026-search-result-body">
 												<h3 className="p2026-search-result-title">
-													{
-														result.title
-													}
+													{ result.title }
 												</h3>
 												<p className="p2026-search-result-excerpt">
-													{
-														result.excerpt
-													}
+													{ result.excerpt }
 												</p>
 												<small className="p2026-search-result-meta">
-													{ result.author }
-													{ ' ' }
-													•{ ' ' }
-													{
-														new Date(
-															result.date
-														).toLocaleDateString()
-													}
+													{ result.author } •{ ' ' }
+													{ new Date(
+														result.date
+													).toLocaleDateString() }
 												</small>
 											</div>
 										</button>

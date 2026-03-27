@@ -6,7 +6,6 @@
  */
 import { useCallback } from '@wordpress/element';
 import { useDispatch } from '@wordpress/data';
-import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../../store';
 import './_notification-item.scss';
@@ -38,30 +37,23 @@ export default function NotificationItem( { notification } ) {
 			message = __( 'Notification', 'p2026' );
 	}
 
-	// Get author avatar (you could fetch this from user endpoint in future).
-	const userUrl = `/wp-json/wp/v2/users/${ notification.from_user }`;
-
 	return (
 		<button
-			className={ `p2026-notification-item ${ ! notification.unread ? 'read' : '' }` }
+			className={ `p2026-notification-item ${
+				! notification.unread ? 'read' : ''
+			}` }
 			onClick={ handleClick }
 		>
 			<div className="p2026-notification-item-avatar">
-				{/* Placeholder avatar — future: fetch user data */ }
+				{ /* Placeholder avatar — future: fetch user data */ }
 				<div className="p2026-notification-placeholder-avatar">
 					{ String( notification.from_user ).charAt( 0 ) }
 				</div>
 			</div>
 			<div className="p2026-notification-item-content">
-				<p className="p2026-notification-item-message">
-					{ message }
-				</p>
+				<p className="p2026-notification-item-message">{ message }</p>
 				<small className="p2026-notification-item-date">
-					{
-						new Date(
-							notification.created_at
-						).toLocaleString()
-					}
+					{ new Date( notification.created_at ).toLocaleString() }
 				</small>
 			</div>
 			{ notification.unread && (
