@@ -85,6 +85,7 @@ Unified search across posts and comments. Accessible to logged-in users.
 -   `includes/api/search.php`: REST endpoint `GET /p2026/v1/search?q={query}&offset={offset}` searches posts and comments with LIKE queries, respects post/comment permissions.
 -   Results sorted newest-first, capped at 20 per request.
 -   `SearchWidget.js`: Debounced (300ms) input with modal results overlay; click navigates to post or comment and scrolls into view.
+-   State management: Uses local component state (useState) for query, results, and loading; does not persist to global store (search is transient UX).
 -   Styling: `src/components/search.scss`.
 
 ### Read/Unread Tracking (Core)
@@ -131,6 +132,8 @@ Key state:
 -   readState (lastActivity, unreadCount)
 -   notifications
 -   unreadNotificationCount
+
+**Note:** Search state is managed locally by SearchWidget (not in global store) since search queries are transient and user-specific.
 
 REST endpoints in use:
 
