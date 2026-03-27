@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 const P2026_AUDIT_LOG_BACKEND_OPTION = 'p2026_audit_log_backend';
+const P2026_AUDIT_LOG_ACTOR_TAXONOMY = 'p2026_audit_actor';
+const P2026_AUDIT_LOG_EVENT_TYPE_TAXONOMY = 'p2026_audit_event_type';
 
 /**
  * Return configured audit backend.
@@ -50,8 +52,96 @@ function p2026_audit_log_register_post_type() {
 			'rewrite'             => false,
 		)
 	);
+
+	register_taxonomy(
+		P2026_AUDIT_LOG_ACTOR_TAXONOMY,
+		array( 'p2026_audit_event' ),
+		array(
+			'labels'            => array(
+				'name'          => __( 'Audit Actors', 'p2026' ),
+				'singular_name' => __( 'Audit Actor', 'p2026' ),
+			),
+			'public'            => false,
+			'show_ui'           => false,
+			'show_admin_column' => false,
+			'show_in_menu'      => false,
+			'show_tagcloud'     => false,
+			'show_in_quick_edit'=> false,
+			'show_in_rest'      => false,
+			'hierarchical'      => false,
+			'rewrite'           => false,
+			'query_var'         => false,
+		)
+	);
+
+	register_taxonomy(
+		P2026_AUDIT_LOG_EVENT_TYPE_TAXONOMY,
+		array( 'p2026_audit_event' ),
+		array(
+			'labels'            => array(
+				'name'          => __( 'Audit Event Types', 'p2026' ),
+				'singular_name' => __( 'Audit Event Type', 'p2026' ),
+			),
+			'public'            => false,
+			'show_ui'           => false,
+			'show_admin_column' => false,
+			'show_in_menu'      => false,
+			'show_tagcloud'     => false,
+			'show_in_quick_edit'=> false,
+			'show_in_rest'      => false,
+			'hierarchical'      => false,
+			'rewrite'           => false,
+			'query_var'         => false,
+		)
+	);
 }
 add_action( 'init', 'p2026_audit_log_register_post_type' );
+
+/**
+ * Return a term ID for the provided taxonomy/slug, creating it if needed.
+ *
+ * @param string $taxonomy Taxonomy name.
+ * @param string $slug     Stable term slug.
+ * @param string $name     Human-readable term name.
+ * @return int
+ */
+function p2026_audit_log_get_or_create_term_id( $taxonomy, $slug, $name ) {
+	$taxonomy = sanitize_key( (string) $taxonomy );
+	$slug     = sanitize_title( (string) $slug );
+	$name     = sanitize_text_field( (string) $name );
+
+	if ( '' === $taxonomy || '' === $slug || '' === $name || ! taxonomy_exists( $taxonomy ) ) {
+		return 0;
+	}
+
+	$existing = get_term_by( 'slug', $slug, $taxonomy );
+	if ( $existing instanceof WP_Term ) {
+		return (int) $existing->term_id;
+	}
+
+	$inserted = wp_insert_term(
+		$name,
+		$taxonomy,
+		array(
+			'slug' => $slug,
+		)
+	);
+
+	if ( is_wp_error( $inserted ) ) {
+		$term_exists = term_exists( $slug, $taxonomy );
+		if ( is_array( $term_exists ) && isset( $term_exists['term_id'] ) ) {
+			return (int) $term_exists['term_id'];
+		}
+
+		if ( is_numeric( $term_exists ) ) {
+			return (int) $term_exists;
+		}
+
+		return 0;
+	}
+
+	return isset( $inserted['term_id'] ) ? (int) $inserted['term_id'] : 0;
+}
 
 /**
  * Persist incoming audit events.
@@ -203,11 +293,13 @@ function p2026_audit_log_write_file( $event_type, $payload ) {
  * @param array  $payload    Event payload.
  */
 function p2026_audit_log_write_cpt( $event_type, $payload ) {
+	$event_type = sanitize_key( (string) $event_type );
+	$actor_id   = (int) ( $payload['actor_id'] ?? 0 );
 	$post_id = (int) ( $payload['post_id'] ?? 0 );
 	$title   = sprintf(
 		/* translators: 1: event type, 2: post id */
 		__( '%1$s: Post %2$d', 'p2026' ),
-		sanitize_key( (string) $event_type ),
+		$event_type,
 		$post_id
 	);
 
@@ -225,11 +317,50 @@ function p2026_audit_log_write_cpt( $event_type, $payload ) {
 		return;
 	}
 
-	update_post_meta( $audit_post_id, 'p2026_audit_event_type', sanitize_key( (string) $event_type ) );
+	update_post_meta( $audit_post_id, 'p2026_audit_event_type', $event_type );
 	update_post_meta( $audit_post_id, 'p2026_audit_post_id', $post_id );
-	update_post_meta( $audit_post_id, 'p2026_audit_actor_id', (int) ( $payload['actor_id'] ?? 0 ) );
+	update_post_meta( $audit_post_id, 'p2026_audit_actor_id', $actor_id );
 	update_post_meta( $audit_post_id, 'p2026_audit_old_state', sanitize_key( (string) ( $payload['old_state'] ?? '' ) ) );
 	update_post_meta( $audit_post_id, 'p2026_audit_new_state', sanitize_key( (string) ( $payload['new_state'] ?? '' ) ) );
 	update_post_meta( $audit_post_id, 'p2026_audit_timestamp', sanitize_text_field( (string) ( $payload['timestamp'] ?? '' ) ) );
 	update_post_meta( $audit_post_id, 'p2026_audit_source', sanitize_key( (string) ( $payload['source'] ?? '' ) ) );
+
+	if ( '' !== $event_type ) {
+		$event_type_name = ucwords( str_replace( array( '-', '_' ), ' ', $event_type ) );
+		$event_type_term = p2026_audit_log_get_or_create_term_id(
+			P2026_AUDIT_LOG_EVENT_TYPE_TAXONOMY,
+			$event_type,
+			$event_type_name
+		);
+		if ( $event_type_term > 0 ) {
+			wp_set_object_terms( $audit_post_id, array( $event_type_term ), P2026_AUDIT_LOG_EVENT_TYPE_TAXONOMY, false );
+		}
+	}
+
+	if ( $actor_id > 0 ) {
+		$actor_slug = 'user-' . $actor_id;
+		$actor_name = sprintf(
+			/* translators: %d: user id */
+			__( 'User %d', 'p2026' ),
+			$actor_id
+		);
+		$user = get_userdata( $actor_id );
+		if ( $user && ! empty( $user->display_name ) ) {
+			$actor_name = sprintf(
+				/* translators: 1: display name, 2: user id */
+				__( '%1$s (#%2$d)', 'p2026' ),
+				$user->display_name,
+				$actor_id
+			);
+		}
+
+		$actor_term = p2026_audit_log_get_or_create_term_id(
+			P2026_AUDIT_LOG_ACTOR_TAXONOMY,
+			$actor_slug,
+			$actor_name
+		);
+		if ( $actor_term > 0 ) {
+			wp_set_object_terms( $audit_post_id, array( $actor_term ), P2026_AUDIT_LOG_ACTOR_TAXONOMY, false );
+		}
+	}
 }
