@@ -87,7 +87,8 @@ Notifications module listens to this hook and creates `mention` notifications fo
 Notifications are enabled by default. To disable the notifications module:
 
 ```php
-update_option( 'p2026_active_modules', array( 'mentions' ) ); // excludes 'notifications'
+// Add 'notifications' to the deny-list; all other modules remain active.
+update_option( 'p2026_disabled_modules', array( 'notifications' ) );
 ```
 
 This can be set in code or via the settings page if available.

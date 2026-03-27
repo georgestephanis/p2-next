@@ -11,9 +11,12 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 -   **Unread tracking** — Tracks per-user read state and shows an unread badge that reveals pending posts.
 -   **Inline threaded comments** — Expand comment threads per post; post top-level comments and replies without leaving the page.
 -   **Inline post editing** — Edit existing posts using the Block Editor directly on the front end.
+-   **Post-state workflow module** — Optional Normal/Unresolved/Resolved state controls in the post menu, plus an "Open only" feed filter.
 -   **New post creation** — A `p2026/new-post` dynamic block provides a front-end Block Editor for publishing posts. An admin bar "New Post" button opens the same editor in a modal when the block isn't on the page.
 -   **Capability-aware UX** — All controls are gated by WordPress capabilities (and an optional Abilities API), so guests, contributors, and editors each see the appropriate UI.
+-   **Mentions module** — `@username` autocomplete and hovercards, server-side linkification, and mention hook emission for downstream notifications.
 -   **Optional notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
+-   **Optional audit-log module** — Persists core audit events to JSONL in uploads or an internal custom post type backend.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
 ## Building a Company Intranet
@@ -91,6 +94,21 @@ p2026 uses progressive enhancement:
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram and file-level responsibility map.
 
+## Module System
+
+p2026 modules are discovered from `modules/*/index.php` and are active by default.
+
+-   Option key: `p2026_disabled_modules`
+-   Model: opt-out deny-list (new modules auto-enable unless explicitly disabled)
+-   Settings UI: WP Admin → **P2026** menu
+
+Current modules:
+
+-   `mentions` — `@username` parsing, linkification, and user lookup REST endpoints
+-   `notifications` — per-user notifications REST API and dock UI
+-   `post-state` — Normal/Unresolved/Resolved workflow state + REST endpoint
+-   `audit-log` — audit event persistence backend (file or internal CPT)
+
 ## Key Files
 
 | File                                        | Role                                                                         |
@@ -108,7 +126,11 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram an
 | `src/components/NewPostEditor.js`           | Block Editor for creating new posts                                          |
 | `src/components/NewPostModal.js`            | Modal wrapper opened by the admin bar "New Post" button                      |
 | `src/blocks/new-post/`                      | Dynamic block metadata, server render gate, and frontend mount               |
+| `modules/post-state/index.php`              | Post-state taxonomy, REST field/endpoint, and audit event emission           |
+| `modules/audit-log/index.php`               | Audit event persistence (uploads JSONL or CPT backend)                       |
+| `modules/mentions/index.php`                | Mention user search/detail endpoints and server-side content linkification   |
 | `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                   |
+| `admin/settings.php`                        | Module toggles and audit backend configuration UI                            |
 | `src/modules/notifications/`                | Notification dock frontend UI                                                |
 
 Playground note: `.github/setup.php` seeds sample users, posts, comments, and starter notifications for the default logged-in `admin` user.

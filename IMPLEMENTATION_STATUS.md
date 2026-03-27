@@ -63,7 +63,7 @@
 -   [x] REST endpoint `POST /p2026/v1/notifications/{id}/read` — mark as read
 -   [x] REST endpoint `POST /p2026/v1/notifications/read-all` — bulk mark as read
 -   [x] Auto-create notifications on @mentions (via `p2026_mentions_found` hook)
--   [x] Auto-create notifications on comment replies (via `wp_insert_comment` hook)
+-   [x] Auto-create notifications on comment replies (via `comment_post` hook)
 -   [x] Helper functions: `p2026_create_notification()`, `p2026_get_notifications()`, `p2026_count_unread_notifications()`
 -   [x] Module readme with API docs
 

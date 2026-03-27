@@ -72,7 +72,17 @@ flowchart TD
 -   `src/components/NewPostModal.js`: modal wrapper for new-post editor; driven by `newPostModalOpen` store state.
 -   `src/blocks/new-post/render.php`: mount point output gated by `publish_posts`.
 -   `src/modules/index.js`: loads active JS modules from `window.p2026Config.activeModules`.
+-   `admin/settings.php`: admin UI for module toggles and audit backend selection.
+-   `modules/post-state/index.php`: taxonomy-backed post state, REST field, and state mutation endpoint.
+-   `modules/audit-log/index.php`: audit event persistence handler (uploads JSONL or internal CPT).
 -   `src/modules/notifications/`: notification dock UI mounted into `document.body`.
+
+## Module Activation
+
+-   Modules are discovered by scanning `modules/*/index.php`.
+-   Activation uses an opt-out deny-list option: `p2026_disabled_modules`.
+-   `window.p2026Config.activeModules` is derived server-side as discovered modules minus disabled modules.
+-   New modules default to active unless explicitly disabled.
 
 ## Integration Boundaries
 

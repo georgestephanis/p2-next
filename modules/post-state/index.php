@@ -3,7 +3,7 @@
  * P2026 Module: Post State
  *
  * Module Name:        Post State
- * Module Description: Adds Normal/Unresolved/Resolved workflow states to posts with a carousel UI, #todo auto-assignment, and audit event hooks.
+ * Module Description: Adds Normal/Unresolved/Resolved workflow states to posts with menu controls, #todo auto-assignment, and audit event hooks.
  * Module Version:     0.1.0
  *
  * Provides:

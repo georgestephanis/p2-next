@@ -27,8 +27,12 @@ It is intentionally not a complete SPA replacement.
 -   src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay; imports module stylesheets via `@use`.
 -   src/modules/index.js: side-effect entry point that imports every active JS module; add a new module by creating `src/modules/{name}/index.js` and importing it here.
 -   src/modules/mentions/: JS mentions module — Block Editor autocomplete, textarea autocomplete (`MentionTextareaControl`), and hovercard host.
+-   src/modules/notifications/: JS notifications module — dock UI and item rendering.
 -   modules/: PHP modules directory; each subdirectory contains an `index.php` loaded by glob on init.
 -   modules/mentions/index.php: REST endpoints for user search and hovercard detail, @mention linkification on `the_content`/`comment_text`, and the `p2026_mentions_found` notification hook.
+-   modules/notifications/index.php: per-user notification storage, REST endpoints, and hooks for mention/reply notifications.
+-   modules/post-state/index.php: taxonomy-backed workflow state, REST field + mutation endpoint, and audit event emission.
+-   modules/audit-log/index.php: backend listener for audit events persisted to JSONL or internal CPT.
 -   .github/: WordPress Playground blueprint and setup script.
 -   build/: generated artifacts from @wordpress/scripts (do not hand-edit).
 
@@ -37,7 +41,7 @@ It is intentionally not a complete SPA replacement.
 1. PHP registers block metadata from build output and enqueues frontend assets.
 2. PHP injects window.p2026Config before frontend script execution.
 3. PHP adds a "New Post" admin bar node on the blog index for users who can create posts.
-4. PHP glob-loads `modules/*/index.php`; active modules are controlled by the `p2026_active_modules` option (defaults to all modules active).
+4. PHP glob-loads `modules/*/index.php`; modules are active by default and can be explicitly disabled via `p2026_disabled_modules`.
 5. frontend.js discovers rendered posts in block or classic themes.
 6. frontend.js mounts the NewPostModal root and wires the admin bar button click.
 7. frontend.js side-effect-imports `src/modules/index.js`, which initialises all JS modules (e.g. mentions autocomplete, hovercard host).
@@ -113,7 +117,7 @@ Optional real-time notifications dock for mentions and comment replies.
 -   `modules/notifications/index.php`: Notification CRUD system using user_meta (UUID-keyed entries). Stores `type` (mention, reply), `post_id`, `comment_id`, `from_user`, `created_at`, `unread`.
 -   Auto-creates notifications:
     -   On @mentions via `p2026_mentions_found` hook (when mentions module is active).
-    -   On comment replies via `wp_insert_comment` hook (detects replies to user's comments).
+    -   On comment replies via `comment_post` hook (detects replies to user's comments).
 -   REST endpoints:
     -   `GET /p2026/v1/notifications?limit=20&offset=0` — paginated notifications list.
     -   `POST /p2026/v1/notifications/{meta_key}/read` — mark single notification as read.
@@ -135,6 +139,7 @@ Key state:
 -   expandedPosts / editingPost
 -   savingPost (null | postId | 'new') / savingComment
 -   newPostModalOpen
+-   postStateFilter
 -   readState (lastActivity, unreadCount)
 -   notifications
 -   unreadNotificationCount
@@ -150,6 +155,7 @@ REST endpoints in use:
 -   GET /p2026/v1/search (unified search)
 -   GET /p2026/v1/read-state (fetch read state)
 -   POST /p2026/v1/read-state/sync (sync activity timestamp)
+-   POST /p2026/v1/posts/{postId}/state (set/cycle post workflow state)
 -   GET /p2026/v1/notifications (list notifications)
 -   POST /p2026/v1/notifications/{id}/read (mark notification as read)
 -   POST /p2026/v1/notifications/read-all (bulk mark as read)
@@ -158,7 +164,7 @@ REST endpoints in use:
 
 p2026 has a lightweight module system for self-contained features.
 
-**PHP side:** `p2026.php` globs `modules/*/index.php` at init and requires each file whose slug appears in the `p2026_active_modules` option. If the option has never been saved, all discovered modules are active by default. Each PHP module file is responsible for hooking into WordPress itself; there is no module API to call.
+**PHP side:** `p2026.php` globs `modules/*/index.php` at init and requires each file unless its slug is present in `p2026_disabled_modules`. This deny-list model keeps new modules active by default. Each PHP module file is responsible for hooking into WordPress itself; there is no module API to call.
 
 **JS side:** `src/modules/index.js` is a single file of side-effect imports. `frontend.js` imports it once. To add a new JS module, create `src/modules/{name}/index.js` and add `import './{name}';` to `src/modules/index.js`.
 
@@ -168,6 +174,8 @@ p2026 has a lightweight module system for self-contained features.
 | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | mentions      | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook              | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard |
 | notifications | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling  |
+| post-state    | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks             | N/A (UI lives in existing core components/store)                                      |
+| audit-log     | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads (file/CPT backend)           | N/A                                                                                   |
 
 ## Build and Validation
 

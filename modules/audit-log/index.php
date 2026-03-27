@@ -113,10 +113,10 @@ function p2026_audit_log_write_file( $event_type, $payload ) {
 
 	$max_size = 5 * 1024 * 1024;
 	if ( file_exists( $log_path ) && filesize( $log_path ) > $max_size ) {
-		if ( ! rename( $log_path, $rotated ) ) {
+		$rotated = $log_path . '.' . gmdate( 'Ymd-His' ) . '.bak';
+		if ( ! @rename( $log_path, $rotated ) ) {
 			error_log( sprintf( 'p2026 audit log rotation failed from %s to %s', $log_path, $rotated ) );
 		}
-		@rename( $log_path, $rotated );
 	}
 }
 
