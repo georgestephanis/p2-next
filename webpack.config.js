@@ -6,8 +6,13 @@
  * frontend enhancement script as an additional entry point.
  *
  * Chunk naming configured to produce semantic names for conditional modules:
- * - src/modules/mentions/ → chunk-mentions.{js,css}
- * - src/modules/notifications/ → chunk-notifications.{js,css}
+ * - src/modules/mentions/ → chunk-mentions.js
+ * - src/modules/notifications/ → chunk-notifications.js
+ *
+ * Cache-busting via query strings is handled by the PHP asset manifest system
+ * (frontend.asset.php), which enqueues scripts with wp_enqueue_script( $handle,
+ * $src, $deps, $version ) where $version is the build timestamp. WordPress
+ * automatically appends the version as a query parameter.
  */
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 
@@ -19,7 +24,7 @@ module.exports = {
 	} ),
 	output: {
 		...defaultConfig.output,
-		chunkFilename: 'chunk-[name].[contenthash:8].js',
+		chunkFilename: 'chunk-[name].js',
 		chunkLoading: defaultConfig.output.chunkLoading,
 	},
 	optimization: {
