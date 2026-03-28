@@ -3,6 +3,22 @@
   "name": "p2026",
   "version": "0.1.0",
   "description": "Modern P2/o2 replacement using the Block Editor and REST API.",
+  "files": [
+    "admin",
+    "build",
+    "includes",
+    "modules",
+    "languages",
+    "public",
+    "p2026.php",
+    "uninstall.php",
+    "block.json",
+    "README.md",
+    "readme.txt",
+    "CHANGELOG.md",
+    "LICENSE",
+    "license.txt"
+  ],
   "scripts": {
     "build": "wp-scripts build --blocks-manifest",
     "start": "wp-scripts start --blocks-manifest",
