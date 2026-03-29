@@ -313,6 +313,7 @@ update_option( 'show_on_front', 'posts' );
 $theme_slug           = wp_get_theme()->get_stylesheet();
 $template_slug        = 'home';
 $legacy_template_slug = sanitize_title( $theme_slug . '//' . $template_slug );
+$template_description = 'Displays the latest posts as either the site homepage or as the "Posts page" as defined under reading settings. If it exists, the Front Page template overrides this template when posts are shown on the homepage.';
 
 // get_block_templates() merges file-based and DB templates; it returns
 // WP_Block_Template objects whose ->slug is the bare slug (no theme prefix).
@@ -430,22 +431,27 @@ if ( ! $existing_custom && $legacy_template_slug !== $template_slug ) {
 if ( $existing_custom ) {
     wp_update_post( [
         'ID'           => $existing_custom->wp_id,
+        'post_excerpt' => $template_description,
         'post_content' => $new_content,
         'post_status'  => 'publish',
     ] );
+    $template_post_id = (int) $existing_custom->wp_id;
 } elseif ( $legacy_custom ) {
     wp_update_post( [
         'ID'           => $legacy_custom->ID,
         'post_name'    => $template_slug,
         'post_title'   => 'Blog Home',
+        'post_excerpt' => $template_description,
         'post_content' => $new_content,
         'post_status'  => 'publish',
     ] );
+    $template_post_id = (int) $legacy_custom->ID;
 } else {
-    $post_id = wp_insert_post( [
+    $template_post_id = wp_insert_post( [
         'post_type'    => 'wp_template',
         'post_name'    => $template_slug,
         'post_title'   => 'Blog Home',
+        'post_excerpt' => $template_description,
         'post_content' => $new_content,
         'post_status'  => 'publish',
         'post_author'  => 1,
@@ -453,4 +459,9 @@ if ( $existing_custom ) {
             'wp_theme' => [ $theme_slug ],
         ],
     ] );
+}
+
+if ( ! empty( $template_post_id ) && ! is_wp_error( $template_post_id ) ) {
+    update_post_meta( (int) $template_post_id, 'origin', 'theme' );
+    wp_set_post_terms( (int) $template_post_id, [ $theme_slug ], 'wp_theme', false );
 }
