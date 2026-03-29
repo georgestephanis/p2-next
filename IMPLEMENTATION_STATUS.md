@@ -35,6 +35,7 @@ This file tracks implemented functionality as it exists in the codebase today.
 
 - `mentions`: implemented (PHP + JS).
 - `notifications`: implemented (PHP + JS).
+- `link-previews`: implemented (PHP + JS).
 - `post-state`: implemented (PHP + core UI integration).
 - `audit-log`: implemented (PHP backend + settings tab).
 
