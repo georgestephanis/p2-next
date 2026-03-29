@@ -14,6 +14,41 @@ import { createRoot, createElement } from '@wordpress/element';
 import PostEnhancement from './components/PostEnhancement';
 
 /**
+ * Read a post's comment count from server-rendered markup.
+ *
+ * Works across block/classic themes by checking common comment-link patterns.
+ * Returns null if no numeric count can be found.
+ *
+ * @param {HTMLElement} postElement The post's outermost element.
+ * @return {?number} Parsed comment count or null.
+ */
+function getInitialCommentCount( postElement ) {
+	const candidates = [
+		'.wp-block-post-comments-link a',
+		'.comments-link a',
+		'a[href*="#comments"]',
+		'a[href*="#respond"]',
+	];
+
+	for ( const selector of candidates ) {
+		const link = postElement.querySelector( selector );
+		if ( ! link ) {
+			continue;
+		}
+
+		const text = `${ link.textContent ?? '' } ${
+			link.getAttribute( 'aria-label' ) ?? ''
+		}`;
+		const match = text.match( /(\d+)/ );
+		if ( match ) {
+			return parseInt( match[ 1 ], 10 );
+		}
+	}
+
+	return null;
+}
+
+/**
  * Mount a PostEnhancement React root into a post element.
  *
  * Ensures the post element is a positioned ancestor so the absolutely-placed
@@ -35,8 +70,16 @@ export function setupPostToolbar( postId, postElement ) {
 	slot.className = 'p2026-post-react';
 	postElement.appendChild( slot );
 
+	const initialCommentCount = getInitialCommentCount( postElement );
+
 	const root = createRoot( slot );
-	root.render( createElement( PostEnhancement, { postId, postElement } ) );
+	root.render(
+		createElement( PostEnhancement, {
+			postId,
+			postElement,
+			initialCommentCount,
+		} )
+	);
 
 	return () => root.unmount();
 }

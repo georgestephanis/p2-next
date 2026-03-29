@@ -53,7 +53,11 @@ function getPermalink( postElement ) {
 	);
 }
 
-export default function PostEnhancement( { postId, postElement } ) {
+export default function PostEnhancement( {
+	postId,
+	postElement,
+	initialCommentCount = null,
+} ) {
 	const {
 		expandPost,
 		collapsePost,
@@ -232,10 +236,15 @@ export default function PostEnhancement( { postId, postElement } ) {
 	// -----------------------------------------------------------------------
 	// Menu actions
 	// -----------------------------------------------------------------------
-	// Once the thread has been fetched, prefer the live count; otherwise fall
-	// back to the server-provided comment_count from the post REST object.
-	const commentCount =
-		comments.length > 0 ? comments.length : storedCommentCount;
+	// Prefer live fetched comments; otherwise use the REST post count, then the
+	// server-rendered DOM count as a first-paint fallback.
+	let commentCount = initialCommentCount ?? 0;
+	if ( storedCommentCount > 0 ) {
+		commentCount = storedCommentCount;
+	}
+	if ( comments.length > 0 ) {
+		commentCount = comments.length;
+	}
 	let commentLabel;
 	if ( isExpanded ) {
 		commentLabel = __( 'Hide comments', 'p2026' );
