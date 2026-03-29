@@ -120,6 +120,16 @@ Current modules:
 -   `post-state` — Normal/Unresolved/Resolved workflow state + REST endpoint
 -   `audit-log` — audit event persistence backend (file or internal CPT)
 
+### Module Matrix
+
+| Module          | PHP Backend File                | Frontend Entrypoint                | REST Routes |
+| --------------- | ------------------------------- | ---------------------------------- | ----------- |
+| `mentions`      | `modules/mentions/index.php`    | `src/modules/mentions/index.js`    | `GET /p2026/v1/users`, `GET /p2026/v1/users/{id}` |
+| `notifications` | `modules/notifications/index.php` | `src/modules/notifications/index.js` | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
+| `link-previews` | `modules/link-previews/index.php` | `src/modules/link-previews/index.js` | `GET /p2026/v1/link-preview?url=...` |
+| `post-state`    | `modules/post-state/index.php`  | Core UI integration (`src/components/PostEnhancement.js`) | `POST /p2026/v1/posts/{id}/state` |
+| `audit-log`     | `modules/audit-log/index.php`   | N/A                                | N/A |
+
 ## Key Files
 
 | File                                        | Role                                                                         |
