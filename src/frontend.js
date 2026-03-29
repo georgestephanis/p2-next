@@ -121,16 +121,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	const feedContainer = findFeedContainer();
 	const postElements = collectPostElements();
 
-	// eslint-disable-next-line no-console
-	console.log( '[p2026] DOMContentLoaded', {
-		feedContainer,
-		postCount: postElements.length,
-		postIds: postElements.map( ( p ) => p.id ),
-	} );
-
 	if ( ! feedContainer && ! postElements.length ) {
-		// eslint-disable-next-line no-console
-		console.warn( '[p2026] No feed container or posts found — bailing.' );
 		return; // Not a page with a post list — nothing to enhance.
 	}
 
@@ -144,13 +135,6 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		! feedContainer.hasAttribute( 'data-wp-query-index' );
 	const isArchiveView = !! window.p2026Config?.isArchiveView;
 	const shouldShowHeader = isMainQuery && isArchiveView;
-
-	// eslint-disable-next-line no-console
-	console.log( '[p2026] query/header flags', {
-		isMainQuery,
-		isArchiveView,
-		shouldShowHeader,
-	} );
 
 	// Append a plain-DOM toolbar to every post and start observing for
 	// scroll-based cleanup.

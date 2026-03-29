@@ -38,14 +38,6 @@ function initTelemetry() {
 		if ( buckets.size === 0 ) {
 			return;
 		}
-
-		const summary = [ ...buckets.entries() ]
-			.sort( ( a, b ) => b[ 1 ] - a[ 1 ] )
-			.map( ( [ key, count ] ) => `${ key } = ${ count }/min` )
-			.join( ', ' );
-
-		// eslint-disable-next-line no-console
-		console.info( `[p2026 telemetry] ${ summary }` );
 		buckets.clear();
 	}, 60 * 1000 );
 }
