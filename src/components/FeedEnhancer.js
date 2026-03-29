@@ -222,6 +222,16 @@ export default function FeedEnhancer( {
 		return map;
 	}, [ storePosts ] );
 
+	const unresolvedCount = useMemo( () => {
+		let count = 0;
+		postStateById.forEach( ( state ) => {
+			if ( state === 'unresolved' ) {
+				count += 1;
+			}
+		} );
+		return count;
+	}, [ postStateById ] );
+
 	const activeModules = window.p2026Config?.activeModules;
 	const isPostStateActive =
 		! Array.isArray( activeModules ) ||
@@ -242,6 +252,12 @@ export default function FeedEnhancer( {
 		},
 		[ postStateById, postStateFilter ]
 	);
+
+	useEffect( () => {
+		if ( postStateFilter === 'unresolved' && unresolvedCount === 0 ) {
+			setPostStateFilter( 'all' );
+		}
+	}, [ postStateFilter, unresolvedCount, setPostStateFilter ] );
 
 	const applyPostStateClass = useCallback(
 		( postId, element ) => {
@@ -404,6 +420,7 @@ export default function FeedEnhancer( {
 									onClick={ () =>
 										setPostStateFilter( 'unresolved' )
 									}
+									disabled={ unresolvedCount === 0 }
 								>
 									{ __( 'Open only', 'p2026' ) }
 								</Button>
