@@ -204,7 +204,7 @@ function renderCard( data ) {
 
 	const byline = document.createElement( 'span' );
 	const dateText = formatDate( data.date );
-	const prefix = data.type === 'comment' ? 'Comment by ' : '';
+	const prefix = data.type === 'comment' ? __( 'Comment by ', 'p2026' ) : '';
 	byline.textContent = dateText
 		? `${ prefix }${ data.authorName } · ${ dateText }`
 		: `${ prefix }${ data.authorName }`;
