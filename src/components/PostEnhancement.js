@@ -80,6 +80,7 @@ export default function PostEnhancement( {
 		s( STORE_NAME ).getPostCommentCount( postId )
 	);
 	const isEditing = editingPost === postId;
+	const [ restCommentCount, setRestCommentCount ] = useState( null );
 
 	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
@@ -149,6 +150,54 @@ export default function PostEnhancement( {
 			removeListeners?.();
 		};
 	}, [] );
+
+	// Some themes do not expose a server-rendered comments link count and the
+	// posts endpoint may not include comment_count. In that case, fetch a single
+	// comments page and read X-WP-Total for an accurate initial label.
+	useEffect( () => {
+		const knownCount =
+			comments.length > 0 ||
+			storedCommentCount > 0 ||
+			( initialCommentCount ?? 0 ) > 0;
+
+		if ( knownCount || restCommentCount !== null ) {
+			return;
+		}
+
+		let cancelled = false;
+
+		apiFetch( {
+			path: `/wp/v2/comments?post=${ postId }&per_page=1&_fields=id`,
+			parse: false,
+		} )
+			.then( ( response ) => {
+				if ( cancelled ) {
+					return;
+				}
+
+				const total = parseInt(
+					response.headers.get( 'X-WP-Total' ) ?? '0',
+					10
+				);
+
+				setRestCommentCount( Number.isNaN( total ) ? 0 : total );
+			} )
+			.catch( () => {
+				if ( ! cancelled ) {
+					setRestCommentCount( 0 );
+				}
+			} );
+
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		comments.length,
+		storedCommentCount,
+		initialCommentCount,
+		restCommentCount,
+		postId,
+	] );
 
 	const closeMenu = useCallback( () => {
 		if ( detailsRef.current ) {
@@ -239,6 +288,9 @@ export default function PostEnhancement( {
 	// Prefer live fetched comments; otherwise use the REST post count, then the
 	// server-rendered DOM count as a first-paint fallback.
 	let commentCount = initialCommentCount ?? 0;
+	if ( restCommentCount !== null ) {
+		commentCount = restCommentCount;
+	}
 	if ( storedCommentCount > 0 ) {
 		commentCount = storedCommentCount;
 	}
