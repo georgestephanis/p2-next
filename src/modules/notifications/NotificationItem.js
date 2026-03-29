@@ -6,7 +6,7 @@
  */
 import { useCallback } from '@wordpress/element';
 import { useDispatch } from '@wordpress/data';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { STORE_NAME } from '../../store';
 import './_notification-item.scss';
 
@@ -24,14 +24,24 @@ export default function NotificationItem( { notification } ) {
 		}
 	}, [ notification, markNotificationAsRead ] );
 
+	const actorName = notification.from_user_name || __( 'Someone', 'p2026' );
+
 	// Format notification message based on type.
 	let message = '';
 	switch ( notification.type ) {
 		case 'mention':
-			message = __( 'Mentioned you', 'p2026' );
+			message = sprintf(
+				/* translators: %s: user display name */
+				__( '%s mentioned you', 'p2026' ),
+				actorName
+			);
 			break;
 		case 'reply':
-			message = __( 'Replied to your post', 'p2026' );
+			message = sprintf(
+				/* translators: %s: user display name */
+				__( '%s replied to your post', 'p2026' ),
+				actorName
+			);
 			break;
 		default:
 			message = __( 'Notification', 'p2026' );
@@ -45,10 +55,18 @@ export default function NotificationItem( { notification } ) {
 			onClick={ handleClick }
 		>
 			<div className="p2026-notification-item-avatar">
-				{ /* Placeholder avatar — future: fetch user data */ }
-				<div className="p2026-notification-placeholder-avatar">
-					{ String( notification.from_user ).charAt( 0 ) }
-				</div>
+				{ notification.from_user_avatar ? (
+					<img
+						src={ notification.from_user_avatar }
+						alt={ actorName }
+						width="40"
+						height="40"
+					/>
+				) : (
+					<div className="p2026-notification-placeholder-avatar">
+						{ String( actorName ).charAt( 0 ).toUpperCase() || '?' }
+					</div>
+				) }
 			</div>
 			<div className="p2026-notification-item-content">
 				<p className="p2026-notification-item-message">{ message }</p>

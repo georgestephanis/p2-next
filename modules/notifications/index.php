@@ -227,6 +227,27 @@ function p2026_get_notifications_rest( $request ) {
 	$offset       = (int) $request['offset'] ?? 0;
 
 	$notifications = p2026_get_notifications( $user_id, $unread_only, $limit, $offset );
+
+	foreach ( $notifications as &$notification ) {
+		$from_user_id = (int) ( $notification['from_user'] ?? 0 );
+		if ( $from_user_id > 0 ) {
+			$from_user = get_user_by( 'id', $from_user_id );
+			if ( $from_user ) {
+				$notification['from_user_name']   = $from_user->display_name ? $from_user->display_name : $from_user->user_login;
+				$notification['from_user_avatar'] = get_avatar_url( $from_user_id, array( 'size' => 80 ) );
+			}
+		}
+
+		$post_id = (int) ( $notification['post_id'] ?? 0 );
+		if ( $post_id > 0 ) {
+			$post = get_post( $post_id );
+			if ( $post ) {
+				$notification['post_title'] = get_the_title( $post );
+			}
+		}
+	}
+	unset( $notification );
+
 	$unread_count  = p2026_count_unread_notifications( $user_id );
 
 	return rest_ensure_response(
