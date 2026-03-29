@@ -4,7 +4,7 @@
  * Uses BlockEditorProvider + BlockList from @wordpress/block-editor so the
  * user gets the full block-authoring experience without the admin chrome.
  */
-import { useState, useCallback } from '@wordpress/element';
+import { useState, useCallback, useRef } from '@wordpress/element';
 import { createBlock } from '@wordpress/blocks';
 import { Button, TextControl } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
@@ -21,7 +21,26 @@ const EDITOR_SETTINGS = getEditorSettings( {
 	},
 } );
 
+function isPristineDraft( { title, isTitleEditing, blocks } ) {
+	if ( title.trim() || isTitleEditing ) {
+		return false;
+	}
+
+	if ( blocks.length !== 1 ) {
+		return false;
+	}
+
+	const [ firstBlock ] = blocks;
+	if ( firstBlock?.name !== 'core/paragraph' ) {
+		return false;
+	}
+
+	const paragraphContent = firstBlock?.attributes?.content ?? '';
+	return paragraphContent.trim() === '';
+}
+
 export default function NewPostEditor( { onAfterPublish } ) {
+	const editorRef = useRef( null );
 	const [ title, setTitle ] = useState( '' );
 	const [ isTitleEditing, setIsTitleEditing ] = useState( false );
 	const [ blocks, setBlocks ] = useState( [
@@ -32,6 +51,13 @@ export default function NewPostEditor( { onAfterPublish } ) {
 		select( STORE_NAME ).isSavingPost( 'new' )
 	);
 	const { onCanvasClick, onCanvasKeyDown } = useCanvasBlockSelection();
+	const isPristine = isPristineDraft( { title, isTitleEditing, blocks } );
+
+	const resetDraft = useCallback( () => {
+		setTitle( '' );
+		setIsTitleEditing( false );
+		setBlocks( [ createBlock( 'core/paragraph' ) ] );
+	}, [] );
 
 	const onPublish = useCallback( async () => {
 		if ( ! blocks.length ) {
@@ -39,14 +65,27 @@ export default function NewPostEditor( { onAfterPublish } ) {
 		}
 		await createPost( { blocks, title } );
 		// Reset editor to a fresh paragraph after successful save.
-		setTitle( '' );
-		setIsTitleEditing( false );
-		setBlocks( [ createBlock( 'core/paragraph' ) ] );
+		resetDraft();
 		onAfterPublish?.();
-	}, [ blocks, createPost, onAfterPublish, title ] );
+	}, [ blocks, createPost, onAfterPublish, resetDraft, title ] );
+
+	const onCancel = useCallback( () => {
+		if ( isPristine ) {
+			return;
+		}
+
+		resetDraft();
+
+		// For the inline block editor (non-modal), blur to make Cancel feel
+		// like an explicit exit from editing.
+		const active = editorRef.current?.ownerDocument.activeElement;
+		if ( active && typeof active.blur === 'function' ) {
+			active.blur();
+		}
+	}, [ isPristine, resetDraft ] );
 
 	return (
-		<div className="p2026-new-post-editor">
+		<div ref={ editorRef } className="p2026-new-post-editor">
 			<div className="p2026-new-post-header">
 				<span className="p2026-new-post-prompt">
 					{ __( "What's on your mind?", 'p2026' ) }
@@ -85,12 +124,8 @@ export default function NewPostEditor( { onAfterPublish } ) {
 			<div className="p2026-editor-toolbar">
 				<Button
 					variant="tertiary"
-					onClick={ () => {
-						setTitle( '' );
-						setIsTitleEditing( false );
-						setBlocks( [ createBlock( 'core/paragraph' ) ] );
-					} }
-					disabled={ isSaving }
+					onClick={ onCancel }
+					disabled={ isSaving || isPristine }
 				>
 					{ __( 'Cancel', 'p2026' ) }
 				</Button>
