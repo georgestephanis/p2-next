@@ -14,6 +14,14 @@ let hideTimer = null;
 let activeAnchor = null;
 
 function createUnavailablePreview( url ) {
+	let targetLabel = '';
+	try {
+		const parsed = new URL( url );
+		targetLabel = `${ parsed.host }${ parsed.pathname }${ parsed.search }${ parsed.hash }`;
+	} catch {
+		targetLabel = url;
+	}
+
 	return {
 		type: 'unavailable',
 		postTitle: __( 'Preview unavailable', 'p2026' ),
@@ -21,6 +29,7 @@ function createUnavailablePreview( url ) {
 			'This internal link cannot be previewed right now.',
 			'p2026'
 		),
+		targetLabel,
 		url,
 	};
 }
@@ -149,6 +158,13 @@ function renderCard( data ) {
 		note.className = 'p2026-link-preview-note';
 		note.textContent = data.excerpt || '';
 		card.appendChild( note );
+
+		if ( data.targetLabel ) {
+			const target = document.createElement( 'p' );
+			target.className = 'p2026-link-preview-target';
+			target.textContent = data.targetLabel;
+			card.appendChild( target );
+		}
 		return;
 	}
 
