@@ -243,6 +243,88 @@ if ( ! empty( $post_ids[1] ) ) {
 }
 
 // ---------------------------------------------------------------------------
+// Cross-link seed content for the internal link previews module demo.
+// Add internal post/comment links to both post bodies and comments so hover
+// preview cards are easy to test immediately.
+// ---------------------------------------------------------------------------
+
+$welcome_post_id   = (int) ( $post_ids[0] ?? 0 );
+$comments_post_id  = (int) ( $post_ids[1] ?? 0 );
+$editing_post_id   = (int) ( $post_ids[2] ?? 0 );
+$mentions_post_id  = (int) ( $post_ids[3] ?? 0 );
+$thread_a_root_id  = (int) ( $seed_comment_ids['thread_a_root'] ?? 0 );
+$thread_a_reply_id = (int) ( $seed_comment_ids['thread_a_reply'] ?? 0 );
+$thread_c_root_id  = (int) ( $seed_comment_ids['thread_c_root'] ?? 0 );
+
+$editing_post_url  = $editing_post_id ? get_permalink( $editing_post_id ) : '';
+$mentions_post_url = $mentions_post_id ? get_permalink( $mentions_post_id ) : '';
+$comments_post_url = $comments_post_id ? get_permalink( $comments_post_id ) : '';
+
+$thread_a_root_url  = $thread_a_root_id ? get_comment_link( $thread_a_root_id ) : '';
+$thread_a_reply_url = $thread_a_reply_id ? get_comment_link( $thread_a_reply_id ) : '';
+$thread_c_root_url  = $thread_c_root_id ? get_comment_link( $thread_c_root_id ) : '';
+
+if ( $welcome_post_id && $editing_post_url && $thread_a_root_url ) {
+    $existing_content = (string) get_post_field( 'post_content', $welcome_post_id );
+    $link_block       = '<!-- wp:paragraph --><p>Related reads: <a href="' . esc_url( $editing_post_url ) . '">Inline editing with the Block Editor</a> and this <a href="' . esc_url( $thread_a_root_url ) . '">comment thread kickoff</a>.</p><!-- /wp:paragraph -->';
+
+    wp_update_post(
+        [
+            'ID'           => $welcome_post_id,
+            'post_content' => $existing_content . "\n" . $link_block,
+        ]
+    );
+}
+
+if ( $comments_post_id && $mentions_post_url && $thread_c_root_url ) {
+    $existing_content = (string) get_post_field( 'post_content', $comments_post_id );
+    $link_block       = '<!-- wp:paragraph --><p>Cross-reference: <a href="' . esc_url( $mentions_post_url ) . '">@mention support is live</a> and an example <a href="' . esc_url( $thread_c_root_url ) . '">question in this thread</a>.</p><!-- /wp:paragraph -->';
+
+    wp_update_post(
+        [
+            'ID'           => $comments_post_id,
+            'post_content' => $existing_content . "\n" . $link_block,
+        ]
+    );
+}
+
+if ( $editing_post_id && $welcome_post_id && $thread_a_reply_url ) {
+    $existing_content = (string) get_post_field( 'post_content', $editing_post_id );
+    $link_block       = '<!-- wp:paragraph --><p>Reference links: back to <a href="' . esc_url( get_permalink( $welcome_post_id ) ) . '">Welcome to P2026</a> and to a <a href="' . esc_url( $thread_a_reply_url ) . '">nested comment reply</a>.</p><!-- /wp:paragraph -->';
+
+    wp_update_post(
+        [
+            'ID'           => $editing_post_id,
+            'post_content' => $existing_content . "\n" . $link_block,
+        ]
+    );
+}
+
+if ( $thread_c_root_id && $comments_post_url ) {
+    $existing_comment = get_comment( $thread_c_root_id );
+    if ( $existing_comment ) {
+        wp_update_comment(
+            [
+                'comment_ID'      => $thread_c_root_id,
+                'comment_content' => (string) $existing_comment->comment_content . ' Also see the <a href="' . esc_url( $comments_post_url ) . '">comments walkthrough post</a>.',
+            ]
+        );
+    }
+}
+
+if ( $thread_a_reply_id && $mentions_post_url ) {
+    $existing_comment = get_comment( $thread_a_reply_id );
+    if ( $existing_comment ) {
+        wp_update_comment(
+            [
+                'comment_ID'      => $thread_a_reply_id,
+                'comment_content' => (string) $existing_comment->comment_content . ' Side note: check out <a href="' . esc_url( $mentions_post_url ) . '">@mention support is live</a>.',
+            ]
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Seed notifications for the default Playground login user (admin).
 // Include both post-level and comment-level notifications so the dock has
 // realistic starter items on first load.
