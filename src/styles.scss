@@ -130,6 +130,11 @@
 }
 
 // New Post Editor (new-post block)
+.wp-block-p2026-new-post {
+
+	@include layout.content-constrained-container();
+}
+
 .p2026-new-post-editor {
 	margin: 16px 0;
 	background-color: #fff;
