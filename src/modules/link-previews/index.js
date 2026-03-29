@@ -85,20 +85,31 @@ function decorateInternalLinks( root = document ) {
 
 async function fetchPreview( url ) {
 	if ( previewCache.has( url ) ) {
-		return previewCache.get( url );
+		const cached = previewCache.get( url );
+		return Promise.resolve( cached );
 	}
 
 	const request = apiFetch( {
 		path: `/p2026/v1/link-preview?url=${ encodeURIComponent( url ) }`,
 	} )
-		.then( ( data ) => data )
+		.then( ( data ) => {
+			// Cache the successful preview response for future hovers.
+			previewCache.set( url, data );
+			return data;
+		} )
 		.catch( ( error ) => {
 			if ( error?.status === 404 || error?.status === 400 ) {
-				return createUnavailablePreview( url );
+				const unavailable = createUnavailablePreview( url );
+				// Cache the "unavailable" preview so we don't re-hit the endpoint.
+				previewCache.set( url, unavailable );
+				return unavailable;
 			}
+			// Evict failed promises so future calls can retry.
+			previewCache.delete( url );
 			throw error;
 		} );
 
+	// Cache the in-flight request so concurrent hovers share the same Promise.
 	previewCache.set( url, request );
 	return request;
 }
