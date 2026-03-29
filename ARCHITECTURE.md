@@ -24,6 +24,8 @@ flowchart TD
     D --> F[find feed container + collect post elements]
     D --> AF[Load active JS modules]
     AF --> AG[Notifications dock mount]
+    AF --> AL[Link previews module mount]
+    AL --> AM[GET /p2026/v1/link-preview?url=...]
     D --> AB[Mount NewPostModal root]
     D --> AC[Wire admin bar New Post button]
     AC -->|block on page| AD[Scroll + focus existing editor]
@@ -73,6 +75,8 @@ flowchart TD
 -   `src/components/NewPostModal.js`: modal wrapper for new-post editor; driven by `newPostModalOpen` store state.
 -   `src/blocks/new-post/render.php`: mount point output gated by `publish_posts`.
 -   `src/modules/index.js`: loads active JS modules from `window.p2026Config.activeModules`.
+-   `modules/link-previews/index.php`: internal link preview REST endpoint and transient caching.
+-   `src/modules/link-previews/`: internal-link hover/focus preview card UI.
 -   `admin/settings.php`: admin UI for module toggles and audit backend selection.
 -   `modules/post-state/index.php`: taxonomy-backed post state, REST field, and state mutation endpoint.
 -   `modules/audit-log/index.php`: audit event persistence handler (uploads JSONL or internal CPT).

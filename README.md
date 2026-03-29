@@ -16,6 +16,7 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 -   **Capability-aware UX** — All controls are gated by WordPress capabilities (and an optional Abilities API), so guests, contributors, and editors each see the appropriate UI.
 -   **Mentions module** — `@username` autocomplete and hovercards, server-side linkification, and mention hook emission for downstream notifications.
 -   **Notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
+-   **Link-previews module** — Internal post/comment links get hover preview cards (title, avatar, date, excerpt) with REST-backed server-side caching.
 -   **Audit-log module** — Persists core audit events to JSONL in uploads or an internal custom post type backend.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
@@ -115,8 +116,19 @@ Current modules:
 
 -   `mentions` — `@username` parsing, linkification, and user lookup REST endpoints
 -   `notifications` — per-user notifications REST API and dock UI
+-   `link-previews` — internal post/comment link preview REST endpoint + hover card UI
 -   `post-state` — Normal/Unresolved/Resolved workflow state + REST endpoint
 -   `audit-log` — audit event persistence backend (file or internal CPT)
+
+### Module Matrix
+
+| Module          | PHP Backend File                | Frontend Entrypoint                | REST Routes |
+| --------------- | ------------------------------- | ---------------------------------- | ----------- |
+| `mentions`      | `modules/mentions/index.php`    | `src/modules/mentions/index.js`    | `GET /p2026/v1/users`, `GET /p2026/v1/users/{id}` |
+| `notifications` | `modules/notifications/index.php` | `src/modules/notifications/index.js` | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
+| `link-previews` | `modules/link-previews/index.php` | `src/modules/link-previews/index.js` | `GET /p2026/v1/link-preview?url=...` |
+| `post-state`    | `modules/post-state/index.php`  | Core UI integration (`src/components/PostEnhancement.js`) | `POST /p2026/v1/posts/{id}/state` |
+| `audit-log`     | `modules/audit-log/index.php`   | N/A                                | N/A |
 
 ## Key Files
 
@@ -139,7 +151,9 @@ Current modules:
 | `modules/audit-log/index.php`               | Audit event persistence (uploads JSONL or CPT backend)                       |
 | `modules/mentions/index.php`                | Mention user search/detail endpoints and server-side content linkification   |
 | `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                   |
+| `modules/link-previews/index.php`           | Internal link preview REST endpoint + 3-day transient caching                |
 | `admin/settings.php`                        | Module toggles and audit backend configuration UI                            |
+| `src/modules/link-previews/`                | Hover/focus preview card UI for internal post/comment links                  |
 | `src/modules/notifications/`                | Notification dock frontend UI                                                |
 
 Playground note: `.github/setup.php` seeds sample users, posts, comments, and starter notifications for the default logged-in `admin` user.
