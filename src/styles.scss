@@ -396,8 +396,30 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 		background-color: #f9f9f9;
 		border: 1px solid #e5e5e5;
 		border-radius: 3px;
-		padding: 12px;
+		padding: 14px;
 		margin-top: 8px;
+		display: grid;
+		gap: 12px;
+
+		.components-base-control {
+			margin-bottom: 0;
+			max-width: none;
+		}
+
+		.components-base-control__field,
+		.components-text-control__input,
+		.components-textarea-control__input,
+		.p2026-mention-textarea-wrap {
+			width: 100%;
+			max-width: none;
+		}
+
+		.components-textarea-control__input {
+			display: block;
+			min-height: 112px;
+			box-sizing: border-box;
+			resize: vertical;
+		}
 	}
 
 	.p2026-new-comment-form {
@@ -407,7 +429,8 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	.p2026-reply-actions {
 		display: flex;
 		gap: 8px;
-		margin-top: 8px;
+		margin-top: 0;
+		justify-content: flex-end;
 	}
 }
 
