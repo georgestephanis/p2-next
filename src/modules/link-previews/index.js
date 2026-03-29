@@ -62,7 +62,19 @@ function isThreadContextLink( anchor ) {
 }
 
 function decorateInternalLinks( root = document ) {
+	const anchors = [];
+
+	// If the root itself is an <a> matching our selector, include it.
+	if ( root instanceof Element && root.matches( LINK_SELECTOR ) ) {
+		anchors.push( root );
+	}
+
+	// Also include all matching descendant anchors.
 	root.querySelectorAll( LINK_SELECTOR ).forEach( ( anchor ) => {
+		anchors.push( anchor );
+	} );
+
+	anchors.forEach( ( anchor ) => {
 		if ( anchor.classList.contains( DECORATED_CLASS ) ) {
 			return;
 		}
