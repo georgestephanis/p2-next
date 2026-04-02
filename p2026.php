@@ -366,8 +366,8 @@ add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
  * If the GitHub updates module file exists, include it to enable update checks
  * against the GitHub repo releases API.
  */
-if ( file_exists( P2026_DIR . '/includes/github-updates.php' ) ) {
-	require_once P2026_DIR . '/includes/github-updates.php';
+if ( file_exists( P2026_DIR . 'includes/github-updates.php' ) ) {
+	require_once P2026_DIR . 'includes/github-updates.php';
 }
 
 // ---------------------------------------------------------------------------
