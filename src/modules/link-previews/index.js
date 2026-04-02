@@ -65,7 +65,7 @@ function decorateInternalLinks( root = document ) {
 	const anchors = [];
 
 	// If the root itself is an <a> matching our selector, include it.
-	if ( root instanceof Element && root.matches( LINK_SELECTOR ) ) {
+	if ( root instanceof window.Element && root.matches( LINK_SELECTOR ) ) {
 		anchors.push( root );
 	}
 
@@ -204,10 +204,11 @@ function renderCard( data ) {
 
 	const byline = document.createElement( 'span' );
 	const dateText = formatDate( data.date );
-	const prefix = data.type === 'comment' ? __( 'Comment by ', 'p2026' ) : '';
+	const prefix = data.type === 'comment' ? __( 'Comment by', 'p2026' ) : '';
+	const prefixText = prefix ? `${ prefix } ` : '';
 	byline.textContent = dateText
-		? `${ prefix }${ data.authorName } · ${ dateText }`
-		: `${ prefix }${ data.authorName }`;
+		? `${ prefixText }${ data.authorName } · ${ dateText }`
+		: `${ prefixText }${ data.authorName }`;
 
 	meta.appendChild( avatar );
 	meta.appendChild( byline );
