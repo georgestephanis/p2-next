@@ -384,10 +384,19 @@ function p2026_build_trunk_update_payload( $plugin_file, $plugin_data, $head, $u
 		? $plugin_data['Version']
 		: P2026_VERSION;
 
-	$published_at = isset( $head['published_at'] ) && is_string( $head['published_at'] ) ? $head['published_at'] : '';
-	$timestamp    = '' !== $published_at ? gmdate( 'YmdHis', strtotime( $published_at ) ) : gmdate( 'YmdHis' );
-	$short_sha    = substr( (string) $head['sha'], 0, 8 );
+	$published_at    = isset( $head['published_at'] ) && is_string( $head['published_at'] ) ? $head['published_at'] : '';
+	$timestamp_source = time();
 
+	if ( '' !== $published_at ) {
+		$parsed = strtotime( $published_at );
+
+		if ( false !== $parsed ) {
+			$timestamp_source = $parsed;
+		}
+	}
+
+	$timestamp = gmdate( 'YmdHis', $timestamp_source );
+	$short_sha = substr( (string) $head['sha'], 0, 8 );
 	$payload                     = new stdClass();
 	$payload->id                 = $update_uri;
 	$payload->slug               = dirname( $plugin_file );
