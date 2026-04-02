@@ -2,6 +2,7 @@
 /**
  * Plugin Name: P2026
  * Plugin URI:  https://github.com/georgestephanis/p2026
+ * Update URI:  https://github.com/georgestephanis/p2026
  * Description: Modern P2/o2 replacement using the Block Editor and REST API.
  * Version:     0.1.0
  * Author:      George Stephanis
@@ -360,6 +361,179 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 	);
 }
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
+
+/**
+ * Parse a GitHub owner/repo tuple from an Update URI value.
+ *
+ * @param string $update_uri Update URI header value.
+ * @return array{owner: string, repo: string}|null
+ */
+function p2026_parse_github_repo_from_update_uri( $update_uri ) {
+	if ( ! is_string( $update_uri ) || '' === $update_uri ) {
+		return null;
+	}
+
+	$parts = wp_parse_url( $update_uri );
+	if ( ! is_array( $parts ) || empty( $parts['host'] ) || 'github.com' !== strtolower( (string) $parts['host'] ) ) {
+		return null;
+	}
+
+	$path = isset( $parts['path'] ) ? trim( (string) $parts['path'], '/' ) : '';
+	if ( '' === $path ) {
+		return null;
+	}
+
+	$segments = array_values( array_filter( explode( '/', $path ) ) );
+	if ( count( $segments ) < 2 ) {
+		return null;
+	}
+
+	return array(
+		'owner' => sanitize_key( $segments[0] ),
+		'repo'  => sanitize_key( preg_replace( '/\.git$/i', '', $segments[1] ) ),
+	);
+}
+
+/**
+ * Fetch the remote update offerings manifest from GitHub contents API.
+ *
+ * @param string $owner Repository owner.
+ * @param string $repo  Repository name.
+ * @return array<string, mixed>|null
+ */
+function p2026_get_remote_update_manifest( $owner, $repo ) {
+	$cache_key = 'p2026_update_manifest_' . md5( $owner . '/' . $repo );
+	$cached    = get_site_transient( $cache_key );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$response = wp_remote_get(
+		sprintf( 'https://api.github.com/repos/%1$s/%2$s/contents/.github/update-offerings.json', rawurlencode( $owner ), rawurlencode( $repo ) ),
+		array(
+			'timeout' => 10,
+			'headers' => array(
+				'Accept'     => 'application/vnd.github+json',
+				'User-Agent' => 'p2026-wordpress-updater',
+			),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return null;
+	}
+
+	$code = wp_remote_retrieve_response_code( $response );
+	if ( 200 !== (int) $code ) {
+		return null;
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! is_array( $body ) || empty( $body['download_url'] ) || ! is_string( $body['download_url'] ) ) {
+		return null;
+	}
+
+	$manifest_response = wp_remote_get(
+		$body['download_url'],
+		array(
+			'timeout' => 10,
+			'headers' => array(
+				'User-Agent' => 'p2026-wordpress-updater',
+			),
+		)
+	);
+	if ( is_wp_error( $manifest_response ) ) {
+		return null;
+	}
+
+	if ( 200 !== (int) wp_remote_retrieve_response_code( $manifest_response ) ) {
+		return null;
+	}
+
+	$manifest = json_decode( wp_remote_retrieve_body( $manifest_response ), true );
+	if ( ! is_array( $manifest ) ) {
+		return null;
+	}
+
+	set_site_transient( $cache_key, $manifest, 30 * MINUTE_IN_SECONDS );
+
+	return $manifest;
+}
+
+/**
+ * Supply update metadata for this plugin via the Update URI host filter.
+ *
+ * @param false|array|object $update      Existing update payload.
+ * @param array              $plugin_data Current plugin headers.
+ * @param string             $plugin_file Plugin basename.
+ * @param string[]           $locales     Installed locales.
+ * @return false|object
+ */
+function p2026_filter_github_plugin_update( $update, $plugin_data, $plugin_file, $locales ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	$our_plugin_file = plugin_basename( __FILE__ );
+	if ( $our_plugin_file !== $plugin_file ) {
+		return $update;
+	}
+
+	$update_uri = isset( $plugin_data['UpdateURI'] ) ? (string) $plugin_data['UpdateURI'] : '';
+	$repo       = p2026_parse_github_repo_from_update_uri( $update_uri );
+	if ( ! is_array( $repo ) || empty( $repo['owner'] ) || empty( $repo['repo'] ) ) {
+		return $update;
+	}
+
+	$manifest = p2026_get_remote_update_manifest( $repo['owner'], $repo['repo'] );
+	if ( ! is_array( $manifest ) || empty( $manifest['latest'] ) || ! is_array( $manifest['latest'] ) ) {
+		return $update;
+	}
+
+	$latest_version = '';
+	if ( isset( $manifest['latest']['wordpress_update']['new_version'] ) && is_string( $manifest['latest']['wordpress_update']['new_version'] ) ) {
+		$latest_version = $manifest['latest']['wordpress_update']['new_version'];
+	} elseif ( isset( $manifest['latest']['version'] ) && is_string( $manifest['latest']['version'] ) ) {
+		$latest_version = $manifest['latest']['version'];
+	}
+
+	$current_version = isset( $plugin_data['Version'] ) ? (string) $plugin_data['Version'] : '';
+	if ( '' === $latest_version || '' === $current_version || ! version_compare( $latest_version, $current_version, '>' ) ) {
+		return $update;
+	}
+
+	$package = '';
+	if ( isset( $manifest['latest']['wordpress_update']['package'] ) && is_string( $manifest['latest']['wordpress_update']['package'] ) ) {
+		$package = $manifest['latest']['wordpress_update']['package'];
+	} elseif ( isset( $manifest['latest']['package'] ) && is_string( $manifest['latest']['package'] ) ) {
+		$package = $manifest['latest']['package'];
+	}
+
+	if ( '' === $package ) {
+		return $update;
+	}
+
+	$update_data              = new stdClass();
+	$update_data->id          = $update_uri;
+	$update_data->slug        = dirname( $our_plugin_file );
+	$update_data->plugin      = $our_plugin_file;
+	$update_data->new_version = $latest_version;
+	$update_data->url         = isset( $manifest['latest']['release_url'] ) && is_string( $manifest['latest']['release_url'] )
+		? $manifest['latest']['release_url']
+		: $update_uri;
+	$update_data->package     = $package;
+
+	if ( isset( $manifest['latest']['wordpress_update']['requires'] ) && is_string( $manifest['latest']['wordpress_update']['requires'] ) && '' !== $manifest['latest']['wordpress_update']['requires'] ) {
+		$update_data->requires = $manifest['latest']['wordpress_update']['requires'];
+	}
+
+	if ( isset( $manifest['latest']['wordpress_update']['requires_php'] ) && is_string( $manifest['latest']['wordpress_update']['requires_php'] ) && '' !== $manifest['latest']['wordpress_update']['requires_php'] ) {
+		$update_data->requires_php = $manifest['latest']['wordpress_update']['requires_php'];
+	}
+
+	if ( isset( $manifest['latest']['wordpress_update']['tested'] ) && is_string( $manifest['latest']['wordpress_update']['tested'] ) && '' !== $manifest['latest']['wordpress_update']['tested'] ) {
+		$update_data->tested = $manifest['latest']['wordpress_update']['tested'];
+	}
+
+	return $update_data;
+}
+add_filter( 'update_plugins_github.com', 'p2026_filter_github_plugin_update', 10, 4 );
 
 
 
