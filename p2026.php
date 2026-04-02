@@ -362,13 +362,13 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 }
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
 
-$p2026_github_updates_file = P2026_DIR . 'includes/github-updates.php';
-if ( file_exists( $p2026_github_updates_file ) ) {
-	require_once $p2026_github_updates_file;
+/**
+ * If the GitHub updates module file exists, include it to enable update checks
+ * against the GitHub repo releases API.
+ */
+if ( file_exists( P2026_DIR . '/includes/github-updates.php' ) ) {
+	require_once P2026_DIR . '/includes/github-updates.php';
 }
-unset( $p2026_github_updates_file );
-
-
 
 // ---------------------------------------------------------------------------
 // Core feature APIs (REST endpoints and backend logic).
