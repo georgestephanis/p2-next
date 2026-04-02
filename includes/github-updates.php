@@ -544,7 +544,18 @@ function p2026_upgrader_source_selection( $source, $remote_source, $upgrader, $h
 		&& is_object( $wp_filesystem )
 		&& method_exists( $wp_filesystem, 'move' )
 	) {
-		$wp_filesystem->move( $source, $new_source, true );
+		$moved = $wp_filesystem->move( $source, $new_source, true );
+		if ( ! $moved ) {
+			return new WP_Error(
+				'p2026_rename_failed',
+				sprintf(
+					/* translators: 1: source path, 2: destination path */
+					__( 'Could not rename plugin folder from %1$s to %2$s.', 'p2026' ),
+					'<code>' . esc_html( basename( $source ) ) . '</code>',
+					'<code>' . esc_html( $slug ) . '</code>'
+				)
+			);
+		}
 	}
 
 	return trailingslashit( $new_source );
