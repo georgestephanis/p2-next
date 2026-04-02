@@ -2,6 +2,7 @@
 /**
  * Plugin Name: P2026
  * Plugin URI:  https://github.com/georgestephanis/p2026
+ * Update URI:  https://github.com/georgestephanis/p2026
  * Description: Modern P2/o2 replacement using the Block Editor and REST API.
  * Version:     0.1.0
  * Author:      George Stephanis
@@ -361,7 +362,13 @@ function p2026_admin_bar_new_post( $wp_admin_bar ) {
 }
 add_action( 'admin_bar_menu', 'p2026_admin_bar_new_post', 100 );
 
-
+/**
+ * If the GitHub updates module file exists, include it to enable update checks
+ * against the GitHub repo releases API.
+ */
+if ( file_exists( P2026_DIR . 'includes/github-updates.php' ) ) {
+	require_once P2026_DIR . 'includes/github-updates.php';
+}
 
 // ---------------------------------------------------------------------------
 // Core feature APIs (REST endpoints and backend logic).
