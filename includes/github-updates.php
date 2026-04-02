@@ -767,10 +767,15 @@ function p2026_track_installed_trunk_sha( $upgrader, $hook_extra ) {
 		return;
 	}
 
-	$head = p2026_get_default_branch_head( $repo['owner'], $repo['repo'] );
-	$sha  = is_array( $head ) && ! empty( $head['sha'] ) && is_string( $head['sha'] )
-		? $head['sha']
-		: '';
+	// Prefer the exact SHA from the update payload when available.
+	if ( isset( $hook_extra['p2026_trunk_sha'] ) && is_string( $hook_extra['p2026_trunk_sha'] ) && '' !== $hook_extra['p2026_trunk_sha'] ) {
+		$sha = $hook_extra['p2026_trunk_sha'];
+	} else {
+		$head = p2026_get_default_branch_head( $repo['owner'], $repo['repo'] );
+		$sha  = is_array( $head ) && ! empty( $head['sha'] ) && is_string( $head['sha'] )
+			? $head['sha']
+			: '';
+	}
 
 	p2026_set_installed_trunk_sha( $repo['owner'], $repo['repo'], $sha );
 }
