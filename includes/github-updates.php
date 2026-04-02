@@ -60,12 +60,151 @@ function p2026_parse_github_repo_from_update_uri( $update_uri ) {
 }
 
 /**
- * Whether prerelease updates are enabled.
+ * Get configured GitHub update channel.
  *
- * @return bool
+ * @return string
  */
-function p2026_github_updates_allow_prerelease() {
-	return '1' === get_option( 'p2026_github_updates_allow_prerelease', '0' );
+function p2026_github_updates_channel() {
+	$channel = get_option( 'p2026_github_updates_channel', '' );
+	if ( ! is_string( $channel ) ) {
+		$channel = '';
+	}
+
+	if ( in_array( $channel, array( 'default', 'prerelease', 'trunk' ), true ) ) {
+		return $channel;
+	}
+
+	// Backward compatibility for the previous checkbox-based setting.
+	return '1' === get_option( 'p2026_github_updates_allow_prerelease', '0' )
+		? 'prerelease'
+		: 'default';
+}
+
+/**
+ * Get last installed trunk SHA for a repository.
+ *
+ * @param string $owner Repository owner.
+ * @param string $repo  Repository name.
+ * @return string
+ */
+function p2026_get_installed_trunk_sha( $owner, $repo ) {
+	$all = get_option( 'p2026_github_updates_installed_trunk_sha', array() );
+	if ( ! is_array( $all ) ) {
+		return '';
+	}
+
+	$key = $owner . '/' . $repo;
+
+	return isset( $all[ $key ] ) && is_string( $all[ $key ] )
+		? $all[ $key ]
+		: '';
+}
+
+/**
+ * Persist installed trunk SHA for a repository.
+ *
+ * @param string $owner Repository owner.
+ * @param string $repo  Repository name.
+ * @param string $sha   Installed commit SHA.
+ * @return void
+ */
+function p2026_set_installed_trunk_sha( $owner, $repo, $sha ) {
+	if ( '' === $sha ) {
+		return;
+	}
+
+	$all = get_option( 'p2026_github_updates_installed_trunk_sha', array() );
+	if ( ! is_array( $all ) ) {
+		$all = array();
+	}
+
+	$all[ $owner . '/' . $repo ] = $sha;
+	update_option( 'p2026_github_updates_installed_trunk_sha', $all );
+}
+
+/**
+ * Fetch repository metadata from GitHub API.
+ *
+ * @param string $owner Repository owner.
+ * @param string $repo  Repository name.
+ * @return array<string, mixed>|null
+ */
+function p2026_get_github_repository_meta( $owner, $repo ) {
+	$cache_key = 'p2026_github_repo_meta_' . md5( $owner . '/' . $repo );
+	$cached    = get_site_transient( $cache_key );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$response = wp_remote_get(
+		sprintf( 'https://api.github.com/repos/%1$s/%2$s', rawurlencode( $owner ), rawurlencode( $repo ) ),
+		array(
+			'timeout' => 10,
+		)
+	);
+
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return null;
+	}
+
+	$meta = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! is_array( $meta ) ) {
+		return null;
+	}
+
+	set_site_transient( $cache_key, $meta, 30 * MINUTE_IN_SECONDS );
+
+	return $meta;
+}
+
+/**
+ * Fetch default branch HEAD information.
+ *
+ * @param string $owner Repository owner.
+ * @param string $repo  Repository name.
+ * @return array<string, string>|null
+ */
+function p2026_get_default_branch_head( $owner, $repo ) {
+	$cache_key = 'p2026_github_trunk_head_' . md5( $owner . '/' . $repo );
+	$cached    = get_site_transient( $cache_key );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$repo_meta = p2026_get_github_repository_meta( $owner, $repo );
+	$branch    = is_array( $repo_meta ) && ! empty( $repo_meta['default_branch'] )
+		? (string) $repo_meta['default_branch']
+		: 'main';
+
+	$response = wp_remote_get(
+		sprintf( 'https://api.github.com/repos/%1$s/%2$s/commits/%3$s', rawurlencode( $owner ), rawurlencode( $repo ), rawurlencode( $branch ) ),
+		array(
+			'timeout' => 10,
+		)
+	);
+
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return null;
+	}
+
+	$data = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! is_array( $data ) ) {
+		return null;
+	}
+
+	$head = array(
+		'branch'       => $branch,
+		'sha'          => isset( $data['sha'] ) && is_string( $data['sha'] ) ? $data['sha'] : '',
+		'published_at' => isset( $data['commit']['committer']['date'] ) && is_string( $data['commit']['committer']['date'] )
+			? $data['commit']['committer']['date']
+			: '',
+		'html_url'     => isset( $data['html_url'] ) && is_string( $data['html_url'] ) ? $data['html_url'] : '',
+		'message'      => isset( $data['commit']['message'] ) && is_string( $data['commit']['message'] ) ? $data['commit']['message'] : '',
+	);
+
+	set_site_transient( $cache_key, $head, 10 * MINUTE_IN_SECONDS );
+
+	return $head;
 }
 
 /**
@@ -226,6 +365,137 @@ function p2026_build_update_payload( $plugin_file, $plugin_data, $release, $upda
 }
 
 /**
+ * Build update payload from default branch HEAD (nightly/trunk mode).
+ *
+ * @param string               $plugin_file Plugin basename.
+ * @param array                $plugin_data Plugin headers.
+ * @param array<string, mixed> $head        Default branch head payload.
+ * @param string               $update_uri  Update URI value.
+ * @param string               $owner       Repository owner.
+ * @param string               $repo        Repository name.
+ * @return stdClass|null
+ */
+function p2026_build_trunk_update_payload( $plugin_file, $plugin_data, $head, $update_uri, $owner, $repo ) {
+	if ( ! is_array( $head ) || empty( $head['sha'] ) || empty( $head['branch'] ) ) {
+		return null;
+	}
+
+	$current_version = isset( $plugin_data['Version'] ) && is_string( $plugin_data['Version'] )
+		? $plugin_data['Version']
+		: P2026_VERSION;
+
+	$published_at = isset( $head['published_at'] ) && is_string( $head['published_at'] ) ? $head['published_at'] : '';
+	$timestamp    = '' !== $published_at ? gmdate( 'YmdHis', strtotime( $published_at ) ) : gmdate( 'YmdHis' );
+	$short_sha    = substr( (string) $head['sha'], 0, 8 );
+
+	$payload                     = new stdClass();
+	$payload->id                 = $update_uri;
+	$payload->slug               = dirname( $plugin_file );
+	$payload->plugin             = $plugin_file;
+	$payload->new_version        = $current_version . '.' . $timestamp;
+	$payload->url                = ! empty( $head['html_url'] ) && is_string( $head['html_url'] )
+		? $head['html_url']
+		: sprintf( 'https://github.com/%1$s/%2$s/tree/%3$s', rawurlencode( $owner ), rawurlencode( $repo ), rawurlencode( (string) $head['branch'] ) );
+	$payload->package            = sprintf( 'https://github.com/%1$s/%2$s/archive/refs/heads/%3$s.zip', rawurlencode( $owner ), rawurlencode( $repo ), rawurlencode( (string) $head['branch'] ) );
+	$payload->p2026_trunk_sha    = (string) $head['sha'];
+	$payload->p2026_trunk_branch = (string) $head['branch'];
+	$payload->p2026_trunk_label  = $short_sha;
+
+	if ( isset( $plugin_data['Requires'] ) && is_string( $plugin_data['Requires'] ) && '' !== $plugin_data['Requires'] ) {
+		$payload->requires = $plugin_data['Requires'];
+	}
+
+	if ( isset( $plugin_data['RequiresPHP'] ) && is_string( $plugin_data['RequiresPHP'] ) && '' !== $plugin_data['RequiresPHP'] ) {
+		$payload->requires_php = $plugin_data['RequiresPHP'];
+	}
+
+	if ( isset( $plugin_data['Tested'] ) && is_string( $plugin_data['Tested'] ) && '' !== $plugin_data['Tested'] ) {
+		$payload->tested = $plugin_data['Tested'];
+	}
+
+	return $payload;
+}
+
+/**
+ * Get update offer context for the configured channel.
+ *
+ * @param string               $plugin_file Plugin basename.
+ * @param array                $plugin_data Plugin headers.
+ * @param string               $update_uri  Update URI value.
+ * @param array<string,string> $repo        Repository tuple.
+ * @return array<string,mixed>|null
+ */
+function p2026_get_update_offer_context( $plugin_file, $plugin_data, $update_uri, $repo ) {
+	$channel = p2026_github_updates_channel();
+
+	if ( 'trunk' === $channel ) {
+		$head = p2026_get_default_branch_head( $repo['owner'], $repo['repo'] );
+		if ( ! is_array( $head ) ) {
+			return null;
+		}
+
+		$payload = p2026_build_trunk_update_payload( $plugin_file, $plugin_data, $head, $update_uri, $repo['owner'], $repo['repo'] );
+		if ( ! $payload instanceof stdClass ) {
+			return null;
+		}
+
+		return array(
+			'channel' => 'trunk',
+			'payload' => $payload,
+			'head'    => $head,
+		);
+	}
+
+	$release = p2026_select_release_offer(
+		p2026_get_github_releases( $repo['owner'], $repo['repo'] ),
+		'prerelease' === $channel
+	);
+	if ( ! is_array( $release ) ) {
+		return null;
+	}
+
+	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
+	if ( ! $payload instanceof stdClass ) {
+		return null;
+	}
+
+	return array(
+		'channel' => $channel,
+		'payload' => $payload,
+		'release' => $release,
+	);
+}
+
+/**
+ * Whether an update should be offered for the selected channel.
+ *
+ * @param array                $plugin_data Plugin headers.
+ * @param array<string,string> $repo        Repository tuple.
+ * @param array<string,mixed>  $context     Offer context.
+ * @return bool
+ */
+function p2026_should_offer_update( $plugin_data, $repo, $context ) {
+	if ( ! is_array( $context ) || empty( $context['payload'] ) || ! $context['payload'] instanceof stdClass ) {
+		return false;
+	}
+
+	if ( 'trunk' === ( $context['channel'] ?? '' ) ) {
+		$remote_sha = isset( $context['head']['sha'] ) && is_string( $context['head']['sha'] ) ? $context['head']['sha'] : '';
+		if ( '' === $remote_sha ) {
+			return false;
+		}
+
+		return p2026_get_installed_trunk_sha( $repo['owner'], $repo['repo'] ) !== $remote_sha;
+	}
+
+	$current_version = isset( $plugin_data['Version'] ) && is_string( $plugin_data['Version'] )
+		? $plugin_data['Version']
+		: P2026_VERSION;
+
+	return version_compare( $context['payload']->new_version, $current_version, '>' );
+}
+
+/**
  * Ensure zip extraction folder is renamed to expected plugin slug on updates.
  *
  * @param string|WP_Error $source        Source path.
@@ -293,22 +563,16 @@ function p2026_filter_github_plugin_update( $update, $plugin_data, $plugin_file,
 		return $update;
 	}
 
-	$release = p2026_select_release_offer( p2026_get_github_releases( $repo['owner'], $repo['repo'] ), p2026_github_updates_allow_prerelease() );
-	if ( ! is_array( $release ) ) {
+	$context = p2026_get_update_offer_context( $our_plugin_file, $plugin_data, $update_uri, $repo );
+	if ( ! is_array( $context ) || empty( $context['payload'] ) || ! $context['payload'] instanceof stdClass ) {
 		return $update;
 	}
 
-	$update_data = p2026_build_update_payload( $our_plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
-	if ( ! $update_data instanceof stdClass ) {
+	if ( ! p2026_should_offer_update( $plugin_data, $repo, $context ) ) {
 		return $update;
 	}
 
-	$current_version = isset( $plugin_data['Version'] ) ? (string) $plugin_data['Version'] : '';
-	if ( '' === $current_version || ! version_compare( $update_data->new_version, $current_version, '>' ) ) {
-		return $update;
-	}
-
-	return $update_data;
+	return $context['payload'];
 }
 add_filter( 'update_plugins_github.com', 'p2026_filter_github_plugin_update', 10, 4 );
 
@@ -344,15 +608,12 @@ function p2026_enrich_update_plugins_transient( $transient ) {
 		return $transient;
 	}
 
-	$release = p2026_select_release_offer( p2026_get_github_releases( $repo['owner'], $repo['repo'] ), p2026_github_updates_allow_prerelease() );
-	if ( ! is_array( $release ) ) {
+	$context = p2026_get_update_offer_context( $plugin_file, $plugin_data, $update_uri, $repo );
+	if ( ! is_array( $context ) || empty( $context['payload'] ) || ! $context['payload'] instanceof stdClass ) {
 		return $transient;
 	}
 
-	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
-	if ( ! $payload instanceof stdClass ) {
-		return $transient;
-	}
+	$payload = $context['payload'];
 
 	if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
 		$transient->response = array();
@@ -361,8 +622,7 @@ function p2026_enrich_update_plugins_transient( $transient ) {
 		$transient->no_update = array();
 	}
 
-	$current_version = isset( $plugin_data['Version'] ) ? (string) $plugin_data['Version'] : P2026_VERSION;
-	if ( version_compare( $payload->new_version, $current_version, '>' ) ) {
+	if ( p2026_should_offer_update( $plugin_data, $repo, $context ) ) {
 		$transient->response[ $plugin_file ] = $payload;
 		unset( $transient->no_update[ $plugin_file ] );
 	} else {
@@ -414,15 +674,12 @@ function p2026_plugin_api_details( $result, $action, $args ) {
 		return $result;
 	}
 
-	$release = p2026_select_release_offer( p2026_get_github_releases( $repo['owner'], $repo['repo'] ), p2026_github_updates_allow_prerelease() );
-	if ( ! is_array( $release ) ) {
+	$context = p2026_get_update_offer_context( $plugin_file, $plugin_data, $update_uri, $repo );
+	if ( ! is_array( $context ) || empty( $context['payload'] ) || ! $context['payload'] instanceof stdClass ) {
 		return $result;
 	}
 
-	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
-	if ( ! $payload instanceof stdClass ) {
-		return $result;
-	}
+	$payload = $context['payload'];
 
 	$info                = new stdClass();
 	$info->name          = ! empty( $plugin_data['Name'] ) ? $plugin_data['Name'] : 'P2026';
@@ -434,19 +691,90 @@ function p2026_plugin_api_details( $result, $action, $args ) {
 	$info->requires      = isset( $payload->requires ) ? $payload->requires : ( $plugin_data['Requires'] ?? '' );
 	$info->requires_php  = isset( $payload->requires_php ) ? $payload->requires_php : ( $plugin_data['RequiresPHP'] ?? '' );
 	$info->tested        = isset( $payload->tested ) ? $payload->tested : ( $plugin_data['Tested'] ?? '' );
-	$info->last_updated  = isset( $release['published_at'] ) && is_string( $release['published_at'] )
-		? $release['published_at']
-		: '';
-	$info->sections      = array(
-		'description' => ! empty( $plugin_data['Description'] ) ? $plugin_data['Description'] : '',
-		'changelog'   => isset( $release['body'] ) && is_string( $release['body'] )
-			? wp_kses_post( wpautop( $release['body'] ) )
-			: '',
-	);
+	if ( 'trunk' === ( $context['channel'] ?? '' ) ) {
+		$head               = isset( $context['head'] ) && is_array( $context['head'] ) ? $context['head'] : array();
+		$branch_label       = isset( $head['branch'] ) && is_string( $head['branch'] ) ? $head['branch'] : 'trunk';
+		$sha_label          = isset( $head['sha'] ) && is_string( $head['sha'] ) ? substr( $head['sha'], 0, 8 ) : '';
+		$info->last_updated = isset( $head['published_at'] ) && is_string( $head['published_at'] )
+			? $head['published_at']
+			: '';
+		$info->sections     = array(
+			'description' => ! empty( $plugin_data['Description'] ) ? $plugin_data['Description'] : '',
+			'changelog'   => wp_kses_post(
+				wpautop(
+					sprintf(
+						/* translators: 1: branch name, 2: short commit hash. */
+						__( 'Nightly build from branch %1$s at commit %2$s.', 'p2026' ),
+						$branch_label,
+						$sha_label
+					)
+				)
+			),
+		);
+	} else {
+		$release            = isset( $context['release'] ) && is_array( $context['release'] ) ? $context['release'] : array();
+		$info->last_updated = isset( $release['published_at'] ) && is_string( $release['published_at'] )
+			? $release['published_at']
+			: '';
+		$info->sections     = array(
+			'description' => ! empty( $plugin_data['Description'] ) ? $plugin_data['Description'] : '',
+			'changelog'   => isset( $release['body'] ) && is_string( $release['body'] )
+				? wp_kses_post( wpautop( $release['body'] ) )
+				: '',
+		);
+	}
 
 	return $info;
 }
 add_filter( 'plugins_api', 'p2026_plugin_api_details', 20, 3 );
+
+/**
+ * Persist installed trunk SHA after successful plugin updates.
+ *
+ * @param WP_Upgrader $upgrader   Upgrader object.
+ * @param array       $hook_extra Hook context.
+ * @return void
+ */
+function p2026_track_installed_trunk_sha( $upgrader, $hook_extra ) {
+	if ( ! is_array( $hook_extra ) ) {
+		return;
+	}
+
+	if ( empty( $hook_extra['type'] ) || 'plugin' !== $hook_extra['type'] ) {
+		return;
+	}
+
+	if ( empty( $hook_extra['action'] ) || 'update' !== $hook_extra['action'] ) {
+		return;
+	}
+
+	if ( empty( $hook_extra['plugins'] ) || ! is_array( $hook_extra['plugins'] ) ) {
+		return;
+	}
+
+	$our_plugin_file = plugin_basename( P2026_DIR . 'p2026.php' );
+	if ( ! in_array( $our_plugin_file, $hook_extra['plugins'], true ) ) {
+		return;
+	}
+
+	if ( 'trunk' !== p2026_github_updates_channel() ) {
+		return;
+	}
+
+	$update_uri = p2026_get_update_uri_from_header();
+	$repo       = p2026_parse_github_repo_from_update_uri( $update_uri );
+	if ( ! is_array( $repo ) || empty( $repo['owner'] ) || empty( $repo['repo'] ) ) {
+		return;
+	}
+
+	$head = p2026_get_default_branch_head( $repo['owner'], $repo['repo'] );
+	$sha  = is_array( $head ) && ! empty( $head['sha'] ) && is_string( $head['sha'] )
+		? $head['sha']
+		: '';
+
+	p2026_set_installed_trunk_sha( $repo['owner'], $repo['repo'], $sha );
+}
+add_action( 'upgrader_process_complete', 'p2026_track_installed_trunk_sha', 20, 2 );
 
 /**
  * Register updater settings tab.
@@ -480,8 +808,16 @@ function p2026_github_updates_save_settings_tab() {
 		return;
 	}
 
-	$allow_prerelease = isset( $_POST['p2026_github_updates_allow_prerelease'] ) ? '1' : '0';
-	update_option( 'p2026_github_updates_allow_prerelease', $allow_prerelease );
+	$channel = isset( $_POST['p2026_github_updates_channel'] )
+		? sanitize_key( wp_unslash( $_POST['p2026_github_updates_channel'] ) )
+		: 'default';
+
+	if ( ! in_array( $channel, array( 'default', 'prerelease', 'trunk' ), true ) ) {
+		$channel = 'default';
+	}
+
+	update_option( 'p2026_github_updates_channel', $channel );
+	update_option( 'p2026_github_updates_allow_prerelease', 'prerelease' === $channel ? '1' : '0' );
 }
 add_action( 'p2026_settings_save_tab_github-updates', 'p2026_github_updates_save_settings_tab' );
 
@@ -489,32 +825,54 @@ add_action( 'p2026_settings_save_tab_github-updates', 'p2026_github_updates_save
  * Render updater settings tab.
  */
 function p2026_github_updates_render_settings_tab() {
-	$allow_prerelease = p2026_github_updates_allow_prerelease();
+	$channel = p2026_github_updates_channel();
 	?>
 	<?php wp_nonce_field( 'p2026_github_updates_settings_save', 'p2026_github_updates_settings_nonce' ); ?>
 	<h2 class="title"><?php esc_html_e( 'GitHub Updates', 'p2026' ); ?></h2>
 	<p class="description">
-		<?php esc_html_e( 'Configure how update offers are selected from GitHub Releases.', 'p2026' ); ?>
+		<?php esc_html_e( 'Configure which GitHub source is used for update offers.', 'p2026' ); ?>
 	</p>
 
 	<table class="form-table" role="presentation">
 		<tr>
 			<th scope="row">
-				<?php esc_html_e( 'Offer prerelease updates', 'p2026' ); ?>
+				<?php esc_html_e( 'Update channel', 'p2026' ); ?>
 			</th>
 			<td>
-				<label for="p2026_github_updates_allow_prerelease">
+				<label for="p2026_github_updates_channel_default">
 					<input
-						type="checkbox"
-						id="p2026_github_updates_allow_prerelease"
-						name="p2026_github_updates_allow_prerelease"
-						value="1"
-						<?php checked( $allow_prerelease ); ?>
+						type="radio"
+						id="p2026_github_updates_channel_default"
+						name="p2026_github_updates_channel"
+						value="default"
+						<?php checked( 'default', $channel ); ?>
 					/>
-					<?php esc_html_e( 'Enable updates from prerelease GitHub versions.', 'p2026' ); ?>
+					<?php esc_html_e( 'Default (stable releases only)', 'p2026' ); ?>
+				</label>
+				<br />
+				<label for="p2026_github_updates_channel_prerelease">
+					<input
+						type="radio"
+						id="p2026_github_updates_channel_prerelease"
+						name="p2026_github_updates_channel"
+						value="prerelease"
+						<?php checked( 'prerelease', $channel ); ?>
+					/>
+					<?php esc_html_e( 'Pre-release (include prerelease tags)', 'p2026' ); ?>
+				</label>
+				<br />
+				<label for="p2026_github_updates_channel_trunk">
+					<input
+						type="radio"
+						id="p2026_github_updates_channel_trunk"
+						name="p2026_github_updates_channel"
+						value="trunk"
+						<?php checked( 'trunk', $channel ); ?>
+					/>
+					<?php esc_html_e( 'Trunk (nightly default-branch updates)', 'p2026' ); ?>
 				</label>
 				<p class="description">
-					<?php esc_html_e( 'When disabled, only non-draft stable releases are considered for updates.', 'p2026' ); ?>
+					<?php esc_html_e( 'Trunk mode offers updates when the repository default branch HEAD commit changes.', 'p2026' ); ?>
 				</p>
 			</td>
 		</tr>
