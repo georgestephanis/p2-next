@@ -60,96 +60,142 @@ function p2026_parse_github_repo_from_update_uri( $update_uri ) {
 }
 
 /**
- * Fetch the remote update offerings manifest from GitHub contents API.
+ * Whether prerelease updates are enabled.
+ *
+ * @return bool
+ */
+function p2026_github_updates_allow_prerelease() {
+	return '1' === get_option( 'p2026_github_updates_allow_prerelease', '0' );
+}
+
+/**
+ * Fetch GitHub releases for the configured repository.
  *
  * @param string $owner Repository owner.
  * @param string $repo  Repository name.
- * @return array<string, mixed>|null
+ * @return array<int, array<string, mixed>>
  */
-function p2026_get_remote_update_manifest( $owner, $repo ) {
-	$cache_key = 'p2026_update_manifest_' . md5( $owner . '/' . $repo );
+function p2026_get_github_releases( $owner, $repo ) {
+	$cache_key = 'p2026_github_releases_' . md5( $owner . '/' . $repo );
 	$cached    = get_site_transient( $cache_key );
 	if ( is_array( $cached ) ) {
 		return $cached;
 	}
 
 	$response = wp_remote_get(
-		sprintf( 'https://api.github.com/repos/%1$s/%2$s/contents/.github/update-offerings.json', rawurlencode( $owner ), rawurlencode( $repo ) ),
+		sprintf( 'https://api.github.com/repos/%1$s/%2$s/releases?per_page=100', rawurlencode( $owner ), rawurlencode( $repo ) ),
 		array(
 			'timeout' => 10,
 		)
 	);
 
-	if ( is_wp_error( $response ) ) {
-		return null;
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return array();
 	}
 
-	$code = wp_remote_retrieve_response_code( $response );
-	if ( 200 !== (int) $code ) {
-		return null;
+	$releases = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! is_array( $releases ) ) {
+		return array();
 	}
 
-	$body = json_decode( wp_remote_retrieve_body( $response ), true );
-	if ( ! is_array( $body ) || empty( $body['download_url'] ) || ! is_string( $body['download_url'] ) ) {
-		return null;
-	}
+	set_site_transient( $cache_key, $releases, 30 * MINUTE_IN_SECONDS );
 
-	$manifest_response = wp_remote_get(
-		$body['download_url'],
-		array(
-			'timeout' => 10,
-		)
-	);
-	if ( is_wp_error( $manifest_response ) ) {
-		return null;
-	}
-
-	if ( 200 !== (int) wp_remote_retrieve_response_code( $manifest_response ) ) {
-		return null;
-	}
-
-	$manifest = json_decode( wp_remote_retrieve_body( $manifest_response ), true );
-	if ( ! is_array( $manifest ) ) {
-		return null;
-	}
-
-	set_site_transient( $cache_key, $manifest, 30 * MINUTE_IN_SECONDS );
-
-	return $manifest;
+	return $releases;
 }
 
 /**
- * Build a normalized update payload object from manifest data.
+ * Pick the best release to offer based on prerelease setting.
  *
- * @param string $plugin_file Plugin basename.
- * @param array  $plugin_data Plugin headers.
- * @param array  $latest      Latest manifest payload.
- * @param string $update_uri  Update URI value.
- * @return stdClass|null
+ * @param array<int, array<string, mixed>> $releases Releases list.
+ * @param bool                             $allow_prerelease Whether prereleases are allowed.
+ * @return array<string, mixed>|null
  */
-function p2026_build_update_payload( $plugin_file, $plugin_data, $latest, $update_uri ) {
-	if ( ! is_array( $latest ) ) {
+function p2026_select_release_offer( $releases, $allow_prerelease ) {
+	if ( ! is_array( $releases ) ) {
 		return null;
 	}
 
-	$latest_version = '';
-	if ( isset( $latest['wordpress_update']['new_version'] ) && is_string( $latest['wordpress_update']['new_version'] ) ) {
-		$latest_version = $latest['wordpress_update']['new_version'];
-	} elseif ( isset( $latest['version'] ) && is_string( $latest['version'] ) ) {
-		$latest_version = $latest['version'];
+	foreach ( $releases as $release ) {
+		if ( ! is_array( $release ) ) {
+			continue;
+		}
+
+		$is_draft      = ! empty( $release['draft'] );
+		$is_prerelease = ! empty( $release['prerelease'] );
+
+		if ( $is_draft ) {
+			continue;
+		}
+
+		if ( $is_prerelease && ! $allow_prerelease ) {
+			continue;
+		}
+
+		return $release;
 	}
 
+	return null;
+}
+
+/**
+ * Build package URL from release metadata.
+ *
+ * @param array<string, mixed> $release Release payload.
+ * @param string               $owner   Repository owner.
+ * @param string               $repo    Repository name.
+ * @return string
+ */
+function p2026_release_package_url( $release, $owner, $repo ) {
+	if ( ! empty( $release['assets'] ) && is_array( $release['assets'] ) ) {
+		foreach ( $release['assets'] as $asset ) {
+			if ( ! is_array( $asset ) ) {
+				continue;
+			}
+
+			$name = isset( $asset['name'] ) ? (string) $asset['name'] : '';
+			$url  = isset( $asset['browser_download_url'] ) ? (string) $asset['browser_download_url'] : '';
+
+			if ( '' !== $name && '' !== $url && '.zip' === strtolower( substr( $name, -4 ) ) ) {
+				return $url;
+			}
+		}
+	}
+
+	$tag = isset( $release['tag_name'] ) ? (string) $release['tag_name'] : '';
+	if ( '' === $tag ) {
+		return '';
+	}
+
+	return sprintf( 'https://github.com/%1$s/%2$s/archive/refs/tags/%3$s.zip', rawurlencode( $owner ), rawurlencode( $repo ), rawurlencode( $tag ) );
+}
+
+/**
+ * Build a normalized update payload object from a GitHub release.
+ *
+ * @param string               $plugin_file Plugin basename.
+ * @param array                $plugin_data Plugin headers.
+ * @param array<string, mixed> $release     Release payload.
+ * @param string               $update_uri  Update URI value.
+ * @param string               $owner       Repository owner.
+ * @param string               $repo        Repository name.
+ * @return stdClass|null
+ */
+function p2026_build_update_payload( $plugin_file, $plugin_data, $release, $update_uri, $owner, $repo ) {
+	if ( ! is_array( $release ) ) {
+		return null;
+	}
+
+	$tag_name = isset( $release['tag_name'] ) ? (string) $release['tag_name'] : '';
+	if ( '' === $tag_name ) {
+		return null;
+	}
+
+	$latest_version = ltrim( $tag_name, 'vV' );
 	if ( '' === $latest_version ) {
 		return null;
 	}
 
-	$package = '';
-	if ( isset( $latest['wordpress_update']['package'] ) && is_string( $latest['wordpress_update']['package'] ) ) {
-		$package = $latest['wordpress_update']['package'];
-	} elseif ( isset( $latest['package'] ) && is_string( $latest['package'] ) ) {
-		$package = $latest['package'];
-	}
-
+	$package = p2026_release_package_url( $release, $owner, $repo );
 	if ( '' === $package ) {
 		return null;
 	}
@@ -159,26 +205,20 @@ function p2026_build_update_payload( $plugin_file, $plugin_data, $latest, $updat
 	$payload->slug        = dirname( $plugin_file );
 	$payload->plugin      = $plugin_file;
 	$payload->new_version = $latest_version;
-	$payload->url         = isset( $latest['release_url'] ) && is_string( $latest['release_url'] )
-		? $latest['release_url']
+	$payload->url         = isset( $release['html_url'] ) && is_string( $release['html_url'] )
+		? $release['html_url']
 		: $update_uri;
 	$payload->package     = $package;
 
-	if ( isset( $latest['wordpress_update']['requires'] ) && is_string( $latest['wordpress_update']['requires'] ) && '' !== $latest['wordpress_update']['requires'] ) {
-		$payload->requires = $latest['wordpress_update']['requires'];
-	} elseif ( isset( $plugin_data['Requires'] ) && is_string( $plugin_data['Requires'] ) && '' !== $plugin_data['Requires'] ) {
+	if ( isset( $plugin_data['Requires'] ) && is_string( $plugin_data['Requires'] ) && '' !== $plugin_data['Requires'] ) {
 		$payload->requires = $plugin_data['Requires'];
 	}
 
-	if ( isset( $latest['wordpress_update']['requires_php'] ) && is_string( $latest['wordpress_update']['requires_php'] ) && '' !== $latest['wordpress_update']['requires_php'] ) {
-		$payload->requires_php = $latest['wordpress_update']['requires_php'];
-	} elseif ( isset( $plugin_data['RequiresPHP'] ) && is_string( $plugin_data['RequiresPHP'] ) && '' !== $plugin_data['RequiresPHP'] ) {
+	if ( isset( $plugin_data['RequiresPHP'] ) && is_string( $plugin_data['RequiresPHP'] ) && '' !== $plugin_data['RequiresPHP'] ) {
 		$payload->requires_php = $plugin_data['RequiresPHP'];
 	}
 
-	if ( isset( $latest['wordpress_update']['tested'] ) && is_string( $latest['wordpress_update']['tested'] ) && '' !== $latest['wordpress_update']['tested'] ) {
-		$payload->tested = $latest['wordpress_update']['tested'];
-	} elseif ( isset( $plugin_data['Tested'] ) && is_string( $plugin_data['Tested'] ) && '' !== $plugin_data['Tested'] ) {
+	if ( isset( $plugin_data['Tested'] ) && is_string( $plugin_data['Tested'] ) && '' !== $plugin_data['Tested'] ) {
 		$payload->tested = $plugin_data['Tested'];
 	}
 
@@ -253,12 +293,12 @@ function p2026_filter_github_plugin_update( $update, $plugin_data, $plugin_file,
 		return $update;
 	}
 
-	$manifest = p2026_get_remote_update_manifest( $repo['owner'], $repo['repo'] );
-	if ( ! is_array( $manifest ) || empty( $manifest['latest'] ) || ! is_array( $manifest['latest'] ) ) {
+	$release = p2026_select_release_offer( p2026_get_github_releases( $repo['owner'], $repo['repo'] ), p2026_github_updates_allow_prerelease() );
+	if ( ! is_array( $release ) ) {
 		return $update;
 	}
 
-	$update_data = p2026_build_update_payload( $our_plugin_file, $plugin_data, $manifest['latest'], $update_uri );
+	$update_data = p2026_build_update_payload( $our_plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
 	if ( ! $update_data instanceof stdClass ) {
 		return $update;
 	}
@@ -304,12 +344,12 @@ function p2026_enrich_update_plugins_transient( $transient ) {
 		return $transient;
 	}
 
-	$manifest = p2026_get_remote_update_manifest( $repo['owner'], $repo['repo'] );
-	if ( ! is_array( $manifest ) || empty( $manifest['latest'] ) || ! is_array( $manifest['latest'] ) ) {
+	$release = p2026_select_release_offer( p2026_get_github_releases( $repo['owner'], $repo['repo'] ), p2026_github_updates_allow_prerelease() );
+	if ( ! is_array( $release ) ) {
 		return $transient;
 	}
 
-	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $manifest['latest'], $update_uri );
+	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
 	if ( ! $payload instanceof stdClass ) {
 		return $transient;
 	}
@@ -374,12 +414,12 @@ function p2026_plugin_api_details( $result, $action, $args ) {
 		return $result;
 	}
 
-	$manifest = p2026_get_remote_update_manifest( $repo['owner'], $repo['repo'] );
-	if ( ! is_array( $manifest ) || empty( $manifest['latest'] ) || ! is_array( $manifest['latest'] ) ) {
+	$release = p2026_select_release_offer( p2026_get_github_releases( $repo['owner'], $repo['repo'] ), p2026_github_updates_allow_prerelease() );
+	if ( ! is_array( $release ) ) {
 		return $result;
 	}
 
-	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $manifest['latest'], $update_uri );
+	$payload = p2026_build_update_payload( $plugin_file, $plugin_data, $release, $update_uri, $repo['owner'], $repo['repo'] );
 	if ( ! $payload instanceof stdClass ) {
 		return $result;
 	}
@@ -394,16 +434,93 @@ function p2026_plugin_api_details( $result, $action, $args ) {
 	$info->requires      = isset( $payload->requires ) ? $payload->requires : ( $plugin_data['Requires'] ?? '' );
 	$info->requires_php  = isset( $payload->requires_php ) ? $payload->requires_php : ( $plugin_data['RequiresPHP'] ?? '' );
 	$info->tested        = isset( $payload->tested ) ? $payload->tested : ( $plugin_data['Tested'] ?? '' );
-	$info->last_updated  = isset( $manifest['latest']['published_at'] ) && is_string( $manifest['latest']['published_at'] )
-		? $manifest['latest']['published_at']
+	$info->last_updated  = isset( $release['published_at'] ) && is_string( $release['published_at'] )
+		? $release['published_at']
 		: '';
 	$info->sections      = array(
 		'description' => ! empty( $plugin_data['Description'] ) ? $plugin_data['Description'] : '',
-		'changelog'   => isset( $manifest['latest']['body'] ) && is_string( $manifest['latest']['body'] )
-			? wp_kses_post( wpautop( $manifest['latest']['body'] ) )
+		'changelog'   => isset( $release['body'] ) && is_string( $release['body'] )
+			? wp_kses_post( wpautop( $release['body'] ) )
 			: '',
 	);
 
 	return $info;
 }
 add_filter( 'plugins_api', 'p2026_plugin_api_details', 20, 3 );
+
+/**
+ * Register updater settings tab.
+ *
+ * @param array<string, string> $tabs Existing settings tabs.
+ * @return array<string, string>
+ */
+function p2026_github_updates_register_settings_tab( $tabs ) {
+	if ( ! is_array( $tabs ) ) {
+		$tabs = array();
+	}
+
+	$tabs['github-updates'] = __( 'GitHub Updates', 'p2026' );
+
+	return $tabs;
+}
+add_filter( 'p2026_settings_tabs', 'p2026_github_updates_register_settings_tab' );
+
+/**
+ * Save updater settings tab.
+ */
+function p2026_github_updates_save_settings_tab() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	$nonce = isset( $_POST['p2026_github_updates_settings_nonce'] )
+		? sanitize_text_field( wp_unslash( $_POST['p2026_github_updates_settings_nonce'] ) )
+		: '';
+	if ( ! wp_verify_nonce( $nonce, 'p2026_github_updates_settings_save' ) ) {
+		return;
+	}
+
+	$allow_prerelease = isset( $_POST['p2026_github_updates_allow_prerelease'] ) ? '1' : '0';
+	update_option( 'p2026_github_updates_allow_prerelease', $allow_prerelease );
+}
+add_action( 'p2026_settings_save_tab_github-updates', 'p2026_github_updates_save_settings_tab' );
+
+/**
+ * Render updater settings tab.
+ */
+function p2026_github_updates_render_settings_tab() {
+	$allow_prerelease = p2026_github_updates_allow_prerelease();
+	?>
+	<?php wp_nonce_field( 'p2026_github_updates_settings_save', 'p2026_github_updates_settings_nonce' ); ?>
+	<h2 class="title"><?php esc_html_e( 'GitHub Updates', 'p2026' ); ?></h2>
+	<p class="description">
+		<?php esc_html_e( 'Configure how update offers are selected from GitHub Releases.', 'p2026' ); ?>
+	</p>
+
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row">
+				<?php esc_html_e( 'Offer prerelease updates', 'p2026' ); ?>
+			</th>
+			<td>
+				<label for="p2026_github_updates_allow_prerelease">
+					<input
+						type="checkbox"
+						id="p2026_github_updates_allow_prerelease"
+						name="p2026_github_updates_allow_prerelease"
+						value="1"
+						<?php checked( $allow_prerelease ); ?>
+					/>
+					<?php esc_html_e( 'Enable updates from prerelease GitHub versions.', 'p2026' ); ?>
+				</label>
+				<p class="description">
+					<?php esc_html_e( 'When disabled, only non-draft stable releases are considered for updates.', 'p2026' ); ?>
+				</p>
+			</td>
+		</tr>
+	</table>
+
+	<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
+	<?php
+}
+add_action( 'p2026_settings_render_tab_github-updates', 'p2026_github_updates_render_settings_tab' );
