@@ -7,6 +7,8 @@ import {
 	useState,
 } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
+import { store as coreDataStore, useEntityRecords } from '@wordpress/core-data';
+import { useDispatch } from '@wordpress/data';
 import {
 	Button,
 	Notice,
@@ -17,6 +19,8 @@ import {
 import { DataViews, filterSortAndPaginate } from '@wordpress/dataviews';
 
 import './audit-log-viewer.scss';
+
+const AUDIT_LOG_ENTITY = 'p2026AuditLogEntry';
 
 const formatTimestamp = ( value ) => {
 	if ( ! value ) {
@@ -44,6 +48,8 @@ const buildUrl = ( base, params = {} ) => {
 	} );
 	return url.toString();
 };
+
+const stripHtml = ( html ) => String( html || '' ).replace( /<[^>]+>/g, '' );
 
 const renderActorCell = ( item, relatedData ) => {
 	const actorId = Number( item.actor_id || 0 );
@@ -160,21 +166,25 @@ const collectUniqueIds = ( items, key ) => {
 			ids.add( value );
 		}
 	} );
-	return Array.from( ids );
+	return Array.from( ids ).sort( ( a, b ) => a - b );
 };
 
 const AuditLogViewerApp = ( { config } ) => {
+	const { addEntities } = useDispatch( coreDataStore );
+	const preloadedDay = config?.preloadedDay || '';
+	const preloadedEntries = useMemo(
+		() =>
+			Array.isArray( config?.preloadedEntries )
+				? config.preloadedEntries
+				: [],
+		[ config?.preloadedEntries ]
+	);
+
 	const [ days, setDays ] = useState( [] );
-	const [ selectedDay, setSelectedDay ] = useState( '' );
+	const [ selectedDay, setSelectedDay ] = useState( preloadedDay );
 	const [ isLoadingDays, setIsLoadingDays ] = useState( true );
-	const [ isLoadingEntries, setIsLoadingEntries ] = useState( true );
 	const [ errorMessage, setErrorMessage ] = useState( '' );
-	const [ rawItems, setRawItems ] = useState( [] );
-	const [ relatedData, setRelatedData ] = useState( {
-		users: {},
-		posts: {},
-		comments: {},
-	} );
+	const [ refreshToken, setRefreshToken ] = useState( 0 );
 	const [ view, setView ] = useState( {
 		type: 'table',
 		perPage: 25,
@@ -193,6 +203,124 @@ const AuditLogViewerApp = ( { config } ) => {
 			direction: 'desc',
 		},
 	} );
+
+	useEffect( () => {
+		addEntities( [
+			{
+				kind: 'root',
+				name: AUDIT_LOG_ENTITY,
+				baseURL: '/p2026/v1/audit-log/entries',
+				key: 'id',
+			},
+		] );
+	}, [ addEntities ] );
+
+	const auditLogQuery = useMemo(
+		() => ( {
+			day: selectedDay || undefined,
+			per_page: 500,
+			page: 1,
+			p2026_refresh: refreshToken,
+		} ),
+		[ refreshToken, selectedDay ]
+	);
+
+	const { records: rawItems, isResolving: isResolvingEntries } =
+		useEntityRecords( 'root', AUDIT_LOG_ENTITY, auditLogQuery );
+
+	const shouldUsePreloadedEntries =
+		isResolvingEntries &&
+		refreshToken === 0 &&
+		selectedDay === preloadedDay;
+
+	const safeItems = useMemo( () => {
+		if ( Array.isArray( rawItems ) ) {
+			return rawItems;
+		}
+
+		if ( shouldUsePreloadedEntries ) {
+			return preloadedEntries;
+		}
+
+		return [];
+	}, [ rawItems, shouldUsePreloadedEntries, preloadedEntries ] );
+	const userIds = useMemo(
+		() => collectUniqueIds( safeItems, 'actor_id' ),
+		[ safeItems ]
+	);
+	const postIds = useMemo(
+		() => collectUniqueIds( safeItems, 'post_id' ),
+		[ safeItems ]
+	);
+	const commentIds = useMemo(
+		() => collectUniqueIds( safeItems, 'comment_id' ),
+		[ safeItems ]
+	);
+
+	const { records: userRecords, isResolving: isResolvingUsers } =
+		useEntityRecords(
+			'root',
+			'user',
+			{ include: userIds, per_page: Math.max( userIds.length, 1 ) },
+			{ enabled: userIds.length > 0 }
+		);
+
+	const { records: postRecords, isResolving: isResolvingPosts } =
+		useEntityRecords(
+			'postType',
+			'post',
+			{ include: postIds, per_page: Math.max( postIds.length, 1 ) },
+			{ enabled: postIds.length > 0 }
+		);
+
+	const { records: commentRecords, isResolving: isResolvingComments } =
+		useEntityRecords(
+			'root',
+			'comment',
+			{
+				include: commentIds,
+				per_page: Math.max( commentIds.length, 1 ),
+				status: 'all',
+			},
+			{ enabled: commentIds.length > 0 }
+		);
+
+	const relatedData = useMemo( () => {
+		const users = {};
+		( userRecords || [] ).forEach( ( user ) => {
+			users[ Number( user.id ) ] = {
+				name: user?.name || '',
+				avatar_url:
+					user?.avatar_urls?.[ '24' ] ||
+					user?.avatar_urls?.[ '32' ] ||
+					'',
+			};
+		} );
+
+		const posts = {};
+		( postRecords || [] ).forEach( ( post ) => {
+			posts[ Number( post.id ) ] = {
+				title: stripHtml( post?.title?.rendered || '' ),
+				permalink: post?.link || '',
+			};
+		} );
+
+		const comments = {};
+		( commentRecords || [] ).forEach( ( comment ) => {
+			comments[ Number( comment.id ) ] = {
+				excerpt: stripHtml( comment?.content?.rendered || '' ),
+				permalink: comment?.link || '',
+			};
+		} );
+
+		return { users, posts, comments };
+	}, [ commentRecords, postRecords, userRecords ] );
+
+	const isLoadingEntries =
+		isResolvingEntries ||
+		isResolvingUsers ||
+		isResolvingPosts ||
+		isResolvingComments;
 
 	const fields = useMemo(
 		() => [
@@ -244,48 +372,6 @@ const AuditLogViewerApp = ( { config } ) => {
 		[ relatedData ]
 	);
 
-	const loadRelatedData = useCallback(
-		async ( items ) => {
-			const userIds = collectUniqueIds( items, 'actor_id' );
-			const postIds = collectUniqueIds( items, 'post_id' );
-			const commentIds = collectUniqueIds( items, 'comment_id' );
-
-			if ( userIds.length + postIds.length + commentIds.length === 0 ) {
-				setRelatedData( { users: {}, posts: {}, comments: {} } );
-				return;
-			}
-
-			try {
-				const response = await window.fetch(
-					buildUrl( `${ config.restRoot }p2026/v1/lookups`, {
-						user_ids: userIds.join( ',' ),
-						post_ids: postIds.join( ',' ),
-						comment_ids: commentIds.join( ',' ),
-					} ),
-					{
-						headers: {
-							'X-WP-Nonce': config.restNonce,
-						},
-					}
-				);
-
-				if ( ! response.ok ) {
-					throw new Error( 'related-fetch-failed' );
-				}
-
-				const payload = await response.json();
-				setRelatedData( {
-					users: payload.users || {},
-					posts: payload.posts || {},
-					comments: payload.comments || {},
-				} );
-			} catch ( error ) {
-				setRelatedData( { users: {}, posts: {}, comments: {} } );
-			}
-		},
-		[ config.restNonce, config.restRoot ]
-	);
-
 	const loadDays = useCallback( async () => {
 		setIsLoadingDays( true );
 		setErrorMessage( '' );
@@ -323,50 +409,9 @@ const AuditLogViewerApp = ( { config } ) => {
 		setIsLoadingDays( false );
 	}, [ config.restBase, config.restNonce, selectedDay ] );
 
-	const loadEntries = useCallback( async () => {
-		setIsLoadingEntries( true );
-		setErrorMessage( '' );
-
-		try {
-			const response = await window.fetch(
-				buildUrl( `${ config.restBase }/entries`, {
-					day: selectedDay,
-					per_page: 500,
-					page: 1,
-				} ),
-				{
-					headers: {
-						'X-WP-Nonce': config.restNonce,
-					},
-				}
-			);
-
-			if ( ! response.ok ) {
-				throw new Error( 'entries-fetch-failed' );
-			}
-
-			const payload = await response.json();
-			const items = Array.isArray( payload.items ) ? payload.items : [];
-			setRawItems( items );
-			await loadRelatedData( items );
-		} catch ( error ) {
-			setErrorMessage(
-				__( 'Unable to load audit log entries.', 'p2026' )
-			);
-			setRawItems( [] );
-			setRelatedData( { users: {}, posts: {}, comments: {} } );
-		}
-
-		setIsLoadingEntries( false );
-	}, [ config.restBase, config.restNonce, loadRelatedData, selectedDay ] );
-
 	useEffect( () => {
 		void loadDays();
 	}, [ loadDays ] );
-
-	useEffect( () => {
-		void loadEntries();
-	}, [ loadEntries ] );
 
 	const dayOptions = useMemo( () => {
 		const options = [ { label: __( 'All Days', 'p2026' ), value: '' } ];
@@ -377,8 +422,8 @@ const AuditLogViewerApp = ( { config } ) => {
 	}, [ days ] );
 
 	const { data: processedData, paginationInfo } = useMemo(
-		() => filterSortAndPaginate( rawItems, view, fields ),
-		[ fields, rawItems, view ]
+		() => filterSortAndPaginate( safeItems, view, fields ),
+		[ fields, safeItems, view ]
 	);
 
 	return (
@@ -411,7 +456,7 @@ const AuditLogViewerApp = ( { config } ) => {
 				</div>
 				<Button
 					variant="secondary"
-					onClick={ () => void loadEntries() }
+					onClick={ () => setRefreshToken( ( token ) => token + 1 ) }
 					disabled={ isLoadingEntries }
 				>
 					{ __( 'Refresh Entries', 'p2026' ) }
@@ -430,17 +475,19 @@ const AuditLogViewerApp = ( { config } ) => {
 				</Notice>
 			) }
 
-			{ ! isLoadingEntries && ! errorMessage && rawItems.length === 0 && (
-				<Notice status="info" isDismissible={ false }>
-					{ selectedDay
-						? sprintf(
-								/* translators: %s: selected day (YYYY-MM-DD). */
-								__( 'No entries found for %s.', 'p2026' ),
-								selectedDay
-						  )
-						: __( 'No audit log entries found.', 'p2026' ) }
-				</Notice>
-			) }
+			{ ! isLoadingEntries &&
+				! errorMessage &&
+				safeItems.length === 0 && (
+					<Notice status="info" isDismissible={ false }>
+						{ selectedDay
+							? sprintf(
+									/* translators: %s: selected day (YYYY-MM-DD). */
+									__( 'No entries found for %s.', 'p2026' ),
+									selectedDay
+							  )
+							: __( 'No audit log entries found.', 'p2026' ) }
+					</Notice>
+				) }
 
 			{ isLoadingEntries && (
 				<p>
@@ -448,7 +495,7 @@ const AuditLogViewerApp = ( { config } ) => {
 				</p>
 			) }
 
-			{ ! isLoadingEntries && ! errorMessage && rawItems.length > 0 && (
+			{ ! isLoadingEntries && ! errorMessage && safeItems.length > 0 && (
 				<DataViews
 					data={ processedData }
 					fields={ fields }

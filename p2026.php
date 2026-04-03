@@ -380,9 +380,6 @@ require_once P2026_DIR . 'includes/api/search.php';
 // Read/Unread state tracking — per-user last activity and unread counts.
 require_once P2026_DIR . 'includes/api/read-state.php';
 
-// Shared entity lookups for frontend/admin React surfaces.
-require_once P2026_DIR . 'includes/api/lookups.php';
-
 // ---------------------------------------------------------------------------
 // Modules — self-contained feature extensions loaded from modules/*/index.php.
 // ---------------------------------------------------------------------------

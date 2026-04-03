@@ -356,6 +356,18 @@ function p2026_audit_log_enqueue_admin_assets( $hook_suffix ) {
 		return;
 	}
 
+	$preloaded_day = '';
+	$preloaded_entries = array();
+	$available_days = p2026_audit_log_get_available_days();
+	if ( ! empty( $available_days ) ) {
+		$preloaded_day = (string) $available_days[0];
+		if ( 'cpt' === p2026_audit_log_get_backend() ) {
+			$preloaded_entries = array_slice( p2026_audit_log_read_cpt_entries( $preloaded_day, 500 ), 0, 500 );
+		} else {
+			$preloaded_entries = array_slice( p2026_audit_log_read_file_entries( $preloaded_day ), 0, 500 );
+		}
+	}
+
 	wp_enqueue_script(
 		'p2026-audit-log-viewer',
 		P2026_URL . 'build/audit-log-viewer.js',
@@ -392,6 +404,8 @@ function p2026_audit_log_enqueue_admin_assets( $hook_suffix ) {
 				'restRoot' => esc_url_raw( rest_url() ),
 				'restNonce' => wp_create_nonce( 'wp_rest' ),
 				'backend' => p2026_audit_log_get_backend(),
+				'preloadedDay' => $preloaded_day,
+				'preloadedEntries' => array_values( $preloaded_entries ),
 			)
 		) . ';',
 		'before'
@@ -753,15 +767,13 @@ function p2026_audit_log_rest_entries( WP_REST_Request $request ) {
 	$total = count( $entries );
 	$start = ( $page - 1 ) * $per_page;
 	$items = array_slice( $entries, $start, $per_page );
+	$total_pages = max( 1, (int) ceil( $total / $per_page ) );
 
-	return rest_ensure_response(
-		array(
-			'items' => array_values( $items ),
-			'total' => $total,
-			'page' => $page,
-			'per_page' => $per_page,
-		)
-	);
+	$response = rest_ensure_response( array_values( $items ) );
+	$response->header( 'X-WP-Total', (string) $total );
+	$response->header( 'X-WP-TotalPages', (string) $total_pages );
+
+	return $response;
 }
 
 /**
