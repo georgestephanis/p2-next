@@ -235,7 +235,7 @@ function p2026_render_settings_page() {
 				<?php if ( empty( $modules ) ) : ?>
 					<p><?php esc_html_e( 'No modules found.', 'p2026' ); ?></p>
 				<?php else : ?>
-					<table class="wp-list-table widefat fixed striped plugins" style="margin-top:1em;">
+					<table class="wp-list-table widefat fixed striped plugins" style="margin:1em 0 1.25em; max-width: 1000px;">
 						<thead>
 							<tr>
 								<td class="manage-column check-column"></td>
