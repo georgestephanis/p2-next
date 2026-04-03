@@ -165,6 +165,89 @@ function p2026_audit_log_handle_event( $event_type, $payload ) {
 add_action( 'p2026_audit_log_event', 'p2026_audit_log_handle_event', 10, 2 );
 
 /**
+ * Emit an audit event for comment changes.
+ *
+ * @param string     $event_type Event type slug.
+ * @param WP_Comment $comment    Comment object.
+ * @param array      $context    Optional context metadata.
+ * @return void
+ */
+function p2026_audit_log_emit_comment_event( $event_type, $comment, $context = array() ) {
+	if ( ! $comment instanceof WP_Comment ) {
+		return;
+	}
+
+	$payload = array(
+		'version' => 1,
+		'post_id' => (int) $comment->comment_post_ID,
+		'comment_id' => (int) $comment->comment_ID,
+		'actor_id' => get_current_user_id(),
+		'timestamp' => current_time( 'c' ),
+		'source' => sanitize_key( (string) $event_type ),
+		'context' => is_array( $context ) ? $context : array(),
+	);
+
+	do_action( 'p2026_audit_log_event', sanitize_key( (string) $event_type ), $payload );
+}
+
+/**
+ * Log comment creation events.
+ *
+ * @param int $comment_id Comment ID.
+ * @return void
+ */
+function p2026_audit_log_on_comment_post( $comment_id ) {
+	$comment = get_comment( (int) $comment_id );
+	if ( ! $comment instanceof WP_Comment ) {
+		return;
+	}
+
+	p2026_audit_log_emit_comment_event( 'comment_created', $comment, array( 'transport' => 'comment_post' ) );
+}
+add_action( 'comment_post', 'p2026_audit_log_on_comment_post', 10, 1 );
+
+/**
+ * Log comment update events.
+ *
+ * @param int $comment_id Comment ID.
+ * @return void
+ */
+function p2026_audit_log_on_edit_comment( $comment_id ) {
+	$comment = get_comment( (int) $comment_id );
+	if ( ! $comment instanceof WP_Comment ) {
+		return;
+	}
+
+	p2026_audit_log_emit_comment_event( 'comment_updated', $comment, array( 'transport' => 'edit_comment' ) );
+}
+add_action( 'edit_comment', 'p2026_audit_log_on_edit_comment', 10, 1 );
+
+/**
+ * Log comment status transition events.
+ *
+ * @param string $new_status New status.
+ * @param string $old_status Previous status.
+ * @param object $comment    Comment object.
+ * @return void
+ */
+function p2026_audit_log_on_comment_status_transition( $new_status, $old_status, $comment ) {
+	if ( ! $comment instanceof WP_Comment || $new_status === $old_status ) {
+		return;
+	}
+
+	p2026_audit_log_emit_comment_event(
+		'comment_status_changed',
+		$comment,
+		array(
+			'old_status' => sanitize_key( (string) $old_status ),
+			'new_status' => sanitize_key( (string) $new_status ),
+			'transport' => 'transition_comment_status',
+		)
+	);
+}
+add_action( 'transition_comment_status', 'p2026_audit_log_on_comment_status_transition', 10, 3 );
+
+/**
  * Register Audit Log tab on the shared P2026 settings screen.
  *
  * @param array<string, string> $tabs Existing settings tabs.
@@ -306,6 +389,7 @@ function p2026_audit_log_enqueue_admin_assets( $hook_suffix ) {
 		'window.p2026AuditLogConfig = ' . wp_json_encode(
 			array(
 				'restBase' => esc_url_raw( rest_url( 'p2026/v1/audit-log' ) ),
+				'restRoot' => esc_url_raw( rest_url() ),
 				'restNonce' => wp_create_nonce( 'wp_rest' ),
 				'backend' => p2026_audit_log_get_backend(),
 			)
@@ -475,6 +559,7 @@ function p2026_audit_log_normalize_file_entry( $decoded, $path, $line_number, $f
 		'timestamp' => $timestamp,
 		'event_type' => $event_type,
 		'post_id' => isset( $payload['post_id'] ) ? (int) $payload['post_id'] : 0,
+		'comment_id' => isset( $payload['comment_id'] ) ? (int) $payload['comment_id'] : 0,
 		'actor_id' => isset( $payload['actor_id'] ) ? (int) $payload['actor_id'] : 0,
 		'old_state' => isset( $payload['old_state'] ) ? sanitize_key( (string) $payload['old_state'] ) : '',
 		'new_state' => isset( $payload['new_state'] ) ? sanitize_key( (string) $payload['new_state'] ) : '',
@@ -577,6 +662,7 @@ function p2026_audit_log_read_cpt_entries( $selected_day = '', $limit = 500 ) {
 
 		$event_type = (string) get_post_meta( $post->ID, 'p2026_audit_event_type', true );
 		$post_id    = (int) get_post_meta( $post->ID, 'p2026_audit_post_id', true );
+		$comment_id = (int) get_post_meta( $post->ID, 'p2026_audit_comment_id', true );
 		$actor_id   = (int) get_post_meta( $post->ID, 'p2026_audit_actor_id', true );
 		$old_state  = (string) get_post_meta( $post->ID, 'p2026_audit_old_state', true );
 		$new_state  = (string) get_post_meta( $post->ID, 'p2026_audit_new_state', true );
@@ -589,6 +675,7 @@ function p2026_audit_log_read_cpt_entries( $selected_day = '', $limit = 500 ) {
 			'timestamp' => $timestamp,
 			'event_type' => sanitize_key( $event_type ),
 			'post_id' => $post_id,
+			'comment_id' => $comment_id,
 			'actor_id' => $actor_id,
 			'old_state' => sanitize_key( $old_state ),
 			'new_state' => sanitize_key( $new_state ),
@@ -732,13 +819,24 @@ function p2026_audit_log_write_file( $event_type, $payload ) {
 function p2026_audit_log_write_cpt( $event_type, $payload ) {
 	$event_type = sanitize_key( (string) $event_type );
 	$actor_id   = (int) ( $payload['actor_id'] ?? 0 );
-	$post_id = (int) ( $payload['post_id'] ?? 0 );
-	$title   = sprintf(
+	$post_id    = (int) ( $payload['post_id'] ?? 0 );
+	$comment_id = (int) ( $payload['comment_id'] ?? 0 );
+
+	$title = sprintf(
 		/* translators: 1: event type, 2: post id */
 		__( '%1$s: Post %2$d', 'p2026' ),
 		$event_type,
 		$post_id
 	);
+
+	if ( $comment_id > 0 ) {
+		$title = sprintf(
+			/* translators: 1: event type, 2: comment id */
+			__( '%1$s: Comment %2$d', 'p2026' ),
+			$event_type,
+			$comment_id
+		);
+	}
 
 	$audit_post_id = wp_insert_post(
 		array(
@@ -756,6 +854,7 @@ function p2026_audit_log_write_cpt( $event_type, $payload ) {
 
 	update_post_meta( $audit_post_id, 'p2026_audit_event_type', $event_type );
 	update_post_meta( $audit_post_id, 'p2026_audit_post_id', $post_id );
+	update_post_meta( $audit_post_id, 'p2026_audit_comment_id', $comment_id );
 	update_post_meta( $audit_post_id, 'p2026_audit_actor_id', $actor_id );
 	update_post_meta( $audit_post_id, 'p2026_audit_old_state', sanitize_key( (string) ( $payload['old_state'] ?? '' ) ) );
 	update_post_meta( $audit_post_id, 'p2026_audit_new_state', sanitize_key( (string) ( $payload['new_state'] ?? '' ) ) );
