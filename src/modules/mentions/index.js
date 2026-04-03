@@ -25,6 +25,7 @@ import { createRoot, createElement } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
 import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
+import './_mentions.scss';
 
 // ---------------------------------------------------------------------------
 // Format type: p2026/mention
@@ -147,6 +148,7 @@ async function fetchUserDetail( userId ) {
 // Timers shared across both mention-hover and hovercard-hover handlers.
 let showTimer = null;
 let hideTimer = null;
+let hovercardMounted = false;
 
 // The anchor element currently being hovered — used to guard stale fetches.
 let currentAnchor = null;
@@ -211,12 +213,24 @@ function cancelHide() {
 	}
 }
 
-// Mount the hovercard host on DOMContentLoaded (or immediately if already ready).
-function mountHovercardHost() {
-	// Only show hovercards for logged-in users (the detail endpoint requires auth).
-	if ( ! window.p2026Config?.currentUser ) {
+/**
+ * Mount hovercard host and delegated events once.
+ *
+ * @param {Object}  [options]             Options.
+ * @param {boolean} [options.force=false]
+ *                                        Allow mount outside frontend p2026Config context.
+ */
+export function initMentionsHovercards( { force = false } = {} ) {
+	if ( hovercardMounted ) {
 		return;
 	}
+
+	// Only show hovercards for logged-in users (the detail endpoint requires auth).
+	if ( ! force && ! window.p2026Config?.currentUser ) {
+		return;
+	}
+
+	hovercardMounted = true;
 
 	const hostEl = document.createElement( 'div' );
 	hostEl.id = 'p2026-hovercard-root';
@@ -266,7 +280,9 @@ function mountHovercardHost() {
 }
 
 if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', mountHovercardHost );
+	document.addEventListener( 'DOMContentLoaded', () =>
+		initMentionsHovercards()
+	);
 } else {
-	mountHovercardHost();
+	initMentionsHovercards();
 }

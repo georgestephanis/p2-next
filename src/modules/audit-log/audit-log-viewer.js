@@ -14,7 +14,6 @@ import {
 	Notice,
 	SearchControl,
 	SelectControl,
-	Spinner,
 } from '@wordpress/components';
 import { DataViews, filterSortAndPaginate } from '@wordpress/dataviews';
 
@@ -62,19 +61,35 @@ const renderActorCell = ( item, relatedData ) => {
 	const actorFallbackName = sprintf( __( 'User #%d', 'p2026' ), actorId );
 	/* translators: %d: user ID. */
 	const actorName = actor?.name ? actor.name : actorFallbackName;
+	const actorSlug = actor?.slug || String( actorId );
+	const actorProfileUrl = actor?.profile_url || '#';
 
 	return (
 		<div className="p2026-audit-log-viewer__entity p2026-audit-log-viewer__entity--actor">
 			{ actor?.avatar_url ? (
-				<img
-					className="p2026-audit-log-viewer__avatar"
-					src={ actor.avatar_url }
-					alt=""
-				/>
+				<a
+					href={ actorProfileUrl }
+					className="p2026-mention p2026-audit-log-viewer__avatar-link"
+					data-user-id={ actorId }
+					data-user-slug={ actorSlug }
+				>
+					<img
+						className="p2026-audit-log-viewer__avatar"
+						src={ actor.avatar_url }
+						alt=""
+					/>
+				</a>
 			) : null }
 			<div>
 				<div className="p2026-audit-log-viewer__entity-title">
-					{ actorName }
+					<a
+						href={ actorProfileUrl }
+						className="p2026-mention"
+						data-user-id={ actorId }
+						data-user-slug={ actorSlug }
+					>
+						{ actorName }
+					</a>
 				</div>
 				<div className="p2026-audit-log-viewer__entity-meta">
 					{
@@ -185,6 +200,7 @@ const AuditLogViewerApp = ( { config } ) => {
 	const [ isLoadingDays, setIsLoadingDays ] = useState( true );
 	const [ errorMessage, setErrorMessage ] = useState( '' );
 	const [ refreshToken, setRefreshToken ] = useState( 0 );
+	const [ displayItems, setDisplayItems ] = useState( preloadedEntries );
 	const [ view, setView ] = useState( {
 		type: 'table',
 		perPage: 25,
@@ -215,6 +231,46 @@ const AuditLogViewerApp = ( { config } ) => {
 		] );
 	}, [ addEntities ] );
 
+	useEffect( () => {
+		let isMounted = true;
+
+		import( /* webpackChunkName: "link-previews" */ '../link-previews' )
+			.then( ( module ) => {
+				if ( ! isMounted ) {
+					return;
+				}
+
+				if ( module?.initLinkPreviews ) {
+					module.initLinkPreviews();
+				}
+			} )
+			.catch( () => {} );
+
+		return () => {
+			isMounted = false;
+		};
+	}, [] );
+
+	useEffect( () => {
+		let isMounted = true;
+
+		import( /* webpackChunkName: "mentions" */ '../mentions' )
+			.then( ( module ) => {
+				if ( ! isMounted ) {
+					return;
+				}
+
+				if ( module?.initMentionsHovercards ) {
+					module.initMentionsHovercards( { force: true } );
+				}
+			} )
+			.catch( () => {} );
+
+		return () => {
+			isMounted = false;
+		};
+	}, [] );
+
 	const auditLogQuery = useMemo(
 		() => ( {
 			day: selectedDay || undefined,
@@ -228,33 +284,23 @@ const AuditLogViewerApp = ( { config } ) => {
 	const { records: rawItems, isResolving: isResolvingEntries } =
 		useEntityRecords( 'root', AUDIT_LOG_ENTITY, auditLogQuery );
 
-	const shouldUsePreloadedEntries =
-		isResolvingEntries &&
-		refreshToken === 0 &&
-		selectedDay === preloadedDay;
-
-	const safeItems = useMemo( () => {
-		if ( Array.isArray( rawItems ) ) {
-			return rawItems;
+	useEffect( () => {
+		if ( ! isResolvingEntries && Array.isArray( rawItems ) ) {
+			setDisplayItems( rawItems );
 		}
+	}, [ isResolvingEntries, rawItems ] );
 
-		if ( shouldUsePreloadedEntries ) {
-			return preloadedEntries;
-		}
-
-		return [];
-	}, [ rawItems, shouldUsePreloadedEntries, preloadedEntries ] );
 	const userIds = useMemo(
-		() => collectUniqueIds( safeItems, 'actor_id' ),
-		[ safeItems ]
+		() => collectUniqueIds( displayItems, 'actor_id' ),
+		[ displayItems ]
 	);
 	const postIds = useMemo(
-		() => collectUniqueIds( safeItems, 'post_id' ),
-		[ safeItems ]
+		() => collectUniqueIds( displayItems, 'post_id' ),
+		[ displayItems ]
 	);
 	const commentIds = useMemo(
-		() => collectUniqueIds( safeItems, 'comment_id' ),
-		[ safeItems ]
+		() => collectUniqueIds( displayItems, 'comment_id' ),
+		[ displayItems ]
 	);
 
 	const { records: userRecords, isResolving: isResolvingUsers } =
@@ -290,10 +336,12 @@ const AuditLogViewerApp = ( { config } ) => {
 		( userRecords || [] ).forEach( ( user ) => {
 			users[ Number( user.id ) ] = {
 				name: user?.name || '',
+				slug: user?.slug || '',
 				avatar_url:
 					user?.avatar_urls?.[ '24' ] ||
 					user?.avatar_urls?.[ '32' ] ||
 					'',
+				profile_url: user?.link || '',
 			};
 		} );
 
@@ -422,8 +470,8 @@ const AuditLogViewerApp = ( { config } ) => {
 	}, [ days ] );
 
 	const { data: processedData, paginationInfo } = useMemo(
-		() => filterSortAndPaginate( safeItems, view, fields ),
-		[ fields, safeItems, view ]
+		() => filterSortAndPaginate( displayItems, view, fields ),
+		[ displayItems, fields, view ]
 	);
 
 	return (
@@ -463,12 +511,6 @@ const AuditLogViewerApp = ( { config } ) => {
 				</Button>
 			</div>
 
-			{ isLoadingDays && (
-				<p>
-					<Spinner /> { __( 'Loading available days…', 'p2026' ) }
-				</p>
-			) }
-
 			{ errorMessage && (
 				<Notice status="error" isDismissible={ false }>
 					{ errorMessage }
@@ -477,7 +519,7 @@ const AuditLogViewerApp = ( { config } ) => {
 
 			{ ! isLoadingEntries &&
 				! errorMessage &&
-				safeItems.length === 0 && (
+				displayItems.length === 0 && (
 					<Notice status="info" isDismissible={ false }>
 						{ selectedDay
 							? sprintf(
@@ -489,13 +531,7 @@ const AuditLogViewerApp = ( { config } ) => {
 					</Notice>
 				) }
 
-			{ isLoadingEntries && (
-				<p>
-					<Spinner /> { __( 'Loading audit entries…', 'p2026' ) }
-				</p>
-			) }
-
-			{ ! isLoadingEntries && ! errorMessage && safeItems.length > 0 && (
+			{ ! errorMessage && displayItems.length > 0 && (
 				<DataViews
 					data={ processedData }
 					fields={ fields }
