@@ -281,23 +281,24 @@ function p2026_audit_log_enqueue_admin_assets( $hook_suffix ) {
 		true
 	);
 
-	// DataViews depends on component styles that are not guaranteed on custom admin pages.
-	wp_enqueue_style( 'wp-components' );
-	if ( wp_style_is( 'wp-dataviews', 'registered' ) ) {
-		wp_enqueue_style( 'wp-dataviews' );
-	}
-	if ( wp_style_is( 'wp-views', 'registered' ) ) {
-		wp_enqueue_style( 'wp-views' );
-	}
-
 	$style_path = P2026_DIR . 'build/audit-log-viewer.css';
 	if ( file_exists( $style_path ) ) {
+		// DataViews styling can be registered under different core handles across WordPress versions.
+		$style_dependencies = array( 'wp-components' );
+		if ( wp_style_is( 'wp-dataviews', 'registered' ) ) {
+			$style_dependencies[] = 'wp-dataviews';
+		}
+		if ( wp_style_is( 'wp-views', 'registered' ) ) {
+			$style_dependencies[] = 'wp-views';
+		}
+
 		wp_enqueue_style(
 			'p2026-audit-log-viewer',
 			P2026_URL . 'build/audit-log-viewer.css',
-			array(),
+			$style_dependencies,
 			$asset['version'] ?? P2026_VERSION
 		);
+		wp_style_add_data( 'p2026-audit-log-viewer', 'rtl', 'replace' );
 	}
 
 	wp_add_inline_script(

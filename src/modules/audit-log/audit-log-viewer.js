@@ -1,4 +1,5 @@
 import {
+	createRoot,
 	render,
 	useCallback,
 	useEffect,
@@ -6,8 +7,16 @@ import {
 	useState,
 } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { Button, Notice, SelectControl, Spinner } from '@wordpress/components';
+import {
+	Button,
+	Notice,
+	SearchControl,
+	SelectControl,
+	Spinner,
+} from '@wordpress/components';
 import { DataViews, filterSortAndPaginate } from '@wordpress/dataviews';
+
+import './audit-log-viewer.scss';
 
 const formatTimestamp = ( value ) => {
 	if ( ! value ) {
@@ -196,23 +205,31 @@ const AuditLogViewerApp = ( { config } ) => {
 	);
 
 	return (
-		<div>
-			<div
-				style={ {
-					display: 'flex',
-					gap: '12px',
-					alignItems: 'end',
-					flexWrap: 'wrap',
-					marginBottom: '12px',
-				} }
-			>
-				<div style={ { minWidth: '240px' } }>
+		<div className="p2026-audit-log-viewer">
+			<div className="p2026-audit-log-viewer__toolbar">
+				<div className="p2026-audit-log-viewer__day-select">
 					<SelectControl
 						label={ __( 'Log Day', 'p2026' ) }
 						value={ selectedDay }
 						options={ dayOptions }
 						onChange={ ( value ) => setSelectedDay( value ) }
 						disabled={ isLoadingDays }
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</div>
+				<div className="p2026-audit-log-viewer__search">
+					<SearchControl
+						label={ __( 'Search entries', 'p2026' ) }
+						value={ view.search || '' }
+						onChange={ ( value ) => {
+							setView( ( currentView ) => ( {
+								...currentView,
+								search: value,
+								page: 1,
+							} ) );
+						} }
+						__nextHasNoMarginBottom
 					/>
 				</div>
 				<Button
@@ -262,6 +279,7 @@ const AuditLogViewerApp = ( { config } ) => {
 					onChangeView={ setView }
 					defaultLayouts={ { table: { layout: {} } } }
 					paginationInfo={ paginationInfo }
+					search={ false }
 				/>
 			) }
 		</div>
@@ -271,6 +289,13 @@ const AuditLogViewerApp = ( { config } ) => {
 document.addEventListener( 'DOMContentLoaded', () => {
 	const mountNode = document.getElementById( 'p2026-audit-log-viewer-root' );
 	if ( ! mountNode || ! window.p2026AuditLogConfig ) {
+		return;
+	}
+
+	if ( 'function' === typeof createRoot ) {
+		createRoot( mountNode ).render(
+			<AuditLogViewerApp config={ window.p2026AuditLogConfig } />
+		);
 		return;
 	}
 
