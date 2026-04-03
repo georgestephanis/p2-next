@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">p2026 icon letter p</title>
+  <desc id="desc">Bold monogram icon with p letterform and activity dots.</desc>
+
+  <defs>
+    <radialGradient id="bg" cx="22%" cy="18%" r="90%">
+      <stop offset="0%" stop-color="#2b7a78"/>
+      <stop offset="55%" stop-color="#205072"/>
+      <stop offset="100%" stop-color="#172a45"/>
+    </radialGradient>
+    <linearGradient id="letter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d8fff4"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="110" ry="110" fill="url(#bg)"/>
+
+  <g fill="url(#letter)">
+    <path d="M154 120h70v272c0 11-9 20-20 20h-30c-11 0-20-9-20-20z"/>
+    <path d="M224 142h86c62 0 112 50 112 112s-50 112-112 112h-86v-68h80c25 0 44-19 44-44s-19-44-44-44h-80z"/>
+  </g>
+
+  <g fill="#7cf4d5">
+    <circle cx="352" cy="128" r="10"/>
+    <circle cx="388" cy="148" r="8"/>
+    <circle cx="410" cy="182" r="7"/>
+  </g>
+
+  <g fill="none" stroke="#7cf4d5" stroke-width="7" stroke-linecap="round" opacity="0.9">
+    <path d="M90 410h332"/>
+    <path d="M90 382h262"/>
+  </g>
+</svg>

@@ -309,6 +309,44 @@ function p2026_release_package_url( $release, $owner, $repo ) {
 }
 
 /**
+ * Return local icon URLs for update payload metadata.
+ *
+ * @return array<string,string>
+ */
+function p2026_github_updates_get_local_icons() {
+	$icon_file = P2026_DIR . 'assets/p2026-icon.svg';
+	if ( ! file_exists( $icon_file ) ) {
+		return array();
+	}
+
+	$icon_url = P2026_URL . 'assets/p2026-icon.svg';
+
+	return array(
+		'default' => esc_url_raw( $icon_url ),
+		'svg' => esc_url_raw( $icon_url ),
+	);
+}
+
+/**
+ * Add local visual metadata (icon) to a plugin update payload.
+ *
+ * @param stdClass $payload Update payload object.
+ * @return stdClass
+ */
+function p2026_github_updates_add_visual_metadata( $payload ) {
+	if ( ! $payload instanceof stdClass ) {
+		$payload = new stdClass();
+	}
+
+	$icons = p2026_github_updates_get_local_icons();
+	if ( ! empty( $icons ) ) {
+		$payload->icons = $icons;
+	}
+
+	return $payload;
+}
+
+/**
  * Build a normalized update payload object from a GitHub release.
  *
  * @param string               $plugin_file Plugin basename.
@@ -361,7 +399,7 @@ function p2026_build_update_payload( $plugin_file, $plugin_data, $release, $upda
 		$payload->tested = $plugin_data['Tested'];
 	}
 
-	return $payload;
+	return p2026_github_updates_add_visual_metadata( $payload );
 }
 
 /**
@@ -422,7 +460,7 @@ function p2026_build_trunk_update_payload( $plugin_file, $plugin_data, $head, $u
 		$payload->tested = $plugin_data['Tested'];
 	}
 
-	return $payload;
+	return p2026_github_updates_add_visual_metadata( $payload );
 }
 
 /**
