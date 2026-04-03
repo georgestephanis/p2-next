@@ -2,7 +2,7 @@
 
 A modern WordPress plugin that adds P2/o2-style team collaboration features by progressively enhancing theme-rendered post lists using React, the Block Editor, and the WordPress REST API.
 
-Current release: 0.2.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
+Current release: 0.3.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 [![Try in WordPress Playground](https://img.shields.io/badge/Try%20in-WordPress%20Playground-3858e9?logo=wordpress)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/georgestephanis/p2026/HEAD/.github/blueprint.json)
 
@@ -87,7 +87,7 @@ Build output goes to `build/`. Do not hand-edit files there.
 
 ## Releases
 
--   Current stable release: `0.2.0`
+-   Current stable release: `0.3.0`
 -   Initial release baseline: `0.1.0` maps to commit `dbf2205587f73c66e3d63a46449ff64b39dc2a2f`
 -   Release notes: [CHANGELOG.md](CHANGELOG.md)
 

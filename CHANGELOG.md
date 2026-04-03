@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 - 2026-04-03
+
+### Added
+
+- Added an admin audit-log browser app (DataViews) with day filtering, search/sort, and enriched actor/post/comment labels.
+- Added audit-log admin REST endpoints for day shards and paged entries (`/p2026/v1/audit-log/days`, `/p2026/v1/audit-log/entries`).
+- Added module-aware hover integrations inside the audit viewer by initializing link previews and mention hovercards in admin context.
+- Added a local plugin SVG icon (`assets/p2026-icon.svg`) and updater metadata wiring so plugin/update screens can resolve icon artwork.
+
+### Changed
+
+- Reworked audit-log loading to prefer preloaded data and stable display-state updates to reduce visual flashing during refreshes.
+- Migrated audit-log related record hydration to core-data entity patterns (`useEntityRecords`) for users/posts/comments.
+- Updated updater behavior for Git checkouts: automatic zip install remains disabled and UI messaging points to manual git update flow.
+- Expanded architecture and agent documentation to reflect audit-log admin flow, module integration points, and dynamic import chunk naming rules.
+- Updated webpack chunk output naming to keep module split chunks human-readable and deterministic.
+
+### Fixed
+
+- Fixed missing DataViews styling and related admin presentation issues in the audit-log viewer.
+- Fixed mention hovercard styling/initialization regressions in admin audit-log context.
+- Fixed React/admin warning noise in the audit viewer by aligning rendering and control usage with current APIs.
+
 ## 0.2.0 - 2026-04-03
 
 ### Added
