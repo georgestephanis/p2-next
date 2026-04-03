@@ -110,6 +110,12 @@ Per-user activity tracking to surface new content. Accessible to logged-in users
 -   Auto-syncs read state when tab becomes hidden (via `visibilitychange` event).
 -   Styling: `src/components/unread-badge.scss`.
 
+### Updates And Distribution
+
+-   `includes/github-updates.php`: Handles the plugin `Update URI` integration for GitHub-hosted installs.
+-   Supports stable GitHub releases, optional prerelease opt-in, and a `trunk` channel for direct-update workflows.
+-   Uses `P2026_VERSION` as the installed version source for update comparisons.
+
 ### Notifications Module (Independent)
 
 Optional real-time notifications dock for mentions and comment replies.

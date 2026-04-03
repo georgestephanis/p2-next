@@ -4,7 +4,7 @@
  *
  * Module Name:        Audit Log
  * Module Description: Persists core audit events to a log file or custom post type.
- * Module Version:     0.1.0
+ * Module Version:     0.2.0
  *
  * @package P2026\Modules\AuditLog
  */

@@ -2,6 +2,8 @@
 
 This plugin adds real-time P2/o2-style collaboration features by progressively enhancing theme-rendered post lists.
 
+This document reflects the 0.2.0 release line.
+
 ## Core Ideas
 
 -   Theme HTML remains the source of truth for initial rendering.
@@ -75,6 +77,7 @@ flowchart TD
 -   `src/components/NewPostModal.js`: modal wrapper for new-post editor; driven by `newPostModalOpen` store state.
 -   `src/blocks/new-post/render.php`: mount point output gated by `publish_posts`.
 -   `src/modules/index.js`: loads active JS modules from `window.p2026Config.activeModules`.
+-   `includes/github-updates.php`: integrates the plugin `Update URI` with GitHub releases, prereleases, and trunk builds.
 -   `modules/link-previews/index.php`: internal link preview REST endpoint and transient caching.
 -   `src/modules/link-previews/`: internal-link hover/focus preview card UI.
 -   `admin/settings.php`: admin UI for module toggles and audit backend selection.

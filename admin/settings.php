@@ -90,7 +90,7 @@ function p2026_get_settings_tabs() {
  * Reads the following doc-block headers from each modules/whatever/index.php:
  *   Module Name:        Human-readable name.
  *   Module Description: One-line description shown in the settings table.
- *   Module Version:     Semver string, e.g. 0.1.0.
+ *   Module Version:     Semver string, e.g. 0.2.0.
  *
  * Falls back to the slug as the name when the header is absent.
  *

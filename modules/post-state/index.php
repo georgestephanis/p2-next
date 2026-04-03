@@ -4,7 +4,7 @@
  *
  * Module Name:        Post State
  * Module Description: Adds Normal/Unresolved/Resolved workflow states to posts with menu controls, #todo auto-assignment, and audit event hooks.
- * Module Version:     0.1.0
+ * Module Version:     0.2.0
  *
  * Provides:
  * - Taxonomy-backed post state (normal|unresolved|resolved)
