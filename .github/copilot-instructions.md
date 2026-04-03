@@ -28,6 +28,9 @@ Do not convert this plugin into a full SPA. Preserve theme ownership of initial 
 - src/modules/index.js: dynamic loader for JS modules listed in `window.p2026Config.activeModules`.
 - modules/mentions/index.php: REST user-search + hovercard endpoints, @mention linkification on `the_content`/`comment_text`, `p2026_mentions_found` action hook for third-party notifications.
 - src/modules/mentions/: JS mentions module — `p2026/mention` rich-text format, Block Editor `@` completer, `MentionTextareaControl` for plain textareas, hovercard host.
+- modules/audit-log/index.php: audit persistence backend, settings-tab renderer, and admin REST routes (`/p2026/v1/audit-log/days`, `/p2026/v1/audit-log/entries`).
+- src/modules/audit-log/audit-log-viewer.js: admin DataViews app for browsing audit entries and resolving related actor/post/comment labels.
+- src/modules/link-previews/index.js and src/modules/mentions/index.js: expose idempotent initializers used by the audit-log admin view for hover previews/hovercards.
 
 ## Permission and Capability Rules
 
@@ -67,6 +70,7 @@ Search contract:
 - Maintain i18n coverage with text domain p2026.
 - Avoid editing build/ directly.
 - Keep API calls in store thunks unless there is a strong reason to move them.
+- Never introduce anonymous dynamic import chunks. Every `import()` must use a human-readable webpack chunk name comment (for example `/* webpackChunkName: "mentions" */`) so build outputs are deterministic and debuggable.
 
 ## Build and Validation
 
@@ -94,6 +98,8 @@ Manual smoke checks expected after behavior changes:
 - src/components/NewPostModal.js + src/store/index.js: newPostModalOpen state and the savingPost context key ('new') are coupled; keep them in sync.
 - modules/mentions/index.php `p2026_mentions_found` hook: this is the public notification contract for third-party plugins; its parameter signature (`$users`, `$object_type`, `$object_id`, `$author_id`) must not change.
 - src/modules/mentions/ REST paths (`/p2026/v1/users`, `/p2026/v1/users/<id>`): changing these breaks both autocomplete surfaces and the hovercard fetch.
+- modules/audit-log/index.php REST paths (`/p2026/v1/audit-log/days`, `/p2026/v1/audit-log/entries`) and response shape (`X-WP-Total*` headers): changing these breaks the admin DataViews browser.
+- src/modules/audit-log/audit-log-viewer.js preload contract (`window.p2026AuditLogConfig.preloadedDay`, `preloadedEntries`): keep in sync with PHP inline config.
 
 ## Performance Guardrails
 

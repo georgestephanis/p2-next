@@ -59,6 +59,13 @@ flowchart TD
     W[new-post dynamic block view.js] --> E
     W --> X[NewPostEditor]
     X --> Y[POST /wp/v2/posts]
+
+    AN[WP Admin P2026 Settings Audit Log tab] --> AO[Enqueue build/audit-log-viewer.js + css]
+    AO --> AP[src/modules/audit-log/audit-log-viewer.js]
+    AP --> AQ[GET /p2026/v1/audit-log/days]
+    AP --> AR[GET /p2026/v1/audit-log/entries]
+    AP --> AS[useEntityRecords users/posts/comments for related labels]
+    AP --> AT[Dynamic init link previews + mentions hovercards]
 ```
 
 ## File-Level Responsibilities
@@ -82,7 +89,8 @@ flowchart TD
 -   `src/modules/link-previews/`: internal-link hover/focus preview card UI.
 -   `admin/settings.php`: admin UI for module toggles and audit backend selection.
 -   `modules/post-state/index.php`: taxonomy-backed post state, REST field, and state mutation endpoint.
--   `modules/audit-log/index.php`: audit event persistence handler (uploads JSONL or internal CPT).
+-   `modules/audit-log/index.php`: audit event persistence handler (uploads JSONL or internal CPT), audit settings tab, and admin REST endpoints.
+-   `src/modules/audit-log/audit-log-viewer.js`: audit entries browser in WP Admin using DataViews and entity lookups.
 -   `src/modules/notifications/`: notification dock UI mounted into `document.body`.
 
 ## Module Activation
@@ -99,6 +107,21 @@ flowchart TD
 -   Depends on existing theme loop markup for post discovery.
 -   Header search/unread widgets are gated by main-query detection plus `window.p2026Config.isArchiveView`.
 -   Build output in `build/` is generated via `@wordpress/scripts` and block manifest support.
+
+Plugin REST endpoints currently include:
+
+-   `/p2026/v1/search`
+-   `/p2026/v1/read-state`
+-   `/p2026/v1/read-state/sync`
+-   `/p2026/v1/users`
+-   `/p2026/v1/users/{id}`
+-   `/p2026/v1/link-preview`
+-   `/p2026/v1/notifications`
+-   `/p2026/v1/notifications/{id}/read`
+-   `/p2026/v1/notifications/read-all`
+-   `/p2026/v1/posts/{id}/state`
+-   `/p2026/v1/audit-log/days`
+-   `/p2026/v1/audit-log/entries`
 
 ## Search Behavior Note
 

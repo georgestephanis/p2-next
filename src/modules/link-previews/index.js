@@ -56,7 +56,7 @@ function isThreadContextLink( anchor ) {
 
 	return Boolean(
 		anchor.closest(
-			'.wp-block-post-content, .entry-content, .comment-content, .wp-block-comment-content, .p2026-comments'
+			'.wp-block-post-content, .entry-content, .comment-content, .wp-block-comment-content, .p2026-comments, .p2026-audit-log-viewer'
 		)
 	);
 }
@@ -367,7 +367,12 @@ function onFocusOut( event ) {
 	}
 }
 
-function mountLinkPreviews() {
+export function initLinkPreviews() {
+	if ( window.__p2026LinkPreviewsMounted ) {
+		return;
+	}
+	window.__p2026LinkPreviewsMounted = true;
+
 	decorateInternalLinks( document );
 
 	const observer = new window.MutationObserver( ( mutations ) => {
@@ -395,7 +400,7 @@ function mountLinkPreviews() {
 }
 
 if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', mountLinkPreviews );
+	document.addEventListener( 'DOMContentLoaded', initLinkPreviews );
 } else {
-	mountLinkPreviews();
+	initLinkPreviews();
 }

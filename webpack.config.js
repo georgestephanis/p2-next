@@ -21,6 +21,7 @@ module.exports = {
 	entry: async () => ( {
 		...( await defaultConfig.entry() ),
 		frontend: './src/frontend.js',
+		'audit-log-viewer': './src/modules/audit-log/audit-log-viewer.js',
 	} ),
 	output: {
 		...defaultConfig.output,

@@ -32,7 +32,8 @@ It is intentionally not a complete SPA replacement.
 -   modules/mentions/index.php: REST endpoints for user search and hovercard detail, @mention linkification on `the_content`/`comment_text`, and the `p2026_mentions_found` notification hook.
 -   modules/notifications/index.php: per-user notification storage, REST endpoints, and hooks for mention/reply notifications.
 -   modules/post-state/index.php: taxonomy-backed workflow state, REST field + mutation endpoint, and audit event emission.
--   modules/audit-log/index.php: backend listener for audit events persisted to JSONL or internal CPT.
+-   modules/audit-log/index.php: backend listener for audit events persisted to JSONL or internal CPT, plus audit settings tab and admin REST endpoints.
+-   src/modules/audit-log/: admin DataViews app for browsing audit entries in the settings tab.
 -   .github/: WordPress Playground blueprint and setup script.
 -   build/: generated artifacts from @wordpress/scripts (do not hand-edit).
 
@@ -165,6 +166,8 @@ REST endpoints in use:
 -   GET /p2026/v1/notifications (list notifications)
 -   POST /p2026/v1/notifications/{id}/read (mark notification as read)
 -   POST /p2026/v1/notifications/read-all (bulk mark as read)
+-   GET /p2026/v1/audit-log/days (audit day shards)
+-   GET /p2026/v1/audit-log/entries (paged audit entries)
 
 ## Module System
 
@@ -180,8 +183,9 @@ p2026 has a lightweight module system for self-contained features.
 | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | mentions      | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook              | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard |
 | notifications | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling  |
+| link-previews | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache                | `src/modules/link-previews/` — Internal post/comment hover preview cards               |
 | post-state    | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks             | N/A (UI lives in existing core components/store)                                      |
-| audit-log     | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads (file/CPT backend)           | N/A                                                                                   |
+| audit-log     | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                     |
 
 ## Build and Validation
 
@@ -221,6 +225,7 @@ Validation expectations after functional changes:
 -   Keep i18n text domain as p2026.
 -   Keep build output generated only.
 -   Prefer capability checks through centralized helpers in p2026.php.
+-   For every dynamic `import()`, include an explicit human-readable `webpackChunkName` comment. Do not add anonymous split points that emit numeric chunk names.
 
 ## Performance and Scale Notes
 

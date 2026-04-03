@@ -19,7 +19,7 @@ Current release: 0.2.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 -   **Mentions module** — `@username` autocomplete and hovercards, server-side linkification, and mention hook emission for downstream notifications.
 -   **Notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
 -   **Link-previews module** — Internal post/comment links get hover preview cards (title, avatar, date, excerpt) with REST-backed server-side caching.
--   **Audit-log module** — Persists core audit events to JSONL in uploads or an internal custom post type backend.
+-   **Audit-log module** — Persists core audit events and provides an admin DataViews browser (day filter, search, sorting, related actor/post/comment links) backed by REST endpoints.
 -   **GitHub-based updates** — Supports native `Update URI` checks against GitHub releases, prereleases, and a `trunk` channel for direct installs from GitHub.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
@@ -137,7 +137,7 @@ Current modules:
 | `notifications` | `modules/notifications/index.php` | `src/modules/notifications/index.js` | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
 | `link-previews` | `modules/link-previews/index.php` | `src/modules/link-previews/index.js` | `GET /p2026/v1/link-preview?url=...` |
 | `post-state`    | `modules/post-state/index.php`  | Core UI integration (`src/components/PostEnhancement.js`) | `POST /p2026/v1/posts/{id}/state` |
-| `audit-log`     | `modules/audit-log/index.php`   | N/A                                | N/A |
+| `audit-log`     | `modules/audit-log/index.php`   | `src/modules/audit-log/audit-log-viewer.js` | `GET /p2026/v1/audit-log/days`, `GET /p2026/v1/audit-log/entries` |
 
 ## Key Files
 
@@ -158,6 +158,7 @@ Current modules:
 | `src/blocks/new-post/`                      | Dynamic block metadata, server render gate, and frontend mount               |
 | `modules/post-state/index.php`              | Post-state taxonomy, REST field/endpoint, and audit event emission           |
 | `modules/audit-log/index.php`               | Audit event persistence (uploads JSONL or CPT backend)                       |
+| `src/modules/audit-log/audit-log-viewer.js` | Admin Audit Log browser app (DataViews + entity-backed related lookups)      |
 | `modules/mentions/index.php`                | Mention user search/detail endpoints and server-side content linkification   |
 | `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                   |
 | `modules/link-previews/index.php`           | Internal link preview REST endpoint + 3-day transient caching                |
@@ -165,6 +166,12 @@ Current modules:
 | `includes/github-updates.php`               | GitHub release/update channel integration for the plugin `Update URI`        |
 | `src/modules/link-previews/`                | Hover/focus preview card UI for internal post/comment links                  |
 | `src/modules/notifications/`                | Notification dock frontend UI                                                |
+
+## Update Behavior (Git Checkouts)
+
+-   Sites deployed from a git checkout are shown a manual update notice in plugin update UI.
+-   Automatic update package install is intentionally blocked for git checkouts to protect local branch and worktree state.
+-   For these installs, updates should be performed via normal git workflows (`git fetch`, `git checkout`/`git merge`/`git pull`) based on site policy.
 
 Playground note: `.github/setup.php` seeds sample users, posts, comments, and starter notifications for the default logged-in `admin` user.
 

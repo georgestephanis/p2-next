@@ -35,5 +35,8 @@
   "devDependencies": {
     "@wordpress/scripts": "^30.0.0"
   },
-  "license": "GPL-2.0-or-later"
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "@wordpress/dataviews": "^14.0.0"
+  }
 }
