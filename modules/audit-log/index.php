@@ -236,9 +236,445 @@ function p2026_audit_log_render_settings_tab() {
 	</table>
 
 	<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
+
+	<hr />
+	<h2 class="title"><?php esc_html_e( 'Audit Entries', 'p2026' ); ?></h2>
+	<p class="description">
+		<?php esc_html_e( 'Browse captured audit events with sorting, filtering, and per-day selection.', 'p2026' ); ?>
+	</p>
+	<div id="p2026-audit-log-viewer-root"></div>
 	<?php
 }
 add_action( 'p2026_settings_render_tab_audit-log', 'p2026_audit_log_render_settings_tab' );
+
+/**
+ * Enqueue audit log DataViews app only on the Audit Log settings tab.
+ *
+ * @param string $hook_suffix Current admin page hook.
+ * @return void
+ */
+function p2026_audit_log_enqueue_admin_assets( $hook_suffix ) {
+	if ( 'toplevel_page_p2026-settings' !== $hook_suffix ) {
+		return;
+	}
+
+	$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'modules';
+	if ( 'audit-log' !== $tab ) {
+		return;
+	}
+
+	$asset_path = P2026_DIR . 'build/audit-log-viewer.asset.php';
+	if ( ! file_exists( $asset_path ) ) {
+		return;
+	}
+
+	$asset = require $asset_path;
+	if ( ! is_array( $asset ) ) {
+		return;
+	}
+
+	wp_enqueue_script(
+		'p2026-audit-log-viewer',
+		P2026_URL . 'build/audit-log-viewer.js',
+		$asset['dependencies'] ?? array(),
+		$asset['version'] ?? P2026_VERSION,
+		true
+	);
+
+	// DataViews depends on component styles that are not guaranteed on custom admin pages.
+	wp_enqueue_style( 'wp-components' );
+	if ( wp_style_is( 'wp-dataviews', 'registered' ) ) {
+		wp_enqueue_style( 'wp-dataviews' );
+	}
+	if ( wp_style_is( 'wp-views', 'registered' ) ) {
+		wp_enqueue_style( 'wp-views' );
+	}
+
+	$style_path = P2026_DIR . 'build/audit-log-viewer.css';
+	if ( file_exists( $style_path ) ) {
+		wp_enqueue_style(
+			'p2026-audit-log-viewer',
+			P2026_URL . 'build/audit-log-viewer.css',
+			array(),
+			$asset['version'] ?? P2026_VERSION
+		);
+	}
+
+	wp_add_inline_script(
+		'p2026-audit-log-viewer',
+		'window.p2026AuditLogConfig = ' . wp_json_encode(
+			array(
+				'restBase' => esc_url_raw( rest_url( 'p2026/v1/audit-log' ) ),
+				'restNonce' => wp_create_nonce( 'wp_rest' ),
+				'backend' => p2026_audit_log_get_backend(),
+			)
+		) . ';',
+		'before'
+	);
+}
+add_action( 'admin_enqueue_scripts', 'p2026_audit_log_enqueue_admin_assets' );
+
+/**
+ * Register Audit Log admin REST routes.
+ */
+function p2026_audit_log_register_rest_routes() {
+	register_rest_route(
+		'p2026/v1',
+		'/audit-log/days',
+		array(
+			'methods' => WP_REST_Server::READABLE,
+			'callback' => 'p2026_audit_log_rest_days',
+			'permission_callback' => static function () {
+				return current_user_can( 'manage_options' );
+			},
+		)
+	);
+
+	register_rest_route(
+		'p2026/v1',
+		'/audit-log/entries',
+		array(
+			'methods' => WP_REST_Server::READABLE,
+			'callback' => 'p2026_audit_log_rest_entries',
+			'permission_callback' => static function () {
+				return current_user_can( 'manage_options' );
+			},
+			'args' => array(
+				'day' => array(
+					'type' => 'string',
+					'required' => false,
+				),
+				'page' => array(
+					'type' => 'integer',
+					'default' => 1,
+				),
+				'per_page' => array(
+					'type' => 'integer',
+					'default' => 200,
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'p2026_audit_log_register_rest_routes' );
+
+/**
+ * Return normalized list of possible audit log files.
+ *
+ * @return string[]
+ */
+function p2026_audit_log_get_file_paths() {
+	$upload_dir = wp_upload_dir();
+	if ( ! empty( $upload_dir['error'] ) || empty( $upload_dir['basedir'] ) ) {
+		return array();
+	}
+
+	$base  = trailingslashit( $upload_dir['basedir'] ) . 'p2026-audit-log.jsonl';
+	$paths = array();
+	if ( file_exists( $base ) ) {
+		$paths[] = $base;
+	}
+
+	$rotated = glob( $base . '.*.bak' );
+	if ( is_array( $rotated ) ) {
+		usort(
+			$rotated,
+			static function ( $a, $b ) {
+				return filemtime( $b ) <=> filemtime( $a );
+			}
+		);
+		$paths = array_merge( $paths, $rotated );
+	}
+
+	return $paths;
+}
+
+/**
+ * Extract shard day from a rotated log file name.
+ *
+ * @param string $path File path.
+ * @return string
+ */
+function p2026_audit_log_shard_day_from_path( $path ) {
+	$filename = basename( (string) $path );
+	if ( preg_match( '/\.(\d{8})-\d{6}\.bak$/', $filename, $matches ) ) {
+		$raw = $matches[1];
+		return substr( $raw, 0, 4 ) . '-' . substr( $raw, 4, 2 ) . '-' . substr( $raw, 6, 2 );
+	}
+
+	return '';
+}
+
+/**
+ * Normalize a timestamp-like value to a UTC day string.
+ *
+ * @param string $timestamp Timestamp candidate.
+ * @return string
+ */
+function p2026_audit_log_timestamp_to_day( $timestamp ) {
+	$timestamp = is_string( $timestamp ) ? trim( $timestamp ) : '';
+	if ( '' === $timestamp ) {
+		return '';
+	}
+
+	$parsed = strtotime( $timestamp );
+	if ( false === $parsed ) {
+		return '';
+	}
+
+	return gmdate( 'Y-m-d', $parsed );
+}
+
+/**
+ * Normalize a timestamp-like value to ISO-8601.
+ *
+ * @param string $timestamp Timestamp candidate.
+ * @return string
+ */
+function p2026_audit_log_normalize_timestamp( $timestamp ) {
+	$timestamp = is_string( $timestamp ) ? trim( $timestamp ) : '';
+	if ( '' === $timestamp ) {
+		return '';
+	}
+
+	$parsed = strtotime( $timestamp );
+	if ( false === $parsed ) {
+		return $timestamp;
+	}
+
+	return gmdate( 'c', $parsed );
+}
+
+/**
+ * Normalize one JSONL audit entry into a table-friendly record.
+ *
+ * @param array  $decoded       Parsed JSON object.
+ * @param string $path          Source file path.
+ * @param int    $line_number   1-indexed line number.
+ * @param string $fallback_day  Day inferred from shard naming.
+ * @return array<string,mixed>|null
+ */
+function p2026_audit_log_normalize_file_entry( $decoded, $path, $line_number, $fallback_day ) {
+	if ( ! is_array( $decoded ) ) {
+		return null;
+	}
+
+	$event_type = isset( $decoded['event_type'] ) ? sanitize_key( (string) $decoded['event_type'] ) : '';
+	$payload    = isset( $decoded['payload'] ) && is_array( $decoded['payload'] ) ? $decoded['payload'] : array();
+	$timestamp  = isset( $payload['timestamp'] ) ? p2026_audit_log_normalize_timestamp( (string) $payload['timestamp'] ) : '';
+	$day        = '' !== $timestamp ? p2026_audit_log_timestamp_to_day( $timestamp ) : $fallback_day;
+
+	if ( '' === $day && file_exists( $path ) ) {
+		$day = gmdate( 'Y-m-d', (int) filemtime( $path ) );
+	}
+
+	return array(
+		'id' => md5( $path . ':' . (int) $line_number . ':' . $event_type . ':' . $timestamp ),
+		'day' => $day,
+		'timestamp' => $timestamp,
+		'event_type' => $event_type,
+		'post_id' => isset( $payload['post_id'] ) ? (int) $payload['post_id'] : 0,
+		'actor_id' => isset( $payload['actor_id'] ) ? (int) $payload['actor_id'] : 0,
+		'old_state' => isset( $payload['old_state'] ) ? sanitize_key( (string) $payload['old_state'] ) : '',
+		'new_state' => isset( $payload['new_state'] ) ? sanitize_key( (string) $payload['new_state'] ) : '',
+		'source' => isset( $payload['source'] ) ? sanitize_key( (string) $payload['source'] ) : '',
+		'context' => isset( $payload['context'] ) && is_array( $payload['context'] ) ? $payload['context'] : array(),
+		'payload' => $payload,
+	);
+}
+
+/**
+ * Read and normalize all file-backed audit entries.
+ *
+ * @param string $selected_day Optional YYYY-MM-DD day filter.
+ * @return array<int,array<string,mixed>>
+ */
+function p2026_audit_log_read_file_entries( $selected_day = '' ) {
+	$entries = array();
+	$paths   = p2026_audit_log_get_file_paths();
+
+	foreach ( $paths as $path ) {
+		$handle = fopen( $path, 'rb' );
+		if ( ! $handle ) {
+			continue;
+		}
+
+		$line_number  = 0;
+		$fallback_day = p2026_audit_log_shard_day_from_path( $path );
+		while ( ! feof( $handle ) ) {
+			$line = fgets( $handle );
+			if ( false === $line ) {
+				continue;
+			}
+
+			++$line_number;
+			$decoded = json_decode( trim( $line ), true );
+			$entry   = p2026_audit_log_normalize_file_entry( $decoded, $path, $line_number, $fallback_day );
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			if ( '' !== $selected_day && $entry['day'] !== $selected_day ) {
+				continue;
+			}
+
+			$entries[] = $entry;
+		}
+
+		fclose( $handle );
+	}
+
+	usort(
+		$entries,
+		static function ( $a, $b ) {
+			$time_a = isset( $a['timestamp'] ) ? strtotime( (string) $a['timestamp'] ) : 0;
+			$time_b = isset( $b['timestamp'] ) ? strtotime( (string) $b['timestamp'] ) : 0;
+			return (int) $time_b <=> (int) $time_a;
+		}
+	);
+
+	return $entries;
+}
+
+/**
+ * Read and normalize CPT-backed audit entries.
+ *
+ * @param string $selected_day Optional YYYY-MM-DD day filter.
+ * @param int    $limit        Max entries to read.
+ * @return array<int,array<string,mixed>>
+ */
+function p2026_audit_log_read_cpt_entries( $selected_day = '', $limit = 500 ) {
+	$query_args = array(
+		'post_type' => 'p2026_audit_event',
+		'post_status' => 'private',
+		'posts_per_page' => max( 1, min( 1000, (int) $limit ) ),
+		'orderby' => 'date',
+		'order' => 'DESC',
+		'no_found_rows' => true,
+	);
+
+	$query = new WP_Query( $query_args );
+	if ( empty( $query->posts ) || ! is_array( $query->posts ) ) {
+		return array();
+	}
+
+	$entries = array();
+	foreach ( $query->posts as $post ) {
+		if ( ! $post instanceof WP_Post ) {
+			continue;
+		}
+
+		$timestamp = (string) get_post_meta( $post->ID, 'p2026_audit_timestamp', true );
+		if ( '' === $timestamp ) {
+			$timestamp = get_post_time( 'c', true, $post );
+		}
+		$timestamp = p2026_audit_log_normalize_timestamp( $timestamp );
+		$day       = p2026_audit_log_timestamp_to_day( $timestamp );
+		if ( '' !== $selected_day && $day !== $selected_day ) {
+			continue;
+		}
+
+		$event_type = (string) get_post_meta( $post->ID, 'p2026_audit_event_type', true );
+		$post_id    = (int) get_post_meta( $post->ID, 'p2026_audit_post_id', true );
+		$actor_id   = (int) get_post_meta( $post->ID, 'p2026_audit_actor_id', true );
+		$old_state  = (string) get_post_meta( $post->ID, 'p2026_audit_old_state', true );
+		$new_state  = (string) get_post_meta( $post->ID, 'p2026_audit_new_state', true );
+		$source     = (string) get_post_meta( $post->ID, 'p2026_audit_source', true );
+		$payload    = json_decode( (string) $post->post_content, true );
+
+		$entries[] = array(
+			'id' => (int) $post->ID,
+			'day' => $day,
+			'timestamp' => $timestamp,
+			'event_type' => sanitize_key( $event_type ),
+			'post_id' => $post_id,
+			'actor_id' => $actor_id,
+			'old_state' => sanitize_key( $old_state ),
+			'new_state' => sanitize_key( $new_state ),
+			'source' => sanitize_key( $source ),
+			'context' => is_array( $payload['context'] ?? null ) ? $payload['context'] : array(),
+			'payload' => is_array( $payload ) ? $payload : array(),
+		);
+	}
+
+	return $entries;
+}
+
+/**
+ * Return available day shards for the current backend.
+ *
+ * @return string[]
+ */
+function p2026_audit_log_get_available_days() {
+	$days = array();
+
+	if ( 'cpt' === p2026_audit_log_get_backend() ) {
+		$entries = p2026_audit_log_read_cpt_entries( '', 1000 );
+	} else {
+		$entries = p2026_audit_log_read_file_entries();
+	}
+
+	foreach ( $entries as $entry ) {
+		if ( empty( $entry['day'] ) || ! is_string( $entry['day'] ) ) {
+			continue;
+		}
+		$days[ $entry['day'] ] = true;
+	}
+
+	$days = array_keys( $days );
+	rsort( $days, SORT_STRING );
+
+	return $days;
+}
+
+/**
+ * REST callback: return available audit-log days.
+ *
+ * @return WP_REST_Response
+ */
+function p2026_audit_log_rest_days() {
+	return rest_ensure_response(
+		array(
+			'days' => p2026_audit_log_get_available_days(),
+			'backend' => p2026_audit_log_get_backend(),
+		)
+	);
+}
+
+/**
+ * REST callback: return paged audit-log entries.
+ *
+ * @param WP_REST_Request $request Request instance.
+ * @return WP_REST_Response
+ */
+function p2026_audit_log_rest_entries( WP_REST_Request $request ) {
+	$selected_day = sanitize_text_field( (string) $request->get_param( 'day' ) );
+	if ( '' !== $selected_day && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $selected_day ) ) {
+		$selected_day = '';
+	}
+
+	$page = max( 1, (int) $request->get_param( 'page' ) );
+	$per_page = max( 1, min( 500, (int) $request->get_param( 'per_page' ) ) );
+
+	if ( 'cpt' === p2026_audit_log_get_backend() ) {
+		$entries = p2026_audit_log_read_cpt_entries( $selected_day, 2000 );
+	} else {
+		$entries = p2026_audit_log_read_file_entries( $selected_day );
+	}
+
+	$total = count( $entries );
+	$start = ( $page - 1 ) * $per_page;
+	$items = array_slice( $entries, $start, $per_page );
+
+	return rest_ensure_response(
+		array(
+			'items' => array_values( $items ),
+			'total' => $total,
+			'page' => $page,
+			'per_page' => $per_page,
+		)
+	);
+}
 
 /**
  * Write an audit entry to uploads JSONL.
