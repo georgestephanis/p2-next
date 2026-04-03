@@ -505,6 +505,136 @@ function p2026_should_offer_update( $plugin_data, $repo, $context ) {
 }
 
 /**
+ * Whether the plugin directory contains a local Git checkout.
+ *
+ * @return bool
+ */
+function p2026_github_updates_has_local_git_checkout() {
+	$git_path = P2026_DIR . '.git';
+
+	return is_dir( $git_path ) || is_file( $git_path );
+}
+
+/**
+ * Build a suggested manual update command for git-based installs.
+ *
+ * @param array<string,mixed>  $context Update offer context.
+ * @param array<string,string> $repo    Repository tuple.
+ * @return string
+ */
+function p2026_github_updates_build_manual_command( $context, $repo ) {
+	$plugin_dir = untrailingslashit( P2026_DIR );
+	$remote     = 'origin';
+
+	if ( 'trunk' === ( $context['channel'] ?? '' ) ) {
+		$head   = isset( $context['head'] ) && is_array( $context['head'] ) ? $context['head'] : array();
+		$branch = isset( $head['branch'] ) && is_string( $head['branch'] ) ? trim( $head['branch'] ) : '';
+		$sha    = isset( $head['sha'] ) && is_string( $head['sha'] ) ? trim( $head['sha'] ) : '';
+
+		if ( '' === $branch || '' === $sha ) {
+			return sprintf( 'cd %s && git fetch --tags %s', escapeshellarg( $plugin_dir ), escapeshellarg( $remote ) );
+		}
+
+		return sprintf(
+			'cd %1$s && git fetch --prune %2$s %3$s && git checkout --detach %4$s',
+			escapeshellarg( $plugin_dir ),
+			escapeshellarg( $remote ),
+			escapeshellarg( $branch ),
+			escapeshellarg( $sha )
+		);
+	}
+
+	$release = isset( $context['release'] ) && is_array( $context['release'] ) ? $context['release'] : array();
+	$tag     = isset( $release['tag_name'] ) && is_string( $release['tag_name'] ) ? trim( $release['tag_name'] ) : '';
+
+	if ( '' === $tag && isset( $context['payload'] ) && $context['payload'] instanceof stdClass && ! empty( $context['payload']->new_version ) ) {
+		$tag = 'v' . (string) $context['payload']->new_version;
+	}
+
+	if ( '' === $tag ) {
+		$tag = 'v' . P2026_VERSION;
+	}
+
+	return sprintf(
+		'cd %1$s && git fetch --tags --prune %2$s && git checkout --detach %3$s',
+		escapeshellarg( $plugin_dir ),
+		escapeshellarg( $remote ),
+		escapeshellarg( $tag )
+	);
+}
+
+/**
+ * Get git-update notice context when auto-update should be suppressed.
+ *
+ * @return array<string,mixed>|null
+ */
+function p2026_github_updates_get_manual_notice_context() {
+	if ( ! p2026_github_updates_has_local_git_checkout() ) {
+		return null;
+	}
+
+	$plugin_file = plugin_basename( P2026_DIR . 'p2026.php' );
+	$plugin_data = get_file_data(
+		P2026_DIR . 'p2026.php',
+		array(
+			'Version'   => 'Version',
+			'UpdateURI' => 'Update URI',
+		)
+	);
+
+	$update_uri = ! empty( $plugin_data['UpdateURI'] ) ? (string) $plugin_data['UpdateURI'] : p2026_get_update_uri_from_header();
+	$repo       = p2026_parse_github_repo_from_update_uri( $update_uri );
+	if ( ! is_array( $repo ) || empty( $repo['owner'] ) || empty( $repo['repo'] ) ) {
+		return null;
+	}
+
+	$context = p2026_get_update_offer_context( $plugin_file, $plugin_data, $update_uri, $repo );
+	if ( ! is_array( $context ) || empty( $context['payload'] ) || ! $context['payload'] instanceof stdClass ) {
+		return null;
+	}
+
+	if ( ! p2026_should_offer_update( $plugin_data, $repo, $context ) ) {
+		return null;
+	}
+
+	$command = p2026_github_updates_build_manual_command( $context, $repo );
+
+	return array(
+		'context' => $context,
+		'repo'    => $repo,
+		'command' => $command,
+	);
+}
+
+/**
+ * Mark an update payload as manual-only for git checkouts.
+ *
+ * @param stdClass $payload Existing update payload.
+ * @param string   $command Suggested manual command.
+ * @return stdClass
+ */
+function p2026_github_updates_prepare_manual_payload( $payload, $command ) {
+	if ( ! $payload instanceof stdClass ) {
+		$payload = new stdClass();
+	}
+
+	$manual_payload = clone $payload;
+	$manual_payload->package = '';
+	$manual_payload->p2026_manual_git_update = true;
+	$manual_payload->p2026_manual_git_command = $command;
+
+	if ( '' !== $command ) {
+		$manual_payload->upgrade_notice = sprintf(
+			/* translators: %s: shell command. */
+			__( 'Git checkout detected. Run manually: %s', 'p2026' ),
+			$command
+		);
+	}
+
+	return $manual_payload;
+}
+
+/**
  * Ensure zip extraction folder is renamed to expected plugin slug on updates.
  *
  * @param string|WP_Error $source        Source path.
@@ -592,6 +722,12 @@ function p2026_filter_github_plugin_update( $update, $plugin_data, $plugin_file,
 		return $update;
 	}
 
+	if ( p2026_github_updates_has_local_git_checkout() ) {
+		$command = p2026_github_updates_build_manual_command( $context, $repo );
+
+		return p2026_github_updates_prepare_manual_payload( $context['payload'], $command );
+	}
+
 	return $context['payload'];
 }
 add_filter( 'update_plugins_github.com', 'p2026_filter_github_plugin_update', 10, 4 );
@@ -643,6 +779,14 @@ function p2026_enrich_update_plugins_transient( $transient ) {
 	}
 
 	if ( p2026_should_offer_update( $plugin_data, $repo, $context ) ) {
+		if ( p2026_github_updates_has_local_git_checkout() ) {
+			$command = p2026_github_updates_build_manual_command( $context, $repo );
+			$transient->response[ $plugin_file ] = p2026_github_updates_prepare_manual_payload( $payload, $command );
+			unset( $transient->no_update[ $plugin_file ] );
+
+			return $transient;
+		}
+
 		$transient->response[ $plugin_file ] = $payload;
 		unset( $transient->no_update[ $plugin_file ] );
 	} else {
@@ -653,6 +797,198 @@ function p2026_enrich_update_plugins_transient( $transient ) {
 	return $transient;
 }
 add_filter( 'site_transient_update_plugins', 'p2026_enrich_update_plugins_transient', 20, 1 );
+
+/**
+ * Render inline plugin-row message for git-based manual updates.
+ *
+ * @param array  $plugin_data Plugin data.
+ * @param object $response    Update response object.
+ * @return void
+ */
+function p2026_github_updates_render_manual_update_inline_message( $plugin_data, $response ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	if ( ! is_object( $response ) || empty( $response->p2026_manual_git_update ) ) {
+		return;
+	}
+
+	$command = isset( $response->p2026_manual_git_command ) && is_string( $response->p2026_manual_git_command )
+		? $response->p2026_manual_git_command
+		: '';
+
+	echo '<br />' . esc_html__( 'Automatic zip-based updates are disabled for this Git checkout. Update manually using Git.', 'p2026' );
+
+	if ( '' !== $command ) {
+		echo '<br /><code>' . esc_html( $command ) . '</code>';
+	}
+}
+
+add_action( 'in_plugin_update_message-p2026/p2026.php', 'p2026_github_updates_render_manual_update_inline_message', 10, 2 );
+
+/**
+ * Whether the update-core bulk checkbox should be disabled for P2026.
+ *
+ * @return bool
+ */
+function p2026_github_updates_should_disable_bulk_checkbox() {
+	$plugin_file = plugin_basename( P2026_DIR . 'p2026.php' );
+	$updates     = get_site_transient( 'update_plugins' );
+
+	if ( ! is_object( $updates ) || empty( $updates->response ) || ! is_array( $updates->response ) ) {
+		return false;
+	}
+
+	if ( empty( $updates->response[ $plugin_file ] ) || ! is_object( $updates->response[ $plugin_file ] ) ) {
+		return false;
+	}
+
+	return ! empty( $updates->response[ $plugin_file ]->p2026_manual_git_update );
+}
+
+/**
+ * Disable the update-core bulk checkbox for manual git-only P2026 updates.
+ *
+ * @return void
+ */
+function p2026_github_updates_disable_bulk_checkbox_on_update_core() {
+	if ( ! current_user_can( 'update_plugins' ) ) {
+		return;
+	}
+
+	if ( ! p2026_github_updates_should_disable_bulk_checkbox() ) {
+		return;
+	}
+
+	$plugin_file = plugin_basename( P2026_DIR . 'p2026.php' );
+	?>
+	<script>
+	(function() {
+		var pluginFile = <?php echo wp_json_encode( $plugin_file ); ?>;
+		var selector = '#update-plugins-table input[name="checked[]"][value="' + pluginFile.replace(/"/g, '\\"') + '"]';
+		var checkbox = document.querySelector(selector);
+		if (!checkbox) {
+			return;
+		}
+
+		checkbox.checked = false;
+		checkbox.disabled = true;
+		checkbox.setAttribute('aria-disabled', 'true');
+		checkbox.style.display = 'none';
+
+		var label = checkbox.parentElement && checkbox.parentElement.querySelector('label[for="' + checkbox.id + '"]');
+		if (label) {
+			label.style.display = 'none';
+		}
+	})();
+	</script>
+	<?php
+}
+add_action( 'admin_print_footer_scripts-update-core.php', 'p2026_github_updates_disable_bulk_checkbox_on_update_core' );
+
+/**
+ * Toggle the plugins-page row checkbox for manual git-only updates.
+ *
+ * Keeps normal checkbox behavior for activate/deactivate/delete bulk actions,
+ * but temporarily detaches the checkbox when "Update" is selected.
+ *
+ * @return void
+ */
+function p2026_github_updates_toggle_plugins_checkbox_for_update_action() {
+	if ( ! current_user_can( 'update_plugins' ) ) {
+		return;
+	}
+
+	if ( ! p2026_github_updates_should_disable_bulk_checkbox() ) {
+		return;
+	}
+
+	$plugin_file = plugin_basename( P2026_DIR . 'p2026.php' );
+	?>
+	<script>
+	(function() {
+		var pluginFile = <?php echo wp_json_encode( $plugin_file ); ?>;
+		var row = document.querySelector('tr[data-plugin="' + pluginFile.replace(/"/g, '\\"') + '"]');
+		if (!row) {
+			return;
+		}
+
+		var checkbox = row.querySelector('input[name="checked[]"][value="' + pluginFile.replace(/"/g, '\\"') + '"]');
+		if (!checkbox) {
+			return;
+		}
+
+		var placeholder = document.createComment('p2026-update-only-checkbox-placeholder');
+		var originalParent = checkbox.parentNode;
+		var label = originalParent ? originalParent.querySelector('label[for="' + checkbox.id + '"]') : null;
+		var labelPlaceholder = label ? document.createComment('p2026-update-only-label-placeholder') : null;
+
+		function selectedBulkAction() {
+			var top = document.getElementById('bulk-action-selector-top');
+			var bottom = document.getElementById('bulk-action-selector-bottom');
+			var topValue = top ? top.value : '-1';
+			var bottomValue = bottom ? bottom.value : '-1';
+
+			if (topValue && topValue !== '-1') {
+				return topValue;
+			}
+
+			if (bottomValue && bottomValue !== '-1') {
+				return bottomValue;
+			}
+
+			return '-1';
+		}
+
+		function detachForUpdateAction() {
+			if (checkbox.parentNode) {
+				checkbox.checked = false;
+				checkbox.disabled = true;
+				checkbox.parentNode.insertBefore(placeholder, checkbox);
+				checkbox.parentNode.removeChild(checkbox);
+			}
+
+			if (label && label.parentNode) {
+				label.parentNode.insertBefore(labelPlaceholder, label);
+				label.parentNode.removeChild(label);
+			}
+		}
+
+		function restoreForOtherActions() {
+			if (!checkbox.parentNode && placeholder.parentNode) {
+				placeholder.parentNode.insertBefore(checkbox, placeholder);
+				placeholder.parentNode.removeChild(placeholder);
+				checkbox.disabled = false;
+			}
+
+			if (label && !label.parentNode && labelPlaceholder && labelPlaceholder.parentNode) {
+				labelPlaceholder.parentNode.insertBefore(label, labelPlaceholder);
+				labelPlaceholder.parentNode.removeChild(labelPlaceholder);
+			}
+		}
+
+		function syncCheckboxState() {
+			if ('update-selected' === selectedBulkAction()) {
+				detachForUpdateAction();
+				return;
+			}
+
+			restoreForOtherActions();
+		}
+
+		document.addEventListener('change', function(event) {
+			if (!event || !event.target) {
+				return;
+			}
+
+			if (event.target.id === 'bulk-action-selector-top' || event.target.id === 'bulk-action-selector-bottom') {
+				syncCheckboxState();
+			}
+		});
+
+		syncCheckboxState();
+	})();
+	</script>
+	<?php
+}
+add_action( 'admin_print_footer_scripts-plugins.php', 'p2026_github_updates_toggle_plugins_checkbox_for_update_action' );
 
 /**
  * Provide plugin details modal data from manifest payload.
