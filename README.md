@@ -2,6 +2,8 @@
 
 A modern WordPress plugin that adds P2/o2-style team collaboration features by progressively enhancing theme-rendered post lists using React, the Block Editor, and the WordPress REST API.
 
+Current release: 0.2.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
+
 [![Try in WordPress Playground](https://img.shields.io/badge/Try%20in-WordPress%20Playground-3858e9?logo=wordpress)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/georgestephanis/p2026/HEAD/.github/blueprint.json)
 
 ## What It Does
@@ -18,6 +20,7 @@ A modern WordPress plugin that adds P2/o2-style team collaboration features by p
 -   **Notifications module** — Bottom-right notification dock for mentions/replies with polling and read management.
 -   **Link-previews module** — Internal post/comment links get hover preview cards (title, avatar, date, excerpt) with REST-backed server-side caching.
 -   **Audit-log module** — Persists core audit events to JSONL in uploads or an internal custom post type backend.
+-   **GitHub-based updates** — Supports native `Update URI` checks against GitHub releases, prereleases, and a `trunk` channel for direct installs from GitHub.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
 ## Building a Company Intranet
@@ -81,6 +84,12 @@ npm run format:js   # Auto-fix JS formatting
 ```
 
 Build output goes to `build/`. Do not hand-edit files there.
+
+## Releases
+
+-   Current stable release: `0.2.0`
+-   Initial release baseline: `0.1.0` maps to commit `dbf2205587f73c66e3d63a46449ff64b39dc2a2f`
+-   Release notes: [CHANGELOG.md](CHANGELOG.md)
 
 ## Architecture
 
@@ -153,6 +162,7 @@ Current modules:
 | `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                   |
 | `modules/link-previews/index.php`           | Internal link preview REST endpoint + 3-day transient caching                |
 | `admin/settings.php`                        | Module toggles and audit backend configuration UI                            |
+| `includes/github-updates.php`               | GitHub release/update channel integration for the plugin `Update URI`        |
 | `src/modules/link-previews/`                | Hover/focus preview card UI for internal post/comment links                  |
 | `src/modules/notifications/`                | Notification dock frontend UI                                                |
 

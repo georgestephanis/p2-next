@@ -4,7 +4,7 @@
  *
  * Module Name:        Link Previews
  * Module Description: REST endpoint for internal post/comment preview cards with server-side caching.
- * Module Version:     0.1.0
+ * Module Version:     0.2.0
  *
  * @package P2026\Modules\LinkPreviews
  */
