@@ -15,7 +15,7 @@ import {
 	SearchControl,
 	SelectControl,
 } from '@wordpress/components';
-import { DataViews, filterSortAndPaginate } from '@wordpress/dataviews';
+import { DataViews, filterSortAndPaginate } from '@wordpress/dataviews/wp';
 import onDomReady from '../../utils/on-dom-ready';
 
 import './audit-log-viewer.scss';

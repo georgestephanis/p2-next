@@ -15,6 +15,32 @@
  * automatically appends the version as a query parameter.
  */
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+const DependencyExtractionWebpackPlugin = require( '@wordpress/dependency-extraction-webpack-plugin' );
+
+const defaultPlugins = defaultConfig.plugins || [];
+const dependencyExtractionPlugin = defaultPlugins.find(
+	( plugin ) =>
+		plugin?.constructor?.name === 'DependencyExtractionWebpackPlugin'
+);
+
+const pluginsWithoutDependencyExtraction = defaultPlugins.filter(
+	( plugin ) =>
+		plugin?.constructor?.name !== 'DependencyExtractionWebpackPlugin'
+);
+
+const dependencyExtractionOptions = {
+	...( dependencyExtractionPlugin?.options || {} ),
+	requestToExternal( request ) {
+		if ( request === '@wordpress/dataviews/wp' ) {
+			return [ 'wp', 'dataviews' ];
+		}
+	},
+	requestToHandle( request ) {
+		if ( request === '@wordpress/dataviews/wp' ) {
+			return 'wp-dataviews';
+		}
+	},
+};
 
 module.exports = {
 	...defaultConfig,
@@ -33,4 +59,8 @@ module.exports = {
 		chunkIds: 'deterministic',
 		moduleIds: 'deterministic',
 	},
+	plugins: [
+		...pluginsWithoutDependencyExtraction,
+		new DependencyExtractionWebpackPlugin( dependencyExtractionOptions ),
+	],
 };
