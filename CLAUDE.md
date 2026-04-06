@@ -148,7 +148,7 @@ Key state:
 -   expandedPosts / editingPost
 -   savingPost (null | postId | 'new') / savingComment
 -   newPostModalOpen
- -   notificationDockOpen
+-   notificationDockOpen
 -   postStateFilter
 -   readState (lastActivity, unreadCount)
 -   notifications
@@ -186,7 +186,7 @@ p2026 has a lightweight module system for self-contained features.
 | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | mentions      | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook              | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard |
 | notifications | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling  |
-| link-previews | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache                | `src/modules/link-previews/` — Internal post/comment hover preview cards               |
+| link-previews | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache              | `src/modules/link-previews/` — Internal post/comment hover preview cards              |
 | post-state    | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks             | N/A (UI lives in existing core components/store)                                      |
 | audit-log     | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                     |
 
