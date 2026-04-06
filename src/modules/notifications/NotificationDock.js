@@ -4,7 +4,7 @@
  * Displays a sticky dock in the bottom-right corner with an unread count badge
  * that expands to show recent notifications when clicked.
  */
-import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
+import { useEffect, useState, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button, Spinner, Dashicon } from '@wordpress/components';
 import { sprintf, _n, __ } from '@wordpress/i18n';
@@ -18,7 +18,7 @@ export default function NotificationDock() {
 	const [ isLoading, setIsLoading ] = useState( false );
 	const stopPollingRef = useRef( null );
 
-	const { fetchNotifications, markAllAsRead } = useDispatch( STORE_NAME );
+	const { fetchNotifications } = useDispatch( STORE_NAME );
 	const notifications = useSelect( ( select ) =>
 		select( STORE_NAME ).getNotifications()
 	);
@@ -53,10 +53,6 @@ export default function NotificationDock() {
 			}
 		};
 	}, [ fetchNotifications ] );
-
-	const handleMarkAllRead = useCallback( () => {
-		markAllAsRead();
-	}, [ markAllAsRead ] );
 
 	return (
 		<div
@@ -119,7 +115,7 @@ export default function NotificationDock() {
 									<Button
 										isSmall
 										isSecondary
-										onClick={ handleMarkAllRead }
+										data-wp-on--click="actions.markAllRead"
 									>
 										{ __( 'Mark all as read', 'p2026' ) }
 									</Button>

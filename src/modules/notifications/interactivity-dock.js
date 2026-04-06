@@ -21,5 +21,9 @@ store( 'p2026/notifications-dock', {
 		close: () => {
 			dispatch( STORE_NAME ).setNotificationDockOpen( false );
 		},
+
+		markAllRead: () => {
+			dispatch( STORE_NAME ).markAllAsRead();
+		},
 	},
 } );
