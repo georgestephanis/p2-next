@@ -1,4 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
+import { store } from '@wordpress/interactivity';
 import { __ } from '@wordpress/i18n';
 import './_link-previews.scss';
 
@@ -6,6 +7,8 @@ const LINK_SELECTOR = 'a[href]:not(.p2026-mention)';
 const DECORATED_CLASS = 'p2026-previewable-link';
 const HOVER_DELAY_MS = 220;
 const HIDE_DELAY_MS = 170;
+const INTERACTIVE_NAMESPACE = 'p2026/link-previews';
+const INTERACTIVE_HOST_ID = 'p2026-link-previews-interactive';
 const previewCache = new Map();
 
 let cardEl = null;
@@ -367,6 +370,43 @@ function onFocusOut( event ) {
 	}
 }
 
+store( INTERACTIVE_NAMESPACE, {
+	actions: {
+		handleMouseOver: ( event ) => onMouseOver( event ),
+		handleMouseOut: ( event ) => onMouseOut( event ),
+		handleFocusIn: ( event ) => onFocusIn( event ),
+		handleFocusOut: ( event ) => onFocusOut( event ),
+	},
+} );
+
+function initLinkPreviewInteractivity() {
+	if ( document.getElementById( INTERACTIVE_HOST_ID ) ) {
+		return;
+	}
+
+	const host = document.createElement( 'div' );
+	host.id = INTERACTIVE_HOST_ID;
+	host.hidden = true;
+	host.setAttribute( 'data-wp-interactive', INTERACTIVE_NAMESPACE );
+	host.setAttribute(
+		'data-wp-on-document--mouseover',
+		'actions.handleMouseOver'
+	);
+	host.setAttribute(
+		'data-wp-on-document--mouseout',
+		'actions.handleMouseOut'
+	);
+	host.setAttribute(
+		'data-wp-on-document--focusin',
+		'actions.handleFocusIn'
+	);
+	host.setAttribute(
+		'data-wp-on-document--focusout',
+		'actions.handleFocusOut'
+	);
+	document.body.appendChild( host );
+}
+
 export function initLinkPreviews() {
 	if ( window.__p2026LinkPreviewsMounted ) {
 		return;
@@ -391,10 +431,7 @@ export function initLinkPreviews() {
 		subtree: true,
 	} );
 
-	document.addEventListener( 'mouseover', onMouseOver );
-	document.addEventListener( 'mouseout', onMouseOut );
-	document.addEventListener( 'focusin', onFocusIn );
-	document.addEventListener( 'focusout', onFocusOut );
+	initLinkPreviewInteractivity();
 	window.addEventListener( 'scroll', hideCard, true );
 	window.addEventListener( 'resize', hideCard );
 }

@@ -17,6 +17,7 @@ import { useSelect, useDispatch } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import NewPostEditor from './NewPostEditor';
+import '../interactivity/new-post-modal';
 
 export default function NewPostModal() {
 	const isOpen = useSelect( ( select ) =>
@@ -60,20 +61,6 @@ export default function NewPostModal() {
 		};
 	}, [ isOpen ] );
 
-	// Escape key handler — only active while open.
-	useEffect( () => {
-		if ( ! isOpen ) {
-			return;
-		}
-		const onKeyDown = ( e ) => {
-			if ( e.key === 'Escape' ) {
-				closeNewPostModal();
-			}
-		};
-		document.addEventListener( 'keydown', onKeyDown );
-		return () => document.removeEventListener( 'keydown', onKeyDown );
-	}, [ isOpen, closeNewPostModal ] );
-
 	// Close when clicking the backdrop (not the dialog panel itself).
 	const onOverlayClick = useCallback(
 		( e ) => {
@@ -93,7 +80,12 @@ export default function NewPostModal() {
 		// document level above. Suppressing the a11y overlay warnings is
 		// the same approach used by @wordpress/components Modal.
 		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-		<div className="p2026-modal-overlay" onClick={ onOverlayClick }>
+		<div
+			className="p2026-modal-overlay"
+			onClick={ onOverlayClick }
+			data-wp-interactive="p2026/new-post-modal"
+			data-wp-on-document--keydown="actions.handleDocumentKeydown"
+		>
 			<div
 				ref={ dialogRef }
 				className="p2026-modal"
