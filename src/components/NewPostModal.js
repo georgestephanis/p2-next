@@ -17,7 +17,6 @@ import { useSelect, useDispatch } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import NewPostEditor from './NewPostEditor';
-import '../interactivity/new-post-modal';
 
 export default function NewPostModal() {
 	const isOpen = useSelect( ( select ) =>

@@ -1,29 +1,27 @@
 /**
  * Interactivity: notifications dock open/close actions.
  */
-import { store } from '@wordpress/interactivity';
-import { dispatch, select } from '@wordpress/data';
-import { STORE_NAME } from '../store';
+import { dispatchStore, interactivityStore, selectStore } from './runtime';
 
-store( 'p2026/notifications-dock', {
+interactivityStore( 'p2026/notifications-dock', {
 	actions: {
 		toggleOpen: () => {
-			const isOpen = select( STORE_NAME ).isNotificationDockOpen();
+			const isOpen = selectStore()?.isNotificationDockOpen() ?? false;
 			const nextOpen = ! isOpen;
 
-			dispatch( STORE_NAME ).setNotificationDockOpen( nextOpen );
+			dispatchStore()?.setNotificationDockOpen( nextOpen );
 			if ( nextOpen ) {
 				// Keep existing behavior: refresh notifications when opening.
-				dispatch( STORE_NAME ).fetchNotifications();
+				dispatchStore()?.fetchNotifications();
 			}
 		},
 
 		close: () => {
-			dispatch( STORE_NAME ).setNotificationDockOpen( false );
+			dispatchStore()?.setNotificationDockOpen( false );
 		},
 
 		markAllRead: () => {
-			dispatch( STORE_NAME ).markAllAsRead();
+			dispatchStore()?.markAllAsRead();
 		},
 	},
 } );

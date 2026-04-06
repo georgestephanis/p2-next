@@ -4,7 +4,7 @@
  * Centralizes directive/store host wiring while link-preview module keeps
  * preview-specific logic.
  */
-import { store } from '@wordpress/interactivity';
+import { interactivityStore } from './runtime';
 
 const NAMESPACE = 'p2026/link-previews';
 const HOST_ID = 'p2026-link-previews-interactive';
@@ -18,7 +18,7 @@ let handlers = {
 	onWindowResize: () => {},
 };
 
-store( NAMESPACE, {
+interactivityStore( NAMESPACE, {
 	actions: {
 		handleMouseOver: ( event ) => handlers.onMouseOver( event ),
 		handleMouseOut: ( event ) => handlers.onMouseOut( event ),

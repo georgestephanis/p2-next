@@ -17,13 +17,16 @@ This document reflects the 0.3.0 release line.
 ```mermaid
 flowchart TD
     A[wp_enqueue_scripts in p2026.php] --> B[Enqueue build/frontend.js]
+    A --> B2[Enqueue build/interactivity.module.js via Script Modules API]
     A --> C[Inject window.p2026Config]
 
     B --> D[src/frontend.js]
+    B2 --> D2[src/interactivity/module-entry.js]
     C --> D
+    D2 --> D3[Expose window.__p2026InteractivityApi bridge]
 
     D --> E[initApiFetch middleware]
-    D --> E1[Init shared interactivity hosts]
+    D --> E1[Init shared interactivity hosts via bridge API]
     D --> F[find feed container + collect post elements]
     D --> AF[Load active JS modules]
     AF --> AG[Notifications dock mount]
@@ -74,6 +77,8 @@ flowchart TD
 -   `p2026.php`: block registration, frontend enqueue, config injection, auto-title filter, admin bar node.
 -   `src/frontend.js`: enhancement bootstrap, archive/main-query header gating, modal root, admin bar button wiring.
 -   `src/interactivity/`: Interactivity API stores + directive host wiring for lightweight interaction islands.
+-   `src/interactivity/module-entry.js`: script-module bootstrap that loads interactivity implementations and publishes bridge methods for classic callers.
+-   `src/interactivity/client-bridge.js`: classic-script facade used by frontend/modules/api code to invoke module-loaded interactivity methods.
 -   `src/store/index.js`: post/comment/polling/editor/modal state and async actions.
 -   `src/api/index.js`: `apiFetch` middleware and polling utility.
 -   `src/utils/on-dom-ready.js`: shared helper for DOM-ready-safe module bootstrap.
@@ -109,7 +114,7 @@ flowchart TD
 -   Place shared Interactivity API wiring in `src/interactivity/*`.
 -   Keep feature logic in `src/modules/*` or `src/components/*`.
 -   Connect the two by passing feature handlers into interactivity initializers.
--   Use `src/interactivity/index.js` for exports that are consumed across domains.
+-   Use `src/interactivity/index.js` for exports that are consumed across domains.- Keep direct imports of interactivity implementation files out of classic bundles; consume bridge exports instead.
 
 ### Namespace And Host Conventions
 
@@ -122,6 +127,12 @@ flowchart TD
 
 -   Use `src/utils/on-dom-ready.js` instead of ad hoc `DOMContentLoaded` checks.
 -   Keep direct `document.addEventListener( 'DOMContentLoaded', ... )` out of feature modules.
+
+### Script Module Constraint
+
+-   Interactivity APIs load from Script Modules (`@wordpress/interactivity`) and are enqueued separately from classic scripts.
+-   Modules cannot depend on script handles (`wp-data`, `wp-api-fetch`, etc.); interop uses `window.wp.*` globals where required.
+-   Do not re-introduce `wp-interactivity` into `build/frontend.asset.php`; interactivity dependencies should live in `build/interactivity.module.asset.php`.
 
 ## Module Activation
 

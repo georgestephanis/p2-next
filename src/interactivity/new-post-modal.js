@@ -1,20 +1,22 @@
 /**
  * Interactivity: New Post modal keyboard handling.
  */
-import { store, withSyncEvent } from '@wordpress/interactivity';
-import { dispatch } from '@wordpress/data';
-import { STORE_NAME } from '../store';
+import {
+	dispatchStore,
+	interactivityStore,
+	interactivityWithSyncEvent,
+} from './runtime';
 
-store( 'p2026/new-post-modal', {
+interactivityStore( 'p2026/new-post-modal', {
 	actions: {
 		handleDocumentKeydown: ( event ) => {
 			if ( event.key === 'Escape' ) {
-				dispatch( STORE_NAME ).closeNewPostModal();
+				dispatchStore()?.closeNewPostModal();
 			}
 		},
-		handleOverlayClick: withSyncEvent( ( event ) => {
+		handleOverlayClick: interactivityWithSyncEvent( ( event ) => {
 			if ( event.target === event.currentTarget ) {
-				dispatch( STORE_NAME ).closeNewPostModal();
+				dispatchStore()?.closeNewPostModal();
 			}
 		} ),
 	},

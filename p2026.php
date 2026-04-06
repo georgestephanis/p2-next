@@ -251,6 +251,8 @@ function p2026_enqueue_frontend() {
 		return;
 	}
 	$asset = require $asset_file;
+	$interactivity_module_asset_file = P2026_DIR . 'build/interactivity.module.asset.php';
+	$can_enqueue_interactivity_module = function_exists( 'wp_register_script_module' ) && function_exists( 'wp_enqueue_script_module' ) && file_exists( $interactivity_module_asset_file );
 
 	// Enqueue WordPress editor/components CSS that frontend components depend on.
 	// These provide the base styles for buttons, inputs, blocks, layouts, etc.
@@ -315,6 +317,18 @@ function p2026_enqueue_frontend() {
 		) . ';',
 		'before'
 	);
+
+	if ( $can_enqueue_interactivity_module ) {
+		$interactivity_module_asset = require $interactivity_module_asset_file;
+
+		wp_register_script_module(
+			'p2026/interactivity',
+			P2026_URL . 'build/interactivity.module.js',
+			isset( $interactivity_module_asset['dependencies'] ) ? $interactivity_module_asset['dependencies'] : array(),
+			$interactivity_module_asset['version']
+		);
+		wp_enqueue_script_module( 'p2026/interactivity' );
+	}
 }
 add_action( 'wp_enqueue_scripts', 'p2026_enqueue_frontend' );
 

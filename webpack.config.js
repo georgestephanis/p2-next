@@ -15,8 +15,15 @@
  * automatically appends the version as a query parameter.
  */
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+const DependencyExtractionWebpackPlugin = require( '@wordpress/dependency-extraction-webpack-plugin' );
 
-module.exports = {
+const defaultPlugins = defaultConfig.plugins || [];
+const pluginsWithoutDependencyExtraction = defaultPlugins.filter(
+	( plugin ) =>
+		plugin?.constructor?.name !== 'DependencyExtractionWebpackPlugin'
+);
+
+const classicConfig = {
 	...defaultConfig,
 	entry: async () => ( {
 		...( await defaultConfig.entry() ),
@@ -25,6 +32,7 @@ module.exports = {
 	} ),
 	output: {
 		...defaultConfig.output,
+		clean: false,
 		chunkFilename: 'chunk-[name].js',
 		chunkLoading: defaultConfig.output.chunkLoading,
 	},
@@ -34,3 +42,48 @@ module.exports = {
 		moduleIds: 'deterministic',
 	},
 };
+
+const interactivityModuleConfig = {
+	...defaultConfig,
+	name: 'p2026-interactivity-module',
+	entry: {
+		'interactivity-module': './src/interactivity/module-entry.js',
+	},
+	experiments: {
+		...( defaultConfig.experiments || {} ),
+		outputModule: true,
+	},
+	output: {
+		...defaultConfig.output,
+		clean: false,
+		filename: 'interactivity.module.js',
+		chunkFilename: 'mchunk-[name].js',
+		module: true,
+		chunkFormat: 'module',
+		environment: {
+			...( defaultConfig.output?.environment || {} ),
+			module: true,
+		},
+		library: {
+			type: 'module',
+		},
+	},
+	optimization: {
+		...defaultConfig.optimization,
+		chunkIds: 'deterministic',
+		moduleIds: 'deterministic',
+	},
+	plugins: [
+		...pluginsWithoutDependencyExtraction,
+		new DependencyExtractionWebpackPlugin( {
+			useDefaults: false,
+			requestToExternalModule( request ) {
+				if ( request === '@wordpress/interactivity' ) {
+					return request;
+				}
+			},
+		} ),
+	],
+};
+
+module.exports = [ classicConfig, interactivityModuleConfig ];

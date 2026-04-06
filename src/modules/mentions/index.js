@@ -24,7 +24,7 @@ import { addFilter } from '@wordpress/hooks';
 import { createRoot, createElement } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
-import { initMentionsHoverInteractivity } from '../../interactivity/mentions-hover';
+import { initMentionsHoverInteractivity } from '../../interactivity';
 import onDomReady from '../../utils/on-dom-ready';
 import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 import './_mentions.scss';

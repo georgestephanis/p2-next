@@ -27,6 +27,8 @@ Recent frontend interaction work now uses a hybrid model:
 
 -   React + `@wordpress/data` continue to power editor-heavy flows and shared async state.
 -   The WordPress Interactivity API now powers delegated event wiring for lightweight interaction islands (for example admin-bar trigger behavior, menu close behavior, notification dock actions, hover interactions, and visibility-driven callbacks).
+-   Interactivity wiring is loaded via a dedicated Script Module entry (`build/interactivity.module.js`) instead of classic script dependencies.
+-   Classic frontend code calls a small bridge API (`src/interactivity/client-bridge.js`), while Script Module implementations live under `src/interactivity/*`.
 
 ## Building a Company Intranet
 
@@ -108,7 +110,16 @@ p2026 uses progressive enhancement:
 -   Search header widgets mount only when the discovered loop is the main query and the current page is archive-like.
 -   Shared Interactivity API host wiring lives under `src/interactivity/`.
 -   Feature modules keep feature logic and pass handlers into shared interactivity initializers.
+-   Interactivity implementations are loaded through the Script Modules API and registered in PHP with `wp_register_script_module` / `wp_enqueue_script_module` when available.
 -   `src/utils/on-dom-ready.js` is the standard DOM-ready bootstrap helper.
+
+### Interactivity Loading Model
+
+-   `build/frontend.js` remains a classic script bundle for React/editor/store features.
+-   `build/interactivity.module.js` is a separate Script Module bundle for Interactivity API stores/host wiring.
+-   `p2026.php` enqueues both: classic frontend script + interactivity module (when Script Modules API is available).
+-   Script-module limitations are respected: module dependencies are module IDs, not script handles.
+-   Interactivity module code uses `window.wp.*` for script interoperability where needed (for example `window.wp.data`).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram and file-level responsibility map.
 
@@ -139,43 +150,45 @@ Current modules:
 
 ### Module Matrix
 
-| Module          | PHP Backend File                | Frontend Entrypoint                | REST Routes |
-| --------------- | ------------------------------- | ---------------------------------- | ----------- |
-| `mentions`      | `modules/mentions/index.php`    | `src/modules/mentions/index.js`    | `GET /p2026/v1/users`, `GET /p2026/v1/users/{id}` |
-| `notifications` | `modules/notifications/index.php` | `src/modules/notifications/index.js` | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
-| `link-previews` | `modules/link-previews/index.php` | `src/modules/link-previews/index.js` | `GET /p2026/v1/link-preview?url=...` |
-| `post-state`    | `modules/post-state/index.php`  | Core UI integration (`src/components/PostEnhancement.js`) | `POST /p2026/v1/posts/{id}/state` |
-| `audit-log`     | `modules/audit-log/index.php`   | `src/modules/audit-log/audit-log-viewer.js` | `GET /p2026/v1/audit-log/days`, `GET /p2026/v1/audit-log/entries` |
+| Module          | PHP Backend File                  | Frontend Entrypoint                                       | REST Routes                                                                                                      |
+| --------------- | --------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `mentions`      | `modules/mentions/index.php`      | `src/modules/mentions/index.js`                           | `GET /p2026/v1/users`, `GET /p2026/v1/users/{id}`                                                                |
+| `notifications` | `modules/notifications/index.php` | `src/modules/notifications/index.js`                      | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
+| `link-previews` | `modules/link-previews/index.php` | `src/modules/link-previews/index.js`                      | `GET /p2026/v1/link-preview?url=...`                                                                             |
+| `post-state`    | `modules/post-state/index.php`    | Core UI integration (`src/components/PostEnhancement.js`) | `POST /p2026/v1/posts/{id}/state`                                                                                |
+| `audit-log`     | `modules/audit-log/index.php`     | `src/modules/audit-log/audit-log-viewer.js`               | `GET /p2026/v1/audit-log/days`, `GET /p2026/v1/audit-log/entries`                                                |
 
 ## Key Files
 
-| File                                        | Role                                                                         |
-| ------------------------------------------- | ---------------------------------------------------------------------------- |
-| `p2026.php`                                 | Bootstrap, block registration, frontend enqueue, config injection, abilities |
-| `src/frontend.js`                           | Entry point; discovers post nodes and mounts enhancement                     |
-| `src/store/index.js`                        | Redux-style store: state, actions, selectors, async thunks                   |
-| `src/api/index.js`                          | `apiFetch` middleware setup and polling utility                              |
-| `src/components/FeedEnhancer.js`            | Polling orchestration and new-posts banner                                   |
-| `src/components/SearchWidget.js`            | Debounced post/comment search modal                                          |
-| `src/components/UnreadBadge.js`             | Per-user unread count badge and read-state sync                              |
-| `src/components/PostEnhancement.js`         | Per-post controls (comments toggle, edit/delete)                             |
-| `src/components/Comments.js` + `Comment.js` | Threaded comment tree and reply forms                                        |
-| `src/components/PostEditor.js`              | Inline Block Editor for editing existing posts                               |
-| `src/components/NewPostEditor.js`           | Block Editor for creating new posts                                          |
-| `src/components/NewPostModal.js`            | Modal wrapper opened by the admin bar "New Post" button                      |
-| `src/blocks/new-post/`                      | Dynamic block metadata, server render gate, and frontend mount               |
-| `modules/post-state/index.php`              | Post-state taxonomy, REST field/endpoint, and audit event emission           |
-| `modules/audit-log/index.php`               | Audit event persistence (uploads JSONL or CPT backend)                       |
-| `src/modules/audit-log/audit-log-viewer.js` | Admin Audit Log browser app (DataViews + entity-backed related lookups)      |
-| `modules/mentions/index.php`                | Mention user search/detail endpoints and server-side content linkification   |
-| `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                   |
-| `modules/link-previews/index.php`           | Internal link preview REST endpoint + 3-day transient caching                |
-| `admin/settings.php`                        | Module toggles and audit backend configuration UI                            |
-| `includes/github-updates.php`               | GitHub release/update channel integration for the plugin `Update URI`        |
-| `src/modules/link-previews/`                | Hover/focus preview card UI for internal post/comment links                  |
-| `src/modules/notifications/`                | Notification dock frontend UI                                                |
-| `src/interactivity/`                        | Interactivity API stores + directive host wiring                             |
-| `src/utils/on-dom-ready.js`                 | Shared helper for DOM-ready bootstrap without ad hoc listeners               |
+| File                                        | Role                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `p2026.php`                                 | Bootstrap, block registration, frontend enqueue, config injection, abilities                           |
+| `src/frontend.js`                           | Entry point; discovers post nodes and mounts enhancement                                               |
+| `src/store/index.js`                        | Redux-style store: state, actions, selectors, async thunks                                             |
+| `src/api/index.js`                          | `apiFetch` middleware setup and polling utility                                                        |
+| `src/components/FeedEnhancer.js`            | Polling orchestration and new-posts banner                                                             |
+| `src/components/SearchWidget.js`            | Debounced post/comment search modal                                                                    |
+| `src/components/UnreadBadge.js`             | Per-user unread count badge and read-state sync                                                        |
+| `src/components/PostEnhancement.js`         | Per-post controls (comments toggle, edit/delete)                                                       |
+| `src/components/Comments.js` + `Comment.js` | Threaded comment tree and reply forms                                                                  |
+| `src/components/PostEditor.js`              | Inline Block Editor for editing existing posts                                                         |
+| `src/components/NewPostEditor.js`           | Block Editor for creating new posts                                                                    |
+| `src/components/NewPostModal.js`            | Modal wrapper opened by the admin bar "New Post" button                                                |
+| `src/blocks/new-post/`                      | Dynamic block metadata, server render gate, and frontend mount                                         |
+| `modules/post-state/index.php`              | Post-state taxonomy, REST field/endpoint, and audit event emission                                     |
+| `modules/audit-log/index.php`               | Audit event persistence (uploads JSONL or CPT backend)                                                 |
+| `src/modules/audit-log/audit-log-viewer.js` | Admin Audit Log browser app (DataViews + entity-backed related lookups)                                |
+| `modules/mentions/index.php`                | Mention user search/detail endpoints and server-side content linkification                             |
+| `modules/notifications/index.php`           | Notifications REST API + auto-create hooks                                                             |
+| `modules/link-previews/index.php`           | Internal link preview REST endpoint + 3-day transient caching                                          |
+| `admin/settings.php`                        | Module toggles and audit backend configuration UI                                                      |
+| `includes/github-updates.php`               | GitHub release/update channel integration for the plugin `Update URI`                                  |
+| `src/modules/link-previews/`                | Hover/focus preview card UI for internal post/comment links                                            |
+| `src/modules/notifications/`                | Notification dock frontend UI                                                                          |
+| `src/interactivity/`                        | Interactivity API stores + directive host wiring                                                       |
+| `src/interactivity/client-bridge.js`        | Classic-script bridge API used by frontend/modules to call module-loaded interactivity implementations |
+| `src/interactivity/module-entry.js`         | Script-module entry that boots interactivity stores/hosts and flushes queued bridge calls              |
+| `src/utils/on-dom-ready.js`                 | Shared helper for DOM-ready bootstrap without ad hoc listeners                                         |
 
 ## Update Behavior (Git Checkouts)
 

@@ -4,14 +4,14 @@
  * Polling consumers can register a callback that runs whenever the document
  * becomes visible. This keeps visibilitychange wiring centralized.
  */
-import { store } from '@wordpress/interactivity';
+import { interactivityStore } from './runtime';
 import onDomReady from '../utils/on-dom-ready';
 
 const HOST_ID = 'p2026-polling-visibility-interactive';
 const NAMESPACE = 'p2026/polling-visibility';
 const callbacks = new Set();
 
-store( NAMESPACE, {
+interactivityStore( NAMESPACE, {
 	actions: {
 		handleVisibilityChange: () => {
 			if ( document.visibilityState !== 'visible' ) {
