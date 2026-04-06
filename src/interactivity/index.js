@@ -3,9 +3,14 @@
  *
  * Shared interactivity utilities that are imported across domains should be
  * exported from this file to keep pathing and ownership consistent.
+ *
+ * These exports are intentionally a classic-script bridge. The concrete
+ * Interactivity API implementations are loaded via a script-module entrypoint.
  */
-export { initAdminBarInteractivity } from './admin-bar';
-export { initLinkPreviewInteractivity } from './link-previews';
-export { initMentionsHoverInteractivity } from './mentions-hover';
-export { initPostMenuInteractivity } from './post-menu';
-export { registerPollingVisibilityCallback } from './polling-visibility';
+export {
+	initAdminBarInteractivity,
+	initLinkPreviewInteractivity,
+	initMentionsHoverInteractivity,
+	initPostMenuInteractivity,
+	registerPollingVisibilityCallback,
+} from './client-bridge';

@@ -4,13 +4,13 @@
  * Centralizes outside-click and Escape handling for all post menu <details>
  * elements. This avoids attaching per-post document listeners.
  */
-import { store } from '@wordpress/interactivity';
+import { interactivityStore } from './runtime';
 
 const HOST_ID = 'p2026-post-menu-interactive';
 const MENU_SELECTOR = 'details.p2026-menu-wrap';
 const OPEN_MENU_SELECTOR = `${ MENU_SELECTOR }[open]`;
 
-store( 'p2026/post-menu', {
+interactivityStore( 'p2026/post-menu', {
 	actions: {
 		handleDocumentClick: ( event ) => {
 			if ( ! ( event.target instanceof window.Element ) ) {

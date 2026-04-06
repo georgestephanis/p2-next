@@ -23,6 +23,8 @@ It is intentionally not a complete SPA replacement.
 -   src/blocks/new-post/: dynamic block server render + frontend mount.
 -   src/components/: feed controls, comments UI, post editor/new post editor, new post modal.
 -   src/interactivity/: shared Interactivity API stores and directive-host initializers for lightweight interaction islands.
+-   src/interactivity/module-entry.js: script-module entrypoint that loads interactivity implementations and publishes a bridge API for classic frontend callers.
+-   src/interactivity/client-bridge.js: classic-script bridge used by `src/frontend.js`, `src/api/index.js`, and modules/components to call module-loaded interactivity initializers.
 -   src/store/index.js: shared @wordpress/data store and async thunks.
 -   src/api/index.js: apiFetch middleware and polling helper.
 -   src/utils/on-dom-ready.js: shared DOM-ready bootstrap helper used by modules and interactivity hosts.
@@ -45,14 +47,16 @@ It is intentionally not a complete SPA replacement.
 2. PHP injects window.p2026Config before frontend script execution.
 3. PHP adds a "New Post" admin bar node on the blog index for users who can create posts.
 4. PHP glob-loads `modules/*/index.php`; modules are active by default and can be explicitly disabled via `p2026_disabled_modules`.
-5. frontend.js discovers rendered posts in block or classic themes.
-6. frontend.js mounts the NewPostModal root and initializes shared interactivity hosts (admin bar trigger, post menu close behavior, and related delegated handlers).
-7. frontend.js side-effect-imports `src/modules/index.js`, which initialises all JS modules (e.g. mentions autocomplete, hovercard host).
-8. `setupPostToolbar` from `enhancer.js` mounts a PostEnhancement React root per post, providing the three-dots menu, comment expansion, and inline editing.
-9. FeedEnhancer mounts once and polls for new posts.
-10. Posts buffer new content behind a reveal banner; expanded comment threads fetch and render inline.
-11. Inline editing and new-post creation use Block Editor primitives on frontend.
-12. Admin bar "New Post" button scrolls to an existing new-post editor if present, otherwise opens the NewPostModal.
+5. PHP enqueues the interactivity Script Module (`build/interactivity.module.js`) via `wp_register_script_module` / `wp_enqueue_script_module` when available.
+6. The interactivity Script Module initializes Interactivity API stores/host initializers and publishes a classic bridge API on `window.__p2026InteractivityApi`.
+7. frontend.js discovers rendered posts in block or classic themes.
+8. frontend.js mounts the NewPostModal root and initializes shared interactivity hosts through bridge calls.
+9. frontend.js side-effect-imports `src/modules/index.js`, which initialises all JS modules (e.g. mentions autocomplete, hovercard host).
+10. `setupPostToolbar` from `enhancer.js` mounts a PostEnhancement React root per post, providing the three-dots menu, comment expansion, and inline editing.
+11. FeedEnhancer mounts once and polls for new posts.
+12. Posts buffer new content behind a reveal banner; expanded comment threads fetch and render inline.
+13. Inline editing and new-post creation use Block Editor primitives on frontend.
+14. Admin bar "New Post" button scrolls to an existing new-post editor if present, otherwise opens the NewPostModal.
 
 ## Permission Model
 
@@ -228,6 +232,8 @@ Validation expectations after functional changes:
 -   Keep i18n text domain as p2026.
 -   Keep build output generated only.
 -   Keep Interactivity API store/host wiring in `src/interactivity/*`; keep feature behavior in `src/modules/*` or `src/components/*`.
+-   Keep classic/frontend callers pointed at `src/interactivity/client-bridge.js`; avoid importing `src/interactivity/*` implementation files directly from classic bundles.
+-   In script-module interactivity code, use module dependencies for module IDs only and use `window.wp.*` for script interop (`wp-data`, etc.) per Script Modules limitations.
 -   Prefer `src/utils/on-dom-ready.js` over ad hoc `DOMContentLoaded` listeners in feature modules.
 -   Prefer capability checks through centralized helpers in p2026.php.
 -   For every dynamic `import()`, include an explicit human-readable `webpackChunkName` comment. Do not add anonymous split points that emit numeric chunk names.
