@@ -376,6 +376,8 @@ store( INTERACTIVE_NAMESPACE, {
 		handleMouseOut: ( event ) => onMouseOut( event ),
 		handleFocusIn: ( event ) => onFocusIn( event ),
 		handleFocusOut: ( event ) => onFocusOut( event ),
+		handleWindowScroll: () => hideCard(),
+		handleWindowResize: () => hideCard(),
 	},
 } );
 
@@ -403,6 +405,14 @@ function initLinkPreviewInteractivity() {
 	host.setAttribute(
 		'data-wp-on-document--focusout',
 		'actions.handleFocusOut'
+	);
+	host.setAttribute(
+		'data-wp-on-window--scroll',
+		'actions.handleWindowScroll'
+	);
+	host.setAttribute(
+		'data-wp-on-window--resize',
+		'actions.handleWindowResize'
 	);
 	document.body.appendChild( host );
 }
@@ -432,8 +442,6 @@ export function initLinkPreviews() {
 	} );
 
 	initLinkPreviewInteractivity();
-	window.addEventListener( 'scroll', hideCard, true );
-	window.addEventListener( 'resize', hideCard );
 }
 
 if ( document.readyState === 'loading' ) {
