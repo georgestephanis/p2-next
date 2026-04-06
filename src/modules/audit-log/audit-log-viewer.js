@@ -255,7 +255,9 @@ const AuditLogViewerApp = ( { config } ) => {
 	useEffect( () => {
 		let isMounted = true;
 
-		import( /* webpackChunkName: "mentions" */ '../mentions' )
+		import(
+			/* webpackChunkName: "mentions-hovercards" */ '../mentions/hovercards'
+		)
 			.then( ( module ) => {
 				if ( ! isMounted ) {
 					return;
