@@ -25,6 +25,7 @@ import { createRoot, createElement } from '@wordpress/element';
 import { store } from '@wordpress/interactivity';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
+import onDomReady from '../../utils/on-dom-ready';
 import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 import './_mentions.scss';
 
@@ -314,10 +315,4 @@ export function initMentionsHovercards( { force = false } = {} ) {
 	initMentionsHoverInteractivity();
 }
 
-if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', () =>
-		initMentionsHovercards()
-	);
-} else {
-	initMentionsHovercards();
-}
+onDomReady( () => initMentionsHovercards() );

@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { store } from '@wordpress/interactivity';
 import { __ } from '@wordpress/i18n';
+import onDomReady from '../../utils/on-dom-ready';
 import './_link-previews.scss';
 
 const LINK_SELECTOR = 'a[href]:not(.p2026-mention)';
@@ -444,8 +445,4 @@ export function initLinkPreviews() {
 	initLinkPreviewInteractivity();
 }
 
-if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', initLinkPreviews );
-} else {
-	initLinkPreviews();
-}
+onDomReady( initLinkPreviews );

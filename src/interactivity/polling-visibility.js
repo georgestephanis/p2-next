@@ -5,6 +5,7 @@
  * becomes visible. This keeps visibilitychange wiring centralized.
  */
 import { store } from '@wordpress/interactivity';
+import onDomReady from '../utils/on-dom-ready';
 
 const HOST_ID = 'p2026-polling-visibility-interactive';
 const NAMESPACE = 'p2026/polling-visibility';
@@ -54,7 +55,7 @@ function ensureHost() {
 		return;
 	}
 
-	document.addEventListener( 'DOMContentLoaded', mountHost, { once: true } );
+	onDomReady( mountHost );
 }
 
 /**

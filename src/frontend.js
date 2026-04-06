@@ -18,6 +18,7 @@ import { initApiFetch } from './api';
 import { setupPostToolbar, observePosts } from './enhancer';
 import { initAdminBarInteractivity } from './interactivity/admin-bar';
 import { initPostMenuInteractivity } from './interactivity/post-menu';
+import onDomReady from './utils/on-dom-ready';
 import FeedEnhancer from './components/FeedEnhancer';
 import NewPostModal from './components/NewPostModal';
 import './styles.scss';
@@ -83,7 +84,7 @@ function collectPostElements() {
 }
 
 // Mount once the DOM is ready.
-document.addEventListener( 'DOMContentLoaded', () => {
+onDomReady( () => {
 	// Always mount the modal root so the admin bar "New Post" button works
 	// even on pages where no posts are present yet.
 	const modalMount = document.createElement( 'div' );
