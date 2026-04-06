@@ -23,6 +23,11 @@ Current release: 0.3.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 -   **GitHub-based updates** — Supports native `Update URI` checks against GitHub releases, prereleases, and a `trunk` channel for direct installs from GitHub.
 -   **Theme-agnostic** — Works with any block or classic theme without replacing the theme loop.
 
+Recent frontend interaction work now uses a hybrid model:
+
+-   React + `@wordpress/data` continue to power editor-heavy flows and shared async state.
+-   The WordPress Interactivity API now powers delegated event wiring for lightweight interaction islands (for example admin-bar trigger behavior, menu close behavior, notification dock actions, hover interactions, and visibility-driven callbacks).
+
 ## Building a Company Intranet
 
 P2026 works well as the collaboration layer for a private internal site. A few companion plugins round out the setup:
@@ -101,6 +106,9 @@ p2026 uses progressive enhancement:
 -   All data flows through the WordPress REST API (`/wp/v2/posts`, `/wp/v2/comments`).
 -   PHP injects `window.p2026Config` at page load with capability flags, nonce, and current user data.
 -   Search header widgets mount only when the discovered loop is the main query and the current page is archive-like.
+-   Shared Interactivity API host wiring lives under `src/interactivity/`.
+-   Feature modules keep feature logic and pass handlers into shared interactivity initializers.
+-   `src/utils/on-dom-ready.js` is the standard DOM-ready bootstrap helper.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full request/data flow diagram and file-level responsibility map.
 
@@ -166,6 +174,8 @@ Current modules:
 | `includes/github-updates.php`               | GitHub release/update channel integration for the plugin `Update URI`        |
 | `src/modules/link-previews/`                | Hover/focus preview card UI for internal post/comment links                  |
 | `src/modules/notifications/`                | Notification dock frontend UI                                                |
+| `src/interactivity/`                        | Interactivity API stores + directive host wiring                             |
+| `src/utils/on-dom-ready.js`                 | Shared helper for DOM-ready bootstrap without ad hoc listeners               |
 
 ## Update Behavior (Git Checkouts)
 

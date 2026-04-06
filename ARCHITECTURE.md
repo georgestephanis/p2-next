@@ -23,13 +23,14 @@ flowchart TD
     C --> D
 
     D --> E[initApiFetch middleware]
+    D --> E1[Init shared interactivity hosts]
     D --> F[find feed container + collect post elements]
     D --> AF[Load active JS modules]
     AF --> AG[Notifications dock mount]
     AF --> AL[Link previews module mount]
     AL --> AM[GET /p2026/v1/link-preview?url=...]
     D --> AB[Mount NewPostModal root]
-    D --> AC[Wire admin bar New Post button]
+    D --> AC[Init admin bar New Post interactivity]
     AC -->|block on page| AD[Scroll + focus existing editor]
     AC -->|no block| AE[openNewPostModal dispatch]
     AE --> AB
@@ -72,8 +73,10 @@ flowchart TD
 
 -   `p2026.php`: block registration, frontend enqueue, config injection, auto-title filter, admin bar node.
 -   `src/frontend.js`: enhancement bootstrap, archive/main-query header gating, modal root, admin bar button wiring.
+-   `src/interactivity/`: Interactivity API stores + directive host wiring for lightweight interaction islands.
 -   `src/store/index.js`: post/comment/polling/editor/modal state and async actions.
 -   `src/api/index.js`: `apiFetch` middleware and polling utility.
+-   `src/utils/on-dom-ready.js`: shared helper for DOM-ready-safe module bootstrap.
 -   `src/components/FeedEnhancer.js`: polling orchestration, banner handling, and conditional search/unread header portal.
 -   `src/components/SearchWidget.js`: debounced unified post/comment search modal with request-staleness protection.
 -   `src/components/UnreadBadge.js`: read-state display and sync trigger.
