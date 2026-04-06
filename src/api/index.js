@@ -6,7 +6,7 @@
  * making any apiFetch calls.
  */
 import apiFetch from '@wordpress/api-fetch';
-import { registerPollingVisibilityCallback } from '../interactivity';
+import { registerPollingVisibilityCallback } from '../interactivity/polling-visibility';
 
 let initialised = false;
 let telemetryInitialised = false;
