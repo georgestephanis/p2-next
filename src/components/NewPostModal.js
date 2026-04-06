@@ -12,7 +12,7 @@
  *   - Escape key and overlay click both close the modal.
  *   - document.body scroll is locked while open.
  */
-import { useEffect, useRef, useCallback } from '@wordpress/element';
+import { useEffect, useRef } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
@@ -61,16 +61,6 @@ export default function NewPostModal() {
 		};
 	}, [ isOpen ] );
 
-	// Close when clicking the backdrop (not the dialog panel itself).
-	const onOverlayClick = useCallback(
-		( e ) => {
-			if ( e.target === e.currentTarget ) {
-				closeNewPostModal();
-			}
-		},
-		[ closeNewPostModal ]
-	);
-
 	if ( ! isOpen ) {
 		return null;
 	}
@@ -82,8 +72,8 @@ export default function NewPostModal() {
 		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
 		<div
 			className="p2026-modal-overlay"
-			onClick={ onOverlayClick }
 			data-wp-interactive="p2026/new-post-modal"
+			data-wp-on--click="actions.handleOverlayClick"
 			data-wp-on-document--keydown="actions.handleDocumentKeydown"
 		>
 			<div
