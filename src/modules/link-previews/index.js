@@ -1,5 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
+import { initLinkPreviewInteractivity } from '../../interactivity/link-previews';
+import onDomReady from '../../utils/on-dom-ready';
 import './_link-previews.scss';
 
 const LINK_SELECTOR = 'a[href]:not(.p2026-mention)';
@@ -391,16 +393,14 @@ export function initLinkPreviews() {
 		subtree: true,
 	} );
 
-	document.addEventListener( 'mouseover', onMouseOver );
-	document.addEventListener( 'mouseout', onMouseOut );
-	document.addEventListener( 'focusin', onFocusIn );
-	document.addEventListener( 'focusout', onFocusOut );
-	window.addEventListener( 'scroll', hideCard, true );
-	window.addEventListener( 'resize', hideCard );
+	initLinkPreviewInteractivity( {
+		onMouseOver,
+		onMouseOut,
+		onFocusIn,
+		onFocusOut,
+		onWindowScroll: hideCard,
+		onWindowResize: hideCard,
+	} );
 }
 
-if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', initLinkPreviews );
-} else {
-	initLinkPreviews();
-}
+onDomReady( initLinkPreviews );

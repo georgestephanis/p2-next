@@ -9,6 +9,7 @@ import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
 import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
+import '../interactivity/unread-badge';
 import './unread-badge.scss';
 
 export default function UnreadBadge() {
@@ -23,44 +24,36 @@ export default function UnreadBadge() {
 		fetchReadState();
 	}, [ fetchReadState ] );
 
-	// Sync read state when page loses focus (user switches tabs).
-	useEffect( () => {
-		const handleVisibilityChange = () => {
-			if ( document.visibilityState === 'hidden' ) {
-				syncReadState();
-			}
-		};
-
-		document.addEventListener( 'visibilitychange', handleVisibilityChange );
-
-		return () => {
-			document.removeEventListener(
-				'visibilitychange',
-				handleVisibilityChange
-			);
-		};
-	}, [ syncReadState ] );
-
 	const handleClick = useCallback( () => {
 		revealPendingPosts();
 		syncReadState();
 	}, [ revealPendingPosts, syncReadState ] );
 
-	if ( unreadCount === 0 ) {
-		return null;
-	}
-
 	return (
-		<Button
-			className="p2026-unread-badge"
-			onClick={ handleClick }
-			aria-label={ sprintf(
-				/* translators: %d: number of unread posts */
-				_n( '%d unread post', '%d unread posts', unreadCount, 'p2026' ),
-				unreadCount
+		<>
+			<div
+				hidden
+				data-wp-interactive="p2026/unread-badge"
+				data-wp-on-document--visibilitychange="actions.handleVisibilityChange"
+			/>
+			{ unreadCount > 0 && (
+				<Button
+					className="p2026-unread-badge"
+					onClick={ handleClick }
+					aria-label={ sprintf(
+						/* translators: %d: number of unread posts */
+						_n(
+							'%d unread post',
+							'%d unread posts',
+							unreadCount,
+							'p2026'
+						),
+						unreadCount
+					) }
+				>
+					{ unreadCount >= 100 ? '99+' : unreadCount }
+				</Button>
 			) }
-		>
-			{ unreadCount >= 100 ? '99+' : unreadCount }
-		</Button>
+		</>
 	);
 }

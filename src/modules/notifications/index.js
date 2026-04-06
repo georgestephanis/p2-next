@@ -4,6 +4,7 @@
  * Mounts the notification dock component on the frontend.
  */
 import { createRoot } from '@wordpress/element';
+import onDomReady from '../../utils/on-dom-ready';
 import NotificationDock from './NotificationDock';
 
 function mountNotificationDock() {
@@ -15,10 +16,4 @@ function mountNotificationDock() {
 	root.render( <NotificationDock /> );
 }
 
-// Mount the notification dock immediately if DOM is ready, or wait for DOMContentLoaded.
-// The deferred frontend script may load after DOMContentLoaded has already fired.
-if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', mountNotificationDock );
-} else {
-	mountNotificationDock();
-}
+onDomReady( mountNotificationDock );

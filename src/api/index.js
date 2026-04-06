@@ -6,6 +6,7 @@
  * making any apiFetch calls.
  */
 import apiFetch from '@wordpress/api-fetch';
+import { registerPollingVisibilityCallback } from '../interactivity/polling-visibility';
 
 let initialised = false;
 let telemetryInitialised = false;
@@ -124,7 +125,7 @@ export function startPolling( pollFn, intervalSecs = 15, options = {} ) {
 		}
 	};
 
-	document.addEventListener( 'visibilitychange', onVisible );
+	const unregisterVisibility = registerPollingVisibilityCallback( onVisible );
 	scheduleNext();
 
 	return () => {
@@ -132,6 +133,6 @@ export function startPolling( pollFn, intervalSecs = 15, options = {} ) {
 		if ( timeoutId ) {
 			window.clearTimeout( timeoutId );
 		}
-		document.removeEventListener( 'visibilitychange', onVisible );
+		unregisterVisibility();
 	};
 }

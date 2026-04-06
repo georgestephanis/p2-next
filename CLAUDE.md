@@ -22,8 +22,10 @@ It is intentionally not a complete SPA replacement.
 -   src/enhancer.js: exports `setupPostToolbar` (mounts per-post PostEnhancement React root) and `observePosts` (no-op stub retained for API compatibility).
 -   src/blocks/new-post/: dynamic block server render + frontend mount.
 -   src/components/: feed controls, comments UI, post editor/new post editor, new post modal.
+-   src/interactivity/: shared Interactivity API stores and directive-host initializers for lightweight interaction islands.
 -   src/store/index.js: shared @wordpress/data store and async thunks.
 -   src/api/index.js: apiFetch middleware and polling helper.
+-   src/utils/on-dom-ready.js: shared DOM-ready bootstrap helper used by modules and interactivity hosts.
 -   src/styles.scss: frontend styling for editor/comment/feed enhancements, modal overlay; imports module stylesheets via `@use`.
 -   src/modules/index.js: side-effect entry point that dynamically imports only modules listed in `window.p2026Config.activeModules`.
 -   src/modules/mentions/: JS mentions module — Block Editor autocomplete, textarea autocomplete (`MentionTextareaControl`), and hovercard host.
@@ -44,7 +46,7 @@ It is intentionally not a complete SPA replacement.
 3. PHP adds a "New Post" admin bar node on the blog index for users who can create posts.
 4. PHP glob-loads `modules/*/index.php`; modules are active by default and can be explicitly disabled via `p2026_disabled_modules`.
 5. frontend.js discovers rendered posts in block or classic themes.
-6. frontend.js mounts the NewPostModal root and wires the admin bar button click.
+6. frontend.js mounts the NewPostModal root and initializes shared interactivity hosts (admin bar trigger, post menu close behavior, and related delegated handlers).
 7. frontend.js side-effect-imports `src/modules/index.js`, which initialises all JS modules (e.g. mentions autocomplete, hovercard host).
 8. `setupPostToolbar` from `enhancer.js` mounts a PostEnhancement React root per post, providing the three-dots menu, comment expansion, and inline editing.
 9. FeedEnhancer mounts once and polls for new posts.
@@ -146,6 +148,7 @@ Key state:
 -   expandedPosts / editingPost
 -   savingPost (null | postId | 'new') / savingComment
 -   newPostModalOpen
+ -   notificationDockOpen
 -   postStateFilter
 -   readState (lastActivity, unreadCount)
 -   notifications
@@ -224,6 +227,8 @@ Validation expectations after functional changes:
 -   Reuse existing store selectors/actions before introducing new state paths.
 -   Keep i18n text domain as p2026.
 -   Keep build output generated only.
+-   Keep Interactivity API store/host wiring in `src/interactivity/*`; keep feature behavior in `src/modules/*` or `src/components/*`.
+-   Prefer `src/utils/on-dom-ready.js` over ad hoc `DOMContentLoaded` listeners in feature modules.
 -   Prefer capability checks through centralized helpers in p2026.php.
 -   For every dynamic `import()`, include an explicit human-readable `webpackChunkName` comment. Do not add anonymous split points that emit numeric chunk names.
 

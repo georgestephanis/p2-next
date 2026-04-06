@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Added a shared frontend Interactivity API layer under `src/interactivity/` for reusable store namespaces and directive host wiring.
+- Added `src/utils/on-dom-ready.js` to standardize DOM-ready-safe module/bootstrap initialization.
+
+### Changed
+
+- Migrated lightweight frontend interaction wiring from ad hoc event listeners toward Interactivity API directive hosts while preserving existing React + `@wordpress/data` behavior for editor-heavy and async state flows.
+- Updated notification dock interactions to use Interactivity API actions backed by shared store state.
+- Consolidated mentions and link-preview interactivity host wiring into shared interactivity modules while keeping feature logic in module directories.
+- Updated architecture and contributor documentation to describe the new JS hierarchy, interactivity placement rules, naming conventions, and bootstrap conventions.
+
 ## 0.3.0 - 2026-04-03
 
 ### Added

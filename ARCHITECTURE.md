@@ -23,13 +23,14 @@ flowchart TD
     C --> D
 
     D --> E[initApiFetch middleware]
+    D --> E1[Init shared interactivity hosts]
     D --> F[find feed container + collect post elements]
     D --> AF[Load active JS modules]
     AF --> AG[Notifications dock mount]
     AF --> AL[Link previews module mount]
     AL --> AM[GET /p2026/v1/link-preview?url=...]
     D --> AB[Mount NewPostModal root]
-    D --> AC[Wire admin bar New Post button]
+    D --> AC[Init admin bar New Post interactivity]
     AC -->|block on page| AD[Scroll + focus existing editor]
     AC -->|no block| AE[openNewPostModal dispatch]
     AE --> AB
@@ -72,8 +73,10 @@ flowchart TD
 
 -   `p2026.php`: block registration, frontend enqueue, config injection, auto-title filter, admin bar node.
 -   `src/frontend.js`: enhancement bootstrap, archive/main-query header gating, modal root, admin bar button wiring.
+-   `src/interactivity/`: Interactivity API stores + directive host wiring for lightweight interaction islands.
 -   `src/store/index.js`: post/comment/polling/editor/modal state and async actions.
 -   `src/api/index.js`: `apiFetch` middleware and polling utility.
+-   `src/utils/on-dom-ready.js`: shared helper for DOM-ready-safe module bootstrap.
 -   `src/components/FeedEnhancer.js`: polling orchestration, banner handling, and conditional search/unread header portal.
 -   `src/components/SearchWidget.js`: debounced unified post/comment search modal with request-staleness protection.
 -   `src/components/UnreadBadge.js`: read-state display and sync trigger.
@@ -92,6 +95,33 @@ flowchart TD
 -   `modules/audit-log/index.php`: audit event persistence handler (uploads JSONL or internal CPT), audit settings tab, and admin REST endpoints.
 -   `src/modules/audit-log/audit-log-viewer.js`: audit entries browser in WP Admin using DataViews and entity lookups.
 -   `src/modules/notifications/`: notification dock UI mounted into `document.body`.
+
+## JS Hierarchy And Conventions
+
+-   `src/frontend.js` remains the canonical frontend bootstrap entry.
+-   `src/store/index.js` remains the canonical cross-feature state boundary.
+-   `src/modules/*` owns feature behavior, presentation, and feature-specific APIs.
+-   `src/interactivity/*` owns Interactivity API store namespaces and directive host wiring.
+-   `src/utils/*` owns small cross-domain helpers (for example, DOM-ready bootstrapping).
+
+### Interactivity Placement Rule
+
+-   Place shared Interactivity API wiring in `src/interactivity/*`.
+-   Keep feature logic in `src/modules/*` or `src/components/*`.
+-   Connect the two by passing feature handlers into interactivity initializers.
+-   Use `src/interactivity/index.js` for exports that are consumed across domains.
+
+### Namespace And Host Conventions
+
+-   Namespace format: `p2026/<feature-name>`.
+-   Host IDs: `p2026-<feature-name>-interactive`.
+-   Host nodes should be hidden and mounted once.
+-   Interactivity actions should delegate to existing store thunks/selectors when state already lives in `@wordpress/data`.
+
+### Bootstrap Convention
+
+-   Use `src/utils/on-dom-ready.js` instead of ad hoc `DOMContentLoaded` checks.
+-   Keep direct `document.addEventListener( 'DOMContentLoaded', ... )` out of feature modules.
 
 ## Module Activation
 

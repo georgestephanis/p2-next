@@ -29,6 +29,7 @@ const DEFAULT_STATE = {
 		savingPost: null, // post ID being saved, 'new' for new-post, null when idle
 		savingComment: false,
 		newPostModalOpen: false,
+		notificationDockOpen: false,
 		postStateFilter: 'all',
 	},
 };
@@ -78,6 +79,9 @@ export const actions = {
 	},
 	closeNewPostModal() {
 		return { type: 'CLOSE_NEW_POST_MODAL' };
+	},
+	setNotificationDockOpen( open ) {
+		return { type: 'SET_NOTIFICATION_DOCK_OPEN', open: !! open };
 	},
 
 	setPostStateFilter( filter ) {
@@ -492,6 +496,12 @@ function reducer( state = DEFAULT_STATE, action ) {
 				ui: { ...state.ui, newPostModalOpen: false },
 			};
 
+		case 'SET_NOTIFICATION_DOCK_OPEN':
+			return {
+				...state,
+				ui: { ...state.ui, notificationDockOpen: action.open },
+			};
+
 		case 'SET_POST_STATE_FILTER':
 			return {
 				...state,
@@ -572,6 +582,7 @@ export const selectors = {
 	isSavingPost: ( state, context ) => state.ui.savingPost === context,
 	isSavingComment: ( state ) => state.ui.savingComment,
 	isNewPostModalOpen: ( state ) => state.ui.newPostModalOpen,
+	isNotificationDockOpen: ( state ) => state.ui.notificationDockOpen,
 	getPostStateFilter: ( state ) => state.ui.postStateFilter,
 	getPostCommentCount: ( state, postId ) =>
 		state.posts.find( ( p ) => p.id === postId )?.comment_count ?? 0,

@@ -4,26 +4,29 @@
  * Displays a sticky dock in the bottom-right corner with an unread count badge
  * that expands to show recent notifications when clicked.
  */
-import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
+import { useEffect, useState, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button, Spinner, Dashicon } from '@wordpress/components';
 import { sprintf, _n, __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../../store';
 import NotificationItem from './NotificationItem';
 import { startPolling } from '../../api';
+import '../../interactivity/notifications-dock';
 import './_notification-dock.scss';
 
 export default function NotificationDock() {
-	const [ isOpen, setIsOpen ] = useState( false );
 	const [ isLoading, setIsLoading ] = useState( false );
 	const stopPollingRef = useRef( null );
 
-	const { fetchNotifications, markAllAsRead } = useDispatch( STORE_NAME );
+	const { fetchNotifications } = useDispatch( STORE_NAME );
 	const notifications = useSelect( ( select ) =>
 		select( STORE_NAME ).getNotifications()
 	);
 	const unreadCount = useSelect( ( select ) =>
 		select( STORE_NAME ).getUnreadNotificationCount()
+	);
+	const isOpen = useSelect( ( select ) =>
+		select( STORE_NAME ).isNotificationDockOpen()
 	);
 
 	// Fetch notifications on mount and start polling.
@@ -51,24 +54,15 @@ export default function NotificationDock() {
 		};
 	}, [ fetchNotifications ] );
 
-	const handleMarkAllRead = useCallback( () => {
-		markAllAsRead();
-	}, [ markAllAsRead ] );
-
-	const handleToggleOpen = useCallback( () => {
-		setIsOpen( ! isOpen );
-		if ( ! isOpen ) {
-			// Opening dock — refresh notifications.
-			fetchNotifications();
-		}
-	}, [ isOpen, fetchNotifications ] );
-
 	return (
-		<div className="p2026-notification-dock-wrapper">
+		<div
+			className="p2026-notification-dock-wrapper"
+			data-wp-interactive="p2026/notifications-dock"
+		>
 			{ /* Badge button in corner */ }
 			<Button
 				className="p2026-notification-dock-badge"
-				onClick={ handleToggleOpen }
+				data-wp-on--click="actions.toggleOpen"
 				aria-label={ sprintf(
 					/* translators: %d: number of unread notifications */
 					_n(
@@ -95,7 +89,7 @@ export default function NotificationDock() {
 					<div className="p2026-notification-dock-header">
 						<h2>{ __( 'Notifications', 'p2026' ) }</h2>
 						<Button
-							onClick={ handleToggleOpen }
+							data-wp-on--click="actions.close"
 							icon="no"
 							label={ __( 'Close', 'p2026' ) }
 							isSmall
@@ -121,7 +115,7 @@ export default function NotificationDock() {
 									<Button
 										isSmall
 										isSecondary
-										onClick={ handleMarkAllRead }
+										data-wp-on--click="actions.markAllRead"
 									>
 										{ __( 'Mark all as read', 'p2026' ) }
 									</Button>

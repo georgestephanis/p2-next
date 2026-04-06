@@ -24,6 +24,8 @@ import { addFilter } from '@wordpress/hooks';
 import { createRoot, createElement } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
+import { initMentionsHoverInteractivity } from '../../interactivity/mentions-hover';
+import onDomReady from '../../utils/on-dom-ready';
 import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 import './_mentions.scss';
 
@@ -213,6 +215,48 @@ function cancelHide() {
 	}
 }
 
+function handleHoverMouseOver( event ) {
+	if ( ! ( event.target instanceof window.Element ) ) {
+		return;
+	}
+
+	// Entering a hovercard — cancel any pending hide.
+	if ( event.target.closest( '.p2026-hovercard' ) ) {
+		cancelHide();
+		return;
+	}
+
+	const mention = event.target.closest( 'a.p2026-mention[data-user-id]' );
+	if ( mention ) {
+		const userId = parseInt( mention.dataset.userId, 10 );
+		if ( userId ) {
+			scheduleShow( userId, mention );
+		}
+	}
+}
+
+function handleHoverMouseOut( event ) {
+	if ( ! ( event.target instanceof window.Element ) ) {
+		return;
+	}
+
+	// Leaving the hovercard itself — schedule a hide.
+	const card = event.target.closest( '.p2026-hovercard' );
+	if ( card && ! card.contains( event.relatedTarget ) ) {
+		scheduleHide();
+		return;
+	}
+
+	// Leaving a mention anchor — schedule a hide (unless entering the card).
+	const mention = event.target.closest( 'a.p2026-mention[data-user-id]' );
+	if ( mention && ! mention.contains( event.relatedTarget ) ) {
+		// Don't hide if the pointer is moving into the hovercard.
+		if ( ! event.relatedTarget?.closest( '.p2026-hovercard' ) ) {
+			scheduleHide();
+		}
+	}
+}
+
 /**
  * Mount hovercard host and delegated events once.
  *
@@ -237,52 +281,11 @@ export function initMentionsHovercards( { force = false } = {} ) {
 	document.body.appendChild( hostEl );
 	createRoot( hostEl ).render( createElement( HovercardHost ) );
 
-	// Event delegation — handles both theme-rendered and React-rendered mentions.
-	document.addEventListener( 'mouseover', ( e ) => {
-		if ( ! ( e.target instanceof window.Element ) ) {
-			return;
-		}
-		// Entering a hovercard — cancel any pending hide.
-		if ( e.target.closest( '.p2026-hovercard' ) ) {
-			cancelHide();
-			return;
-		}
-
-		const mention = e.target.closest( 'a.p2026-mention[data-user-id]' );
-		if ( mention ) {
-			const userId = parseInt( mention.dataset.userId, 10 );
-			if ( userId ) {
-				scheduleShow( userId, mention );
-			}
-		}
-	} );
-
-	document.addEventListener( 'mouseout', ( e ) => {
-		if ( ! ( e.target instanceof window.Element ) ) {
-			return;
-		}
-		// Leaving the hovercard itself — schedule a hide.
-		const card = e.target.closest( '.p2026-hovercard' );
-		if ( card && ! card.contains( e.relatedTarget ) ) {
-			scheduleHide();
-			return;
-		}
-
-		// Leaving a mention anchor — schedule a hide (unless entering the card).
-		const mention = e.target.closest( 'a.p2026-mention[data-user-id]' );
-		if ( mention && ! mention.contains( e.relatedTarget ) ) {
-			// Don't hide if the pointer is moving into the hovercard.
-			if ( ! e.relatedTarget?.closest( '.p2026-hovercard' ) ) {
-				scheduleHide();
-			}
-		}
+	// Event delegation now runs via Interactivity API directives.
+	initMentionsHoverInteractivity( {
+		onMouseOver: handleHoverMouseOver,
+		onMouseOut: handleHoverMouseOut,
 	} );
 }
 
-if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', () =>
-		initMentionsHovercards()
-	);
-} else {
-	initMentionsHovercards();
-}
+onDomReady( () => initMentionsHovercards() );
