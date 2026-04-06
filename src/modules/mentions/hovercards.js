@@ -7,7 +7,7 @@
  */
 import { createRoot, createElement } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
-import { initMentionsHoverInteractivity } from '../../interactivity/mentions-hover';
+import { initMentionsHoverInteractivity } from '../../interactivity';
 import HovercardHost, { showHovercard, hideHovercard } from './Hovercard';
 import './_mentions.scss';
 
