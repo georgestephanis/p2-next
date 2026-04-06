@@ -17,6 +17,7 @@ import '@wordpress/format-library';
 import { initApiFetch } from './api';
 import { setupPostToolbar, observePosts } from './enhancer';
 import { initAdminBarInteractivity } from './interactivity/admin-bar';
+import { initPostMenuInteractivity } from './interactivity/post-menu';
 import FeedEnhancer from './components/FeedEnhancer';
 import NewPostModal from './components/NewPostModal';
 import './styles.scss';
@@ -92,6 +93,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 
 	// Convert admin bar click handling to Interactivity API action wiring.
 	initAdminBarInteractivity();
+	initPostMenuInteractivity();
 
 	const feedContainer = findFeedContainer();
 	const postElements = collectPostElements();

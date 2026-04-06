@@ -100,57 +100,6 @@ export default function PostEnhancement( {
 	// -----------------------------------------------------------------------
 	const detailsRef = useRef( null );
 
-	useEffect( () => {
-		const details = detailsRef.current;
-		if ( ! details ) {
-			return;
-		}
-
-		let removeListeners = null;
-		let deferTimer = null;
-
-		const onToggle = () => {
-			if ( details.open ) {
-				const outsideClick = ( e ) => {
-					if ( ! details.contains( e.target ) ) {
-						details.open = false;
-					}
-				};
-				const onKeydown = ( e ) => {
-					if ( e.key === 'Escape' ) {
-						details.open = false;
-					}
-				};
-
-				// Defer so the click that opened the menu doesn't immediately
-				// close it via the outside-click handler.
-				deferTimer = setTimeout( () => {
-					deferTimer = null;
-					document.addEventListener( 'click', outsideClick );
-				} );
-				document.addEventListener( 'keydown', onKeydown );
-
-				removeListeners = () => {
-					if ( deferTimer ) {
-						clearTimeout( deferTimer );
-						deferTimer = null;
-					}
-					document.removeEventListener( 'click', outsideClick );
-					document.removeEventListener( 'keydown', onKeydown );
-				};
-			} else {
-				removeListeners?.();
-				removeListeners = null;
-			}
-		};
-
-		details.addEventListener( 'toggle', onToggle );
-		return () => {
-			details.removeEventListener( 'toggle', onToggle );
-			removeListeners?.();
-		};
-	}, [] );
-
 	// Some themes do not expose a server-rendered comments link count and the
 	// posts endpoint may not include comment_count. In that case, fetch a single
 	// comments page and read X-WP-Total for an accurate initial label.
