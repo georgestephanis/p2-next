@@ -5,5 +5,7 @@
  * exported from this file to keep pathing and ownership consistent.
  */
 export { initAdminBarInteractivity } from './admin-bar';
+export { initLinkPreviewInteractivity } from './link-previews';
+export { initMentionsHoverInteractivity } from './mentions-hover';
 export { initPostMenuInteractivity } from './post-menu';
 export { registerPollingVisibilityCallback } from './polling-visibility';
