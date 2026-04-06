@@ -1,15 +1,13 @@
 /**
  * Interactivity: unread badge visibility sync.
  */
-import { store } from '@wordpress/interactivity';
-import { dispatch } from '@wordpress/data';
-import { STORE_NAME } from '../store';
+import { dispatchStore, interactivityStore } from './runtime';
 
-store( 'p2026/unread-badge', {
+interactivityStore( 'p2026/unread-badge', {
 	actions: {
 		handleVisibilityChange: () => {
 			if ( document.visibilityState === 'hidden' ) {
-				dispatch( STORE_NAME ).syncReadState();
+				dispatchStore()?.syncReadState();
 			}
 		},
 	},

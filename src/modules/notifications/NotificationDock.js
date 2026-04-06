@@ -11,7 +11,6 @@ import { sprintf, _n, __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../../store';
 import NotificationItem from './NotificationItem';
 import { startPolling } from '../../api';
-import '../../interactivity/notifications-dock';
 import './_notification-dock.scss';
 
 export default function NotificationDock() {

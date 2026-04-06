@@ -1,20 +1,18 @@
 /**
  * Interactivity: admin bar "New Post" behavior.
- *
- * This replaces the bespoke DOM click listener in frontend.js with
- * Interactivity API actions so this interaction can evolve with other
- * directive-driven enhancements.
  */
-import { store, withSyncEvent } from '@wordpress/interactivity';
-import { dispatch } from '@wordpress/data';
-import { STORE_NAME } from '../store';
+import {
+	dispatchStore,
+	interactivityStore,
+	interactivityWithSyncEvent,
+} from './runtime';
 
 const HOST_ID = 'p2026-adminbar-interactive';
 const NEW_POST_LINK_SELECTOR = '#wp-admin-bar-p2026-new-post > a';
 
-store( 'p2026/admin-bar', {
+interactivityStore( 'p2026/admin-bar', {
 	actions: {
-		handleDocumentClick: withSyncEvent( ( event ) => {
+		handleDocumentClick: interactivityWithSyncEvent( ( event ) => {
 			if ( ! ( event.target instanceof window.Element ) ) {
 				return;
 			}
@@ -41,7 +39,7 @@ store( 'p2026/admin-bar', {
 				return;
 			}
 
-			dispatch( STORE_NAME ).openNewPostModal();
+			dispatchStore()?.openNewPostModal();
 		} ),
 	},
 } );

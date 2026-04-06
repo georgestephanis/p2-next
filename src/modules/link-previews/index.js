@@ -1,6 +1,6 @@
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
-import { initLinkPreviewInteractivity } from '../../interactivity/link-previews';
+import { initLinkPreviewInteractivity } from '../../interactivity';
 import onDomReady from '../../utils/on-dom-ready';
 import './_link-previews.scss';
 

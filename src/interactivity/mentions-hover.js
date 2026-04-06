@@ -4,7 +4,7 @@
  * Keeps directive/store host wiring centralized while mentions module retains
  * hovercard-specific behavior.
  */
-import { store } from '@wordpress/interactivity';
+import { interactivityStore } from './runtime';
 
 const NAMESPACE = 'p2026/mentions-hover';
 const HOST_ID = 'p2026-mentions-hover-interactive';
@@ -14,7 +14,7 @@ let handlers = {
 	onMouseOut: () => {},
 };
 
-store( NAMESPACE, {
+interactivityStore( NAMESPACE, {
 	actions: {
 		handleMouseOver: ( event ) => handlers.onMouseOver( event ),
 		handleMouseOut: ( event ) => handlers.onMouseOut( event ),

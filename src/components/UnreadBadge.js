@@ -9,7 +9,6 @@ import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
 import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
-import '../interactivity/unread-badge';
 import './unread-badge.scss';
 
 export default function UnreadBadge() {
