@@ -93,6 +93,33 @@ flowchart TD
 -   `src/modules/audit-log/audit-log-viewer.js`: audit entries browser in WP Admin using DataViews and entity lookups.
 -   `src/modules/notifications/`: notification dock UI mounted into `document.body`.
 
+## JS Hierarchy And Conventions
+
+-   `src/frontend.js` remains the canonical frontend bootstrap entry.
+-   `src/store/index.js` remains the canonical cross-feature state boundary.
+-   `src/modules/*` owns feature behavior, presentation, and feature-specific APIs.
+-   `src/interactivity/*` owns Interactivity API store namespaces and directive host wiring.
+-   `src/utils/*` owns small cross-domain helpers (for example, DOM-ready bootstrapping).
+
+### Interactivity Placement Rule
+
+-   Place shared Interactivity API wiring in `src/interactivity/*`.
+-   Keep feature logic in `src/modules/*` or `src/components/*`.
+-   Connect the two by passing feature handlers into interactivity initializers.
+-   Use `src/interactivity/index.js` for exports that are consumed across domains.
+
+### Namespace And Host Conventions
+
+-   Namespace format: `p2026/<feature-name>`.
+-   Host IDs: `p2026-<feature-name>-interactive`.
+-   Host nodes should be hidden and mounted once.
+-   Interactivity actions should delegate to existing store thunks/selectors when state already lives in `@wordpress/data`.
+
+### Bootstrap Convention
+
+-   Use `src/utils/on-dom-ready.js` instead of ad hoc `DOMContentLoaded` checks.
+-   Keep direct `document.addEventListener( 'DOMContentLoaded', ... )` out of feature modules.
+
 ## Module Activation
 
 -   Modules are discovered by scanning `modules/*/index.php`.
