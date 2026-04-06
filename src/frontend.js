@@ -11,13 +11,12 @@
  * No custom block is needed for the feed; the theme owns post display.
  */
 import { createRoot, createElement } from '@wordpress/element';
-import { dispatch } from '@wordpress/data';
 import { registerCoreBlocks } from '@wordpress/block-library';
 import { setDefaultBlockName } from '@wordpress/blocks';
 import '@wordpress/format-library';
 import { initApiFetch } from './api';
-import { STORE_NAME } from './store';
 import { setupPostToolbar, observePosts } from './enhancer';
+import { initAdminBarInteractivity } from './interactivity/admin-bar';
 import FeedEnhancer from './components/FeedEnhancer';
 import NewPostModal from './components/NewPostModal';
 import './styles.scss';
@@ -91,32 +90,8 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	document.body.appendChild( modalMount );
 	createRoot( modalMount ).render( createElement( NewPostModal ) );
 
-	// Wire the admin bar "New Post" button if WordPress rendered one.
-	// If the p2026/new-post block is already on the page, scroll to it and
-	// focus the editor canvas. Otherwise, open the modal.
-	const adminBarLink = document.querySelector(
-		'#wp-admin-bar-p2026-new-post > a'
-	);
-	if ( adminBarLink ) {
-		adminBarLink.addEventListener( 'click', ( e ) => {
-			e.preventDefault();
-			const existing = document.querySelector( '.p2026-new-post-editor' );
-			if ( existing ) {
-				existing.scrollIntoView( {
-					behavior: 'smooth',
-					block: 'nearest',
-				} );
-				window.requestAnimationFrame( () => {
-					const canvas = existing.querySelector(
-						'[contenteditable="true"]'
-					);
-					( canvas ?? existing ).focus();
-				} );
-			} else {
-				dispatch( STORE_NAME ).openNewPostModal();
-			}
-		} );
-	}
+	// Convert admin bar click handling to Interactivity API action wiring.
+	initAdminBarInteractivity();
 
 	const feedContainer = findFeedContainer();
 	const postElements = collectPostElements();
