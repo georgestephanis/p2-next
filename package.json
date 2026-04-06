@@ -30,10 +30,12 @@
     "format:js": "wp-scripts lint-js --fix",
     "format:css": "wp-scripts lint-style --fix",
     "format:php": "composer format:php",
-    "plugin-zip": "wp-scripts plugin-zip"
+    "plugin-zip": "wp-scripts plugin-zip",
+    "packages-update": "wp-scripts packages-update",
+    "postpackages-update": "npm install && npm run build"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^30.0.0"
+    "@wordpress/scripts": "^31.8.0"
   },
   "license": "GPL-2.0-or-later",
   "dependencies": {
