@@ -16,8 +16,10 @@ import { setDefaultBlockName } from '@wordpress/blocks';
 import '@wordpress/format-library';
 import { initApiFetch } from './api';
 import { setupPostToolbar, observePosts } from './enhancer';
-import { initAdminBarInteractivity } from './interactivity/admin-bar';
-import { initPostMenuInteractivity } from './interactivity/post-menu';
+import {
+	initAdminBarInteractivity,
+	initPostMenuInteractivity,
+} from './interactivity';
 import onDomReady from './utils/on-dom-ready';
 import FeedEnhancer from './components/FeedEnhancer';
 import NewPostModal from './components/NewPostModal';

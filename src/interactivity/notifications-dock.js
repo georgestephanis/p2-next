@@ -3,7 +3,7 @@
  */
 import { store } from '@wordpress/interactivity';
 import { dispatch, select } from '@wordpress/data';
-import { STORE_NAME } from '../../store';
+import { STORE_NAME } from '../store';
 
 store( 'p2026/notifications-dock', {
 	actions: {
