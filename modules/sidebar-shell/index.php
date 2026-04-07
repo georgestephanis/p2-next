@@ -141,6 +141,56 @@ function p2026_sidebar_shell_save_settings() {
 add_action( 'p2026_settings_save_tab_sidebar-shell', 'p2026_sidebar_shell_save_settings' );
 
 /**
+ * Enqueue block editor assets on the Sidebar Shell settings tab.
+ *
+ * Loads wp-block-library (which registers all core block types as a side
+ * effect) and the compiled sidebar-shell-admin bundle produced by webpack.
+ * Only runs on the P2026 settings page with the sidebar-shell tab active.
+ *
+ * @param string $hook Current admin page hook suffix.
+ */
+function p2026_sidebar_shell_enqueue_admin_assets( $hook ) {
+	if ( 'toplevel_page_p2026-settings' !== $hook ) {
+		return;
+	}
+
+	$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+	if ( 'sidebar-shell' !== $tab ) {
+		return;
+	}
+
+	// wp-block-library registers all core block types when it runs.
+	wp_enqueue_script( 'wp-block-library' );
+	wp_enqueue_style( 'wp-block-library' );
+	wp_enqueue_style( 'wp-block-editor' );
+	wp_enqueue_style( 'wp-components' );
+
+	$asset_file = P2026_DIR . 'build/sidebar-shell-admin.asset.php';
+	if ( ! file_exists( $asset_file ) ) {
+		return;
+	}
+	$asset = require $asset_file;
+
+	wp_enqueue_script(
+		'p2026-sidebar-shell-admin',
+		P2026_URL . 'build/sidebar-shell-admin.js',
+		array_merge( $asset['dependencies'], array( 'wp-block-library' ) ),
+		$asset['version'],
+		true
+	);
+
+	if ( file_exists( P2026_DIR . 'build/sidebar-shell-admin.css' ) ) {
+		wp_enqueue_style(
+			'p2026-sidebar-shell-admin',
+			P2026_URL . 'build/sidebar-shell-admin.css',
+			array( 'wp-block-editor', 'wp-components' ),
+			$asset['version']
+		);
+	}
+}
+add_action( 'admin_enqueue_scripts', 'p2026_sidebar_shell_enqueue_admin_assets' );
+
+/**
  * Render the Sidebar Shell settings tab content.
  */
 function p2026_sidebar_shell_render_settings_tab() {
@@ -149,9 +199,13 @@ function p2026_sidebar_shell_render_settings_tab() {
 	<h2 class="title"><?php esc_html_e( 'Sidebar Shell', 'p2026' ); ?></h2>
 	<h3><?php esc_html_e( 'Default Block Content', 'p2026' ); ?></h3>
 	<p class="description" style="max-width:1000px; margin:0 0 10px;">
-		<?php esc_html_e( 'Optional block markup rendered by the Sidebar Shell when no sidebar widgets are active. Leave blank to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>
+		<?php esc_html_e( 'Block markup rendered in the Sidebar Shell when no sidebar widgets are active. Add or remove blocks using the editor below; leave empty to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>
 	</p>
+
+	<div id="p2026-sidebar-shell-block-editor"></div>
+
 	<textarea
+		id="p2026-sidebar-shell-blocks-field"
 		name="p2026_sidebar_shell_default_blocks"
 		rows="7"
 		class="large-text code"

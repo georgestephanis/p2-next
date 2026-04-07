@@ -1,0 +1,35 @@
+/**
+ * Sidebar Shell: admin block editor chrome.
+ *
+ * Styles the editor wrapper (border, header toolbar, scrollable canvas) on
+ * the Sidebar Shell settings tab in the P2026 admin screen.
+ */
+
+.p2026-sidebar-shell-admin-editor {
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #fff;
+	max-width: 1000px;
+	margin-block-end: 1.25em;
+
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 12px;
+		border-block-end: 1px solid #dcdcde;
+		background: #f6f7f7;
+	}
+
+	&__canvas {
+		padding: 16px 24px;
+		min-height: 200px;
+		max-height: 480px;
+		overflow-y: auto;
+
+		// Remove default root container padding — the outer wrapper provides it.
+		> .is-root-container {
+			padding: 0;
+		}
+	}
+}

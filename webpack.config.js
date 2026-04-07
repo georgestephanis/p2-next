@@ -29,6 +29,7 @@ const classicConfig = {
 		...( await defaultConfig.entry() ),
 		frontend: './src/frontend.js',
 		'audit-log-viewer': './src/modules/audit-log/audit-log-viewer.js',
+		'sidebar-shell-admin': './src/modules/sidebar-shell/admin.js',
 	} ),
 	output: {
 		...defaultConfig.output,
