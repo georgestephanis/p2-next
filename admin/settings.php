@@ -145,12 +145,29 @@ function p2026_handle_settings_save() {
 	}
 
 	if ( 'modules' === $posted_tab ) {
-		$modules  = p2026_get_modules();
-		$posted   = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
+		$modules = p2026_get_modules();
+		$posted  = isset( $_POST['p2026_modules'] ) && is_array( $_POST['p2026_modules'] )
 			? array_map( 'sanitize_key', array_keys( $_POST['p2026_modules'] ) )
 			: array();
-		$disabled = array_values( array_diff( array_keys( $modules ), $posted ) );
-		update_option( 'p2026_disabled_modules', $disabled );
+
+		$disabled = array();
+		$enabled  = array();
+
+		foreach ( array_keys( $modules ) as $slug ) {
+			$is_checked     = in_array( $slug, $posted, true );
+			$default_active = p2026_module_default_is_active( $slug );
+
+			if ( $default_active ) {
+				if ( ! $is_checked ) {
+					$disabled[] = $slug;
+				}
+			} elseif ( $is_checked ) {
+				$enabled[] = $slug;
+			}
+		}
+
+		update_option( 'p2026_disabled_modules', array_values( array_unique( $disabled ) ) );
+		update_option( 'p2026_enabled_modules', array_values( array_unique( $enabled ) ) );
 	} else {
 		/**
 		 * Allow module tabs to process saves for their own settings.
@@ -229,7 +246,7 @@ function p2026_render_settings_page() {
 			<?php if ( 'modules' === $active_tab ) : ?>
 				<h2 class="title"><?php esc_html_e( 'Modules', 'p2026' ); ?></h2>
 				<p class="description">
-					<?php esc_html_e( 'Enable or disable individual P2026 feature modules. All modules are active by default.', 'p2026' ); ?>
+					<?php esc_html_e( 'Enable or disable individual P2026 feature modules. Most modules are active by default; some modules use context-aware defaults.', 'p2026' ); ?>
 				</p>
 
 				<?php if ( empty( $modules ) ) : ?>
@@ -281,6 +298,7 @@ function p2026_render_settings_page() {
 							<?php endforeach; ?>
 						</tbody>
 					</table>
+
 				<?php endif; ?>
 
 				<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>

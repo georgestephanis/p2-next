@@ -122,6 +122,7 @@ export default function SearchWidget() {
 				onChange={ handleSearch }
 				placeholder={ __( 'Search posts and comments…', 'p2026' ) }
 				className="p2026-search-input"
+				__nextHasNoMarginBottom
 			/>
 
 			{ isOpen && (
@@ -143,6 +144,7 @@ export default function SearchWidget() {
 									'Search posts and comments…',
 									'p2026'
 								) }
+								__nextHasNoMarginBottom
 							/>
 						</div>
 

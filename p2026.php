@@ -217,6 +217,7 @@ function p2026_register_blocks() {
 		wp_register_block_metadata_collection( P2026_DIR . 'build', $manifest );
 	}
 	register_block_type( P2026_DIR . 'build/blocks/new-post' );
+	register_block_type( P2026_DIR . 'build/blocks/feed-tools' );
 }
 add_action( 'init', 'p2026_register_blocks' );
 
@@ -236,6 +237,43 @@ function p2026_discover_modules() {
 		$discovered[ $slug ] = dirname( $module_file );
 	}
 	return $discovered;
+}
+
+/**
+ * Best-effort detection for whether the active theme already has sidebar support.
+ *
+ * @return bool
+ */
+function p2026_theme_has_sidebar_functionality() {
+	static $result = null;
+
+	if ( null !== $result ) {
+		return $result;
+	}
+
+	// Classic themes often expose a dedicated sidebar template file.
+	if ( locate_template( array( 'sidebar.php' ), false, false ) ) {
+		$result = true;
+		return $result;
+	}
+
+	// Common block and hybrid theme sidebar template-part locations.
+	$candidates = array(
+		get_stylesheet_directory() . '/parts/sidebar.html',
+		get_template_directory() . '/parts/sidebar.html',
+		get_stylesheet_directory() . '/block-template-parts/sidebar.html',
+		get_template_directory() . '/block-template-parts/sidebar.html',
+	);
+
+	foreach ( $candidates as $candidate ) {
+		if ( file_exists( $candidate ) ) {
+			$result = true;
+			return $result;
+		}
+	}
+
+	$result = false;
+	return $result;
 }
 
 /**
@@ -312,7 +350,7 @@ function p2026_enqueue_frontend() {
 				'canComment'       => $can_comment,
 				'requireNameEmail' => $require_name_email,
 				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
-				'activeModules'    => array_values( array_diff( array_keys( p2026_discover_modules() ), p2026_get_disabled_modules() ) ),
+				'activeModules'    => p2026_get_active_module_slugs(),
 			)
 		) . ';',
 		'before'
@@ -413,6 +451,38 @@ function p2026_get_disabled_modules() {
 }
 
 /**
+ * Return the list of explicitly enabled module slugs.
+ *
+ * This is used for modules that default to inactive.
+ *
+ * @return string[]
+ */
+function p2026_get_enabled_modules() {
+	$stored = get_option( 'p2026_enabled_modules', null );
+	return is_array( $stored ) ? $stored : array();
+}
+
+/**
+ * Whether a given module should be active by default.
+ *
+ * Most modules default to active. Specific modules can opt into a different
+ * default state here.
+ *
+ * @param string $slug Module directory slug.
+ * @return bool
+ */
+function p2026_module_default_is_active( $slug ) {
+	$slug = sanitize_key( (string) $slug );
+
+	if ( 'sidebar-shell' === $slug ) {
+		// Default to active only when the current theme appears to have no sidebar.
+		return ! p2026_theme_has_sidebar_functionality();
+	}
+
+	return true;
+}
+
+/**
  * Whether a given module slug is currently active.
  *
  * A module is active unless its slug appears in the explicit deny list
@@ -422,7 +492,36 @@ function p2026_get_disabled_modules() {
  * @return bool
  */
 function p2026_is_module_active( $slug ) {
-	return ! in_array( $slug, p2026_get_disabled_modules(), true );
+	$slug = sanitize_key( (string) $slug );
+
+	if ( '' === $slug ) {
+		return false;
+	}
+
+	$default_active = p2026_module_default_is_active( $slug );
+
+	if ( $default_active ) {
+		return ! in_array( $slug, p2026_get_disabled_modules(), true );
+	}
+
+	return in_array( $slug, p2026_get_enabled_modules(), true );
+}
+
+/**
+ * Return currently active module slugs based on discovery and activation rules.
+ *
+ * @return string[]
+ */
+function p2026_get_active_module_slugs() {
+	$active = array();
+
+	foreach ( array_keys( p2026_discover_modules() ) as $slug ) {
+		if ( p2026_is_module_active( $slug ) ) {
+			$active[] = $slug;
+		}
+	}
+
+	return $active;
 }
 
 // Load each module whose slug is in the active list (all by default).
@@ -439,22 +538,24 @@ unset( $p2026_module );
 
 /**
  * Migrate from the legacy opt-in (p2026_active_modules) schema to the
- * current opt-out (p2026_disabled_modules) schema.
+ * current mixed-default schema.
  *
- * On first run after upgrade the old allow-list is deleted and an empty
- * deny-list is written, making all discovered modules active. Any module
- * the admin had previously disabled will need to be re-toggled off via the
- * settings page — a one-time inconvenience in exchange for correct
- * default-active behaviour for newly added modules.
+ * On first run after upgrade, the old allow-list is deleted and both the
+ * explicit deny-list (p2026_disabled_modules) and explicit allow-list
+ * (p2026_enabled_modules) are initialized.
  */
 function p2026_migrate_module_activation_schema() {
 	if ( null !== get_option( 'p2026_disabled_modules', null ) ) {
+		if ( null === get_option( 'p2026_enabled_modules', null ) ) {
+			update_option( 'p2026_enabled_modules', array() );
+		}
 		return; // Already on the new schema.
 	}
 	if ( null !== get_option( 'p2026_active_modules', null ) ) {
 		delete_option( 'p2026_active_modules' );
 	}
 	update_option( 'p2026_disabled_modules', array() );
+	update_option( 'p2026_enabled_modules', array() );
 }
 add_action( 'init', 'p2026_migrate_module_activation_schema', 1 );
 // Admin settings page (menu registration, module management UI).
