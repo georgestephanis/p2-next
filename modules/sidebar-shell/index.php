@@ -242,6 +242,7 @@ function p2026_sidebar_shell_enqueue_admin_assets( $hook ) {
 			array( 'wp-edit-blocks', 'wp-block-editor', 'wp-components' ),
 			$asset['version']
 		);
+		wp_style_add_data( 'p2026-sidebar-shell-admin', 'rtl', 'replace' );
 	}
 }
 add_action( 'admin_enqueue_scripts', 'p2026_sidebar_shell_enqueue_admin_assets' );
