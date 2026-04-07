@@ -108,7 +108,7 @@ function p2026_sidebar_shell_render() {
 	if ( ! $has_widgets && '' === trim( $block_markup ) ) {
 		return;
 	}
-	$classes = array( 'p2026-sidebar-shell' );
+	$classes = array( 'p2026-sidebar-shell', 'is-initializing' );
 	if ( ! $default_open ) {
 		$classes[] = 'is-collapsed';
 	}
@@ -148,6 +148,13 @@ function p2026_sidebar_shell_render() {
 			</div>
 		</aside>
 	</div>
+	<noscript>
+		<style>
+			.p2026-sidebar-shell.is-initializing {
+				visibility: visible !important;
+			}
+		</style>
+	</noscript>
 	<?php
 }
 add_action( 'wp_footer', 'p2026_sidebar_shell_render', 20 );

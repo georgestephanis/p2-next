@@ -28,6 +28,10 @@ function mountSidebarShell() {
 			'p2026-sidebar-shell-visible',
 			! collapsed
 		);
+		document.documentElement.classList.toggle(
+			'p2026-sidebar-shell-visible',
+			! collapsed
+		);
 
 		if ( toggleButton ) {
 			toggleButton.setAttribute(
@@ -126,6 +130,10 @@ function mountSidebarShell() {
 	if ( toolsSlot ) {
 		createRoot( toolsSlot ).render( createElement( SidebarControls ) );
 	}
+
+	window.requestAnimationFrame( () => {
+		root.classList.remove( 'is-initializing' );
+	} );
 }
 
 onDomReady( mountSidebarShell );

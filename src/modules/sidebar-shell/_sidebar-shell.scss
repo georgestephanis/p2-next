@@ -1,6 +1,9 @@
-.p2026-sidebar-shell {
+:root {
 	--p2026-sidebar-shell-panel-width: min(360px, calc(100vw - 28px));
 	--p2026-sidebar-shell-reserve-width: min(392px, calc(100vw - 4px));
+}
+
+.p2026-sidebar-shell {
 	position: fixed;
 	top: 46px;
 	right: 0;
@@ -39,10 +42,36 @@
 	}
 }
 
+.p2026-sidebar-shell.is-initializing {
+	visibility: hidden;
+
+	.p2026-sidebar-shell__panel,
+	.p2026-sidebar-shell__toggle {
+		transition: none !important;
+	}
+}
+
+html {
+
+	@media ( min-width: 960px ) {
+		width: 100vw;
+		overflow-x: hidden;
+		transition: width 0.2s ease;
+	}
+}
+
+html.p2026-sidebar-shell-visible {
+
+	@media ( min-width: 960px ) {
+		width: calc(100vw - var(--p2026-sidebar-shell-reserve-width));
+	}
+}
+
 body.p2026-sidebar-shell-visible {
 
 	@media ( min-width: 960px ) {
-		padding-right: var(--p2026-sidebar-shell-reserve-width);
+		width: 100%;
+		max-width: 100%;
 		box-sizing: border-box;
 	}
 }
@@ -53,9 +82,7 @@ body.p2026-sidebar-shell-visible {
 	right: 0;
 	border: 1px solid rgba(208, 215, 222, 0.7);
 	border-right: 0;
-	background: rgba(255, 255, 255, 0.86);
-	-webkit-backdrop-filter: blur(12px) saturate(130%);
-	backdrop-filter: blur(12px) saturate(130%);
+	background: #fff;
 	color: #1f2328;
 	border-radius: 8px 0 0 8px;
 	width: 32px;
@@ -79,9 +106,7 @@ body.p2026-sidebar-shell-visible {
 	width: var(--p2026-sidebar-shell-panel-width);
 	max-height: calc(100vh - 56px);
 	overflow: auto;
-	background: rgba(248, 251, 255, 0.72);
-	-webkit-backdrop-filter: blur(18px) saturate(140%);
-	backdrop-filter: blur(18px) saturate(140%);
+	background: #f8fbff;
 	border: 1px solid rgba(208, 215, 222, 0.85);
 	border-right: 0;
 	border-radius: 12px 0 0 12px;
@@ -140,9 +165,7 @@ body.p2026-sidebar-shell-visible {
 	padding: 12px;
 	border: 1px solid rgba(203, 213, 225, 0.95);
 	border-radius: 10px;
-	background: rgba(255, 255, 255, 0.86);
-	-webkit-backdrop-filter: blur(8px);
-	backdrop-filter: blur(8px);
+	background: #fff;
 	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
 }
 
