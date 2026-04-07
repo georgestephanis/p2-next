@@ -21,7 +21,8 @@ It is intentionally not a complete SPA replacement.
 -   src/frontend.js: enhancement bootstrap for existing loop pages; mounts modal root, wires admin bar button, and side-effect-imports all JS modules.
 -   src/enhancer.js: exports `setupPostToolbar` (mounts per-post PostEnhancement React root) and `observePosts` (no-op stub retained for API compatibility).
 -   src/blocks/new-post/: dynamic block server render + frontend mount.
--   src/components/: feed controls, comments UI, post editor/new post editor, new post modal.
+-   src/blocks/feed-tools/: dynamic block server render (logged-in only) + frontend `view.js` that mounts `SidebarControls`.
+-   src/components/: comments UI, post editor/new post editor, new post modal, search widget, unread badge.
 -   src/interactivity/: shared Interactivity API stores and directive-host initializers for lightweight interaction islands.
 -   src/interactivity/module-entry.js: script-module entrypoint that loads interactivity implementations and publishes a bridge API for classic frontend callers.
 -   src/interactivity/client-bridge.js: classic-script bridge used by `src/frontend.js`, `src/api/index.js`, and modules/components to call module-loaded interactivity initializers.
@@ -32,6 +33,7 @@ It is intentionally not a complete SPA replacement.
 -   src/modules/index.js: side-effect entry point that dynamically imports only modules listed in `window.p2026Config.activeModules`.
 -   src/modules/mentions/: JS mentions module — Block Editor autocomplete, textarea autocomplete (`MentionTextareaControl`), and hovercard host.
 -   src/modules/notifications/: JS notifications module — dock UI and item rendering.
+-   src/modules/sidebar-shell/: JS sidebar-shell module — vanilla JS mount/collapse controller (`index.js`), `SidebarControls.js` React component (search + state filter), and admin block editor for configuring default block content (`admin.js`).
 -   modules/: PHP modules directory; each subdirectory contains an `index.php` loaded by glob on init.
 -   modules/mentions/index.php: REST endpoints for user search and hovercard detail, @mention linkification on `the_content`/`comment_text`, and the `p2026_mentions_found` notification hook.
 -   modules/notifications/index.php: per-user notification storage, REST endpoints, and hooks for mention/reply notifications.
@@ -46,7 +48,7 @@ It is intentionally not a complete SPA replacement.
 1. PHP registers block metadata from build output and enqueues frontend assets.
 2. PHP injects window.p2026Config before frontend script execution.
 3. PHP adds a "New Post" admin bar node on the blog index for users who can create posts.
-4. PHP glob-loads `modules/*/index.php`; modules are active by default and can be explicitly disabled via `p2026_disabled_modules`.
+4. PHP glob-loads `modules/*/index.php`; modules use a dual-default model: most are active by default (opt-out via `p2026_disabled_modules`), but some modules (currently `sidebar-shell`) default to inactive on themes that already expose sidebar functionality and must be explicitly enabled via `p2026_enabled_modules`. `p2026_module_default_is_active( $slug )` encodes per-module default logic.
 5. PHP enqueues the interactivity Script Module (`build/interactivity.module.js`) via `wp_register_script_module` / `wp_enqueue_script_module` when available.
 6. The interactivity Script Module initializes Interactivity API stores/host initializers and publishes a classic bridge API on `window.__p2026InteractivityApi`.
 7. frontend.js discovers rendered posts in block or classic themes.
@@ -99,11 +101,24 @@ Unified search across posts and comments. Accessible to logged-in users.
 -   `SearchWidget.js`: Debounced (300ms) input with modal results overlay; click navigates to post or comment and scrolls into view.
 -   Modal opens only after the first non-empty result set, and remains open while refining query.
 -   While refining, previous results stay visible with a loading overlay until fresh results arrive.
--   Search header mounts only when both conditions are true:
-    -   discovered loop is the main query (`data-wp-query-index === 0` or equivalent classic fallback)
-    -   `window.p2026Config.isArchiveView` is true (`is_home`, `is_front_page`, `is_archive`, or `is_search`)
+-   `SearchWidget.js` is rendered by `SidebarControls` (mounted by the `p2026/feed-tools` block). It is no longer injected directly by `FeedEnhancer` into the header area.
+-   The `p2026/feed-tools` block can be placed anywhere, but its primary home is inside the Sidebar Shell (auto-injected as `<!-- wp:p2026/feed-tools /-->` in the sidebar shell's tools area).
+-   The block renders nothing server-side for logged-out users (`is_user_logged_in()` guard in `render.php`); `SidebarControls` also returns null when `window.p2026Config.currentUser` is absent.
 -   State management: Uses local component state (useState) for query, results, and loading; does not persist to global store (search is transient UX).
 -   Styling: `src/components/search.scss`.
+
+### Sidebar Shell Module
+
+Optional fixed, collapsible sidebar panel for themes that lack native sidebar support.
+
+-   `modules/sidebar-shell/index.php`: registers a `p2026-sidebar-shell` widget area, renders the shell container via `wp_footer` (priority 20), and provides a dedicated Sidebar Shell settings tab with an embedded block editor for configuring default block content.
+-   The shell renders only when content is available: either the `p2026-sidebar-shell` widget area is active, or block markup exists (default: search + latest-posts + latest-comments blocks).
+-   Visibility and collapse behavior (default open, allow collapse) are configurable per-site via the settings tab.
+-   The `p2026/feed-tools` block is always injected into the tools area inside the shell (`do_blocks( '<!-- wp:p2026/feed-tools /-->' )`); the widget area and block content areas follow.
+-   `src/modules/sidebar-shell/index.js`: vanilla JS mount. Reads `data-default-open` / `data-allow-collapse` from the root element, applies `is-collapsed` class and `p2026-sidebar-shell-visible` on `<html>` / `<body>` (the latter shrinks the page width via CSS to reserve space). Persists collapse state in `localStorage` (key `p2026.sidebarShell.collapsed`). Handles keyboard: `Escape` closes the panel and returns focus to the toggle.
+-   `SidebarControls.js`: React component that renders the post-state filter buttons (when `post-state` module is active) and `SearchWidget`. Mounted per `[data-p2026-feed-tools]` node by `src/blocks/feed-tools/view.js`. Returns null for logged-out users.
+-   Admin block editor (`src/modules/sidebar-shell/admin.js`): standalone `BlockEditorProvider` mounted on the Sidebar Shell settings tab. Keeps a hidden `<textarea>` in sync for form POST delivery. Falls back gracefully to the raw textarea if the block editor cannot mount.
+-   CSS: `src/modules/sidebar-shell/_sidebar-shell.scss`. Uses CSS custom properties for width and motion; applies `html { width: calc(100vw - reserve-width) }` at ≥960 px to push page content left rather than overlapping it.
 
 ### Read/Unread Tracking (Core)
 
@@ -180,19 +195,28 @@ REST endpoints in use:
 
 p2026 has a lightweight module system for self-contained features.
 
-**PHP side:** `p2026.php` globs `modules/*/index.php` at init and requires each file unless its slug is present in `p2026_disabled_modules`. This deny-list model keeps new modules active by default. Each PHP module file is responsible for hooking into WordPress itself; there is no module API to call.
+**PHP side:** `p2026.php` globs `modules/*/index.php` at init and requires each file if `p2026_is_module_active( $slug )` returns true. The activation model is dual-default:
 
-**JS side:** `src/modules/index.js` is a single file of side-effect imports. `frontend.js` imports it once. To add a new JS module, create `src/modules/{name}/index.js` and add `import './{name}';` to `src/modules/index.js`.
+-   **Default-active modules** (the majority): active unless their slug appears in `p2026_disabled_modules`. Adding a new module to this category requires no opt-in from existing installs.
+-   **Default-inactive modules** (`sidebar-shell` currently): inactive unless their slug appears in `p2026_enabled_modules`, *or* the context-aware default evaluates to active (e.g. `sidebar-shell` auto-activates when the theme lacks native sidebar support).
+-   `p2026_module_default_is_active( $slug )` in `p2026.php` encodes the per-module default; add new cases there when introducing a context-aware default.
+
+Each PHP module file is responsible for hooking into WordPress itself; there is no module API to call.
+
+**JS side:** `src/modules/index.js` is a single file of side-effect imports. `frontend.js` imports it once. To add a new JS module, create `src/modules/{name}/index.js` and add `import './{name}';` to `src/modules/index.js` (both in the "load all" and "load by slug" branches).
 
 **Active modules:**
 
-| Module        | PHP                                                                                                    | JS                                                                                    |
-| ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| mentions      | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook              | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard |
-| notifications | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling  |
-| link-previews | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache              | `src/modules/link-previews/` — Internal post/comment hover preview cards              |
-| post-state    | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks             | N/A (UI lives in existing core components/store)                                      |
-| audit-log     | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                     |
+| Module         | Default   | PHP                                                                                                    | JS                                                                                                              |
+| -------------- | --------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| mentions       | active    | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook              | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard                           |
+| notifications  | active    | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling                            |
+| link-previews  | active    | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache              | `src/modules/link-previews/` — Internal post/comment hover preview cards                                        |
+| post-state     | active    | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks             | N/A (UI lives in existing core components/store)                                                                |
+| audit-log      | active    | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                                               |
+| sidebar-shell  | context¹  | `modules/sidebar-shell/index.php` — fixed collapsible sidebar panel, widget area, settings tab + block editor admin | `src/modules/sidebar-shell/` — collapse/expand controller, `SidebarControls.js` (search + state filter), admin block editor |
+
+¹ `sidebar-shell` defaults to **active** when the theme has no detected sidebar (`sidebar.php` or `parts/sidebar.html`); defaults to **inactive** otherwise. Can be overridden on the Modules settings page.
 
 ## Build and Validation
 
