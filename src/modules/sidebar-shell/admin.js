@@ -34,6 +34,7 @@ import './admin.scss';
  * calendar, embeds, and basic layout/text primitives.
  */
 const ALLOWED_BLOCKS = [
+	'p2026/feed-tools',
 	'core/search',
 	'core/latest-posts',
 	'core/latest-comments',
