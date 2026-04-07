@@ -27,7 +27,6 @@ import { __, sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
 import { setupPostToolbar } from '../enhancer';
-import SearchWidget from './SearchWidget';
 import UnreadBadge from './UnreadBadge';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
@@ -66,7 +65,7 @@ export default function FeedEnhancer( {
 	// Container for the "new posts" banner — injected before the post list.
 	const bannerContainerRef = useRef( null );
 
-	// Container for the header widgets (search + unread badge).
+	// Container for header widgets.
 	const headerContainerRef = useRef( null );
 
 	useEffect( () => {
@@ -397,36 +396,6 @@ export default function FeedEnhancer( {
 				headerContainerRef.current &&
 				createPortal(
 					<div className="p2026-header-widgets">
-						{ isPostStateActive && (
-							<div className="p2026-feed-filter" role="group">
-								<Button
-									variant={
-										postStateFilter === 'all'
-											? 'secondary'
-											: 'tertiary'
-									}
-									onClick={ () =>
-										setPostStateFilter( 'all' )
-									}
-								>
-									{ __( 'All posts', 'p2026' ) }
-								</Button>
-								<Button
-									variant={
-										postStateFilter === 'unresolved'
-											? 'secondary'
-											: 'tertiary'
-									}
-									onClick={ () =>
-										setPostStateFilter( 'unresolved' )
-									}
-									disabled={ unresolvedCount === 0 }
-								>
-									{ __( 'Open only', 'p2026' ) }
-								</Button>
-							</div>
-						) }
-						<SearchWidget />
 						<UnreadBadge />
 					</div>,
 					headerContainerRef.current

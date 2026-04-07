@@ -67,12 +67,77 @@
 	gap: 10px;
 }
 
+.p2026-sidebar-shell__tools {
+	display: grid;
+	gap: 10px;
+}
+
+.p2026-sidebar-shell__tool-panel {
+	padding: 10px;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	background: #fff;
+	display: grid;
+	gap: 10px;
+
+	.p2026-search-widget {
+		width: 100%;
+	}
+
+	.p2026-feed-filter {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+
+		.components-button {
+			justify-content: center;
+		}
+	}
+}
+
 .p2026-sidebar-shell__widget,
 .p2026-sidebar-shell__blocks > * {
 	padding: 10px;
 	border: 1px solid #e5e7eb;
 	border-radius: 8px;
 	background: #fff;
+}
+
+.p2026-sidebar-shell__widget ul,
+.p2026-sidebar-shell__widget ol,
+.p2026-sidebar-shell__blocks ul,
+.p2026-sidebar-shell__blocks ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.p2026-sidebar-shell__widget li,
+.p2026-sidebar-shell__blocks li {
+	margin: 0 0 8px;
+	padding: 0;
+}
+
+.p2026-sidebar-shell__widget li:last-child,
+.p2026-sidebar-shell__blocks li:last-child {
+	margin-bottom: 0;
+}
+
+.p2026-sidebar-shell__widget a,
+.p2026-sidebar-shell__blocks a {
+	color: #1d4f8f;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.p2026-sidebar-shell__widget a:hover,
+.p2026-sidebar-shell__blocks a:hover {
+	color: #123661;
+}
+
+.p2026-sidebar-shell__widget,
+.p2026-sidebar-shell__blocks {
+	color: #1f2328;
 }
 
 .p2026-sidebar-shell__title {

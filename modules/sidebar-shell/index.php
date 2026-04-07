@@ -94,6 +94,8 @@ function p2026_sidebar_shell_render() {
 		</button>
 		<aside id="p2026-sidebar-shell-panel" class="p2026-sidebar-shell__panel" aria-label="<?php esc_attr_e( 'Sidebar', 'p2026' ); ?>">
 			<div class="p2026-sidebar-shell__inner">
+				<div class="p2026-sidebar-shell__tools" data-p2026-sidebar-shell-tools></div>
+
 				<?php if ( $has_widgets ) : ?>
 					<div class="p2026-sidebar-shell__widgets" data-sidebar-shell-widgets>
 						<?php dynamic_sidebar( 'p2026-sidebar-shell' ); ?>

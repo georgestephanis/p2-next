@@ -1,4 +1,7 @@
 import onDomReady from '../../utils/on-dom-ready';
+import { createElement } from '@wordpress/element';
+import { createRoot } from '@wordpress/element';
+import SidebarControls from './SidebarControls';
 import './_sidebar-shell.scss';
 
 const STORAGE_KEY = 'p2026.sidebarShell.collapsed';
@@ -13,6 +16,8 @@ function mountSidebarShell() {
 	if ( ! toggleButton ) {
 		return;
 	}
+
+	const toolsSlot = root.querySelector( '[data-p2026-sidebar-shell-tools]' );
 
 	const applyCollapsedState = ( collapsed ) => {
 		root.classList.toggle( 'is-collapsed', collapsed );
@@ -40,6 +45,10 @@ function mountSidebarShell() {
 			// Ignore storage errors (private mode, quota, etc).
 		}
 	} );
+
+	if ( toolsSlot ) {
+		createRoot( toolsSlot ).render( createElement( SidebarControls ) );
+	}
 }
 
 onDomReady( mountSidebarShell );
