@@ -111,3 +111,53 @@ function p2026_sidebar_shell_render() {
 	<?php
 }
 add_action( 'wp_footer', 'p2026_sidebar_shell_render', 20 );
+
+/**
+ * Register a dedicated settings tab for the Sidebar Shell module.
+ *
+ * @param array<string, string> $tabs Existing settings tabs.
+ * @return array<string, string>
+ */
+function p2026_sidebar_shell_settings_tab( $tabs ) {
+	$tabs['sidebar-shell'] = __( 'Sidebar Shell', 'p2026' );
+	return $tabs;
+}
+add_filter( 'p2026_settings_tabs', 'p2026_sidebar_shell_settings_tab' );
+
+/**
+ * Save Sidebar Shell settings when the dedicated tab is submitted.
+ */
+function p2026_sidebar_shell_save_settings() {
+	$value = isset( $_POST['p2026_sidebar_shell_default_blocks'] )
+		? wp_unslash( $_POST['p2026_sidebar_shell_default_blocks'] )
+		: '';
+
+	if ( ! is_string( $value ) ) {
+		$value = '';
+	}
+
+	update_option( 'p2026_sidebar_shell_default_blocks', trim( str_replace( "\0", '', $value ) ) );
+}
+add_action( 'p2026_settings_save_tab_sidebar-shell', 'p2026_sidebar_shell_save_settings' );
+
+/**
+ * Render the Sidebar Shell settings tab content.
+ */
+function p2026_sidebar_shell_render_settings_tab() {
+	$current = (string) get_option( 'p2026_sidebar_shell_default_blocks', '' );
+	?>
+	<h2 class="title"><?php esc_html_e( 'Sidebar Shell', 'p2026' ); ?></h2>
+	<h3><?php esc_html_e( 'Default Block Content', 'p2026' ); ?></h3>
+	<p class="description" style="max-width:1000px; margin:0 0 10px;">
+		<?php esc_html_e( 'Optional block markup rendered by the Sidebar Shell when no sidebar widgets are active. Leave blank to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>
+	</p>
+	<textarea
+		name="p2026_sidebar_shell_default_blocks"
+		rows="7"
+		class="large-text code"
+		style="max-width:1000px;"
+	><?php echo esc_textarea( $current ); ?></textarea>
+	<?php
+	submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false );
+}
+add_action( 'p2026_settings_render_tab_sidebar-shell', 'p2026_sidebar_shell_render_settings_tab' );

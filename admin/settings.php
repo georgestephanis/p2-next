@@ -168,19 +168,6 @@ function p2026_handle_settings_save() {
 
 		update_option( 'p2026_disabled_modules', array_values( array_unique( $disabled ) ) );
 		update_option( 'p2026_enabled_modules', array_values( array_unique( $enabled ) ) );
-
-		if ( isset( $modules['sidebar-shell'] ) ) {
-			$sidebar_default_blocks = isset( $_POST['p2026_sidebar_shell_default_blocks'] )
-				? wp_unslash( $_POST['p2026_sidebar_shell_default_blocks'] )
-				: '';
-
-			if ( ! is_string( $sidebar_default_blocks ) ) {
-				$sidebar_default_blocks = '';
-			}
-
-			$sidebar_default_blocks = str_replace( "\0", '', $sidebar_default_blocks );
-			update_option( 'p2026_sidebar_shell_default_blocks', trim( $sidebar_default_blocks ) );
-		}
 	} else {
 		/**
 		 * Allow module tabs to process saves for their own settings.
@@ -312,20 +299,7 @@ function p2026_render_settings_page() {
 						</tbody>
 					</table>
 
-					<?php if ( isset( $modules['sidebar-shell'] ) ) : ?>
-						<?php $sidebar_default_blocks = (string) get_option( 'p2026_sidebar_shell_default_blocks', '' ); ?>
-						<h3><?php esc_html_e( 'Sidebar Shell Default Blocks', 'p2026' ); ?></h3>
-						<p class="description" style="max-width:1000px; margin:0 0 10px;">
-							<?php esc_html_e( 'Optional block markup used by the Sidebar Shell module when no sidebar widgets are active. Leave blank to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>
-						</p>
-						<textarea
-							name="p2026_sidebar_shell_default_blocks"
-							rows="7"
-							class="large-text code"
-							style="max-width:1000px;"
-						><?php echo esc_textarea( $sidebar_default_blocks ); ?></textarea>
 					<?php endif; ?>
-				<?php endif; ?>
 
 				<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
 			<?php else : ?>
