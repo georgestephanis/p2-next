@@ -217,6 +217,7 @@ function p2026_register_blocks() {
 		wp_register_block_metadata_collection( P2026_DIR . 'build', $manifest );
 	}
 	register_block_type( P2026_DIR . 'build/blocks/new-post' );
+	register_block_type( P2026_DIR . 'build/blocks/feed-tools' );
 }
 add_action( 'init', 'p2026_register_blocks' );
 

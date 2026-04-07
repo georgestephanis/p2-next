@@ -132,7 +132,9 @@ function p2026_sidebar_shell_render() {
 		<aside id="p2026-sidebar-shell-panel" class="p2026-sidebar-shell__panel" aria-labelledby="p2026-sidebar-shell-title">
 			<div class="p2026-sidebar-shell__inner">
 				<h2 id="p2026-sidebar-shell-title" class="screen-reader-text"><?php esc_html_e( 'Sidebar', 'p2026' ); ?></h2>
-				<div class="p2026-sidebar-shell__tools" data-p2026-sidebar-shell-tools></div>
+				<div class="p2026-sidebar-shell__tools">
+					<?php echo do_blocks( '<!-- wp:p2026/feed-tools /-->' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</div>
 
 				<?php if ( $has_widgets ) : ?>
 					<div class="p2026-sidebar-shell__widgets" data-sidebar-shell-widgets>
