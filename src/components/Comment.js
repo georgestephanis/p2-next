@@ -26,7 +26,11 @@ function getEditableContent( comment ) {
 	return renderedHtmlToText( comment?.content?.rendered ?? '' );
 }
 
-export default function Comment( { comment, postId } ) {
+export default function Comment( {
+	comment,
+	postId,
+	canCreateComments = true,
+} ) {
 	const [ replying, setReplying ] = useState( false );
 	const [ replyContent, setReplyContent ] = useState( '' );
 	const [ editing, setEditing ] = useState( false );
@@ -43,7 +47,9 @@ export default function Comment( { comment, postId } ) {
 	);
 
 	const currentUser = window.p2026Config?.currentUser;
-	const canComment = window.p2026Config?.canComment ?? !! currentUser;
+	const canComment =
+		( window.p2026Config?.canComment ?? !! currentUser ) &&
+		canCreateComments;
 	const requireNameEmail =
 		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =

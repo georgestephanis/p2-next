@@ -87,6 +87,10 @@ export default function PostEnhancement( {
 	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
 		currentUser && ( currentUser.canUpdatePosts || currentUser.canPublish );
+	const commentsClosed = post?.comment_status === 'closed';
+	const canCreateComments =
+		( window.p2026Config?.canComment ?? !! currentUser ) &&
+		! commentsClosed;
 
 	const activeModules = window.p2026Config?.activeModules;
 	const isPostStateActive =
@@ -272,7 +276,9 @@ export default function PostEnhancement( {
 
 			comments.forEach( ( commentItem ) => {
 				const key = String(
-					commentItem.author || commentItem.author_name || commentItem.id
+					commentItem.author ||
+						commentItem.author_name ||
+						commentItem.id
 				);
 				if ( seen.has( key ) ) {
 					return;
@@ -293,6 +299,11 @@ export default function PostEnhancement( {
 
 		return previewContributors;
 	}, [ comments, previewContributors ] );
+
+	const contributorOverflowCount = Math.max(
+		0,
+		commentCount - contributorPreview.length
+	);
 
 	useEffect( () => {
 		if ( comments.length > 0 || commentCount < 1 ) {
@@ -327,7 +338,8 @@ export default function PostEnhancement( {
 					seen.add( key );
 					unique.push( {
 						id: key,
-						name: commentItem.author_name || __( 'Someone', 'p2026' ),
+						name:
+							commentItem.author_name || __( 'Someone', 'p2026' ),
 						avatar:
 							commentItem.author_avatar_urls?.[ '48' ] ||
 							commentItem.author_avatar_urls?.[ 48 ] ||
@@ -348,9 +360,13 @@ export default function PostEnhancement( {
 		};
 	}, [ comments.length, commentCount, postId, previewContributors.length ] );
 
-	const summaryActionLabel = isExpanded
-		? __( 'Hide discussion', 'p2026' )
-		: __( 'View discussion', 'p2026' );
+	const canViewDiscussion = commentCount > 0 || canCreateComments;
+	let summaryActionLabel = __( 'View all comments and reply', 'p2026' );
+	if ( isExpanded ) {
+		summaryActionLabel = __( 'Hide discussion', 'p2026' );
+	} else if ( commentsClosed ) {
+		summaryActionLabel = __( 'View existing comments', 'p2026' );
+	}
 
 	const onToggleComments = useCallback( () => {
 		closeMenu();
@@ -606,31 +622,53 @@ export default function PostEnhancement( {
 									className="p2026-comment-summary-avatars"
 									aria-hidden="true"
 								>
-									{ contributorPreview.map( ( contributor ) =>
-										contributor.avatar ? (
-											<img
-												key={ contributor.id }
-												className="p2026-comment-summary-avatar"
-												src={ contributor.avatar }
-												alt=""
-												width={ 24 }
-												height={ 24 }
-											/>
-										) : null
+									{ contributorPreview.map(
+										( contributor ) =>
+											contributor.avatar ? (
+												<img
+													key={ contributor.id }
+													className="p2026-comment-summary-avatar"
+													src={ contributor.avatar }
+													alt=""
+													width={ 24 }
+													height={ 24 }
+												/>
+											) : null
 									) }
 								</div>
 								<span className="p2026-comment-summary-names">
 									{ contributorPreview
-										.map( ( contributor ) => contributor.name )
+										.map(
+											( contributor ) => contributor.name
+										)
 										.join( ', ' ) }
 								</span>
+								{ contributorOverflowCount > 0 && (
+									<span className="p2026-comment-summary-more">
+										+{ contributorOverflowCount }
+									</span>
+								) }
 							</div>
+						) }
+						{ commentsClosed && (
+							<span className="p2026-comment-summary-note">
+								{ commentCount > 0
+									? __(
+											'Replies are closed, but you can still read existing comments.',
+											'p2026'
+									  )
+									: __(
+											'Comments are closed for this post.',
+											'p2026'
+									  ) }
+							</span>
 						) }
 					</div>
 					<button
 						type="button"
 						className="p2026-comment-summary-action"
 						onClick={ onToggleComments }
+						disabled={ ! isExpanded && ! canViewDiscussion }
 					>
 						{ summaryActionLabel }
 					</button>
@@ -638,7 +676,12 @@ export default function PostEnhancement( {
 			) }
 
 			{ /* Comment thread — renders in normal flow below the post content */ }
-			{ isExpanded && ! isEditing && <Comments postId={ postId } /> }
+			{ isExpanded && ! isEditing && (
+				<Comments
+					postId={ postId }
+					canCreateComments={ canCreateComments }
+				/>
+			) }
 		</>
 	);
 }

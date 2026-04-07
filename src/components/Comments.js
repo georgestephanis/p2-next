@@ -22,7 +22,7 @@ function buildTree( comments, parentId = 0 ) {
 		.map( ( c ) => ( { ...c, children: buildTree( comments, c.id ) } ) );
 }
 
-function CommentTree( { comments, postId, depth = 0 } ) {
+function CommentTree( { comments, postId, depth = 0, canCreateComments } ) {
 	return (
 		<>
 			{ comments.map( ( comment ) => (
@@ -30,13 +30,18 @@ function CommentTree( { comments, postId, depth = 0 } ) {
 					key={ comment.id }
 					className={ `p2026-comment-thread depth-${ depth }` }
 				>
-					<Comment comment={ comment } postId={ postId } />
+					<Comment
+						comment={ comment }
+						postId={ postId }
+						canCreateComments={ canCreateComments }
+					/>
 					{ comment.children.length > 0 && (
 						<div className="p2026-comment-children">
 							<CommentTree
 								comments={ comment.children }
 								postId={ postId }
 								depth={ depth + 1 }
+								canCreateComments={ canCreateComments }
 							/>
 						</div>
 					) }
@@ -46,7 +51,7 @@ function CommentTree( { comments, postId, depth = 0 } ) {
 	);
 }
 
-export default function Comments( { postId } ) {
+export default function Comments( { postId, canCreateComments = true } ) {
 	const { createComment } = useDispatch( STORE_NAME );
 	const comments = useSelect( ( select ) =>
 		select( STORE_NAME ).getComments( postId )
@@ -61,7 +66,9 @@ export default function Comments( { postId } ) {
 	const [ guestUrl, setGuestUrl ] = useState( '' );
 
 	const currentUser = window.p2026Config?.currentUser;
-	const canComment = window.p2026Config?.canComment ?? !! currentUser;
+	const canComment =
+		( window.p2026Config?.canComment ?? !! currentUser ) &&
+		canCreateComments;
 	const requireNameEmail =
 		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
@@ -168,7 +175,11 @@ export default function Comments( { postId } ) {
 					{ __( 'No comments yet.', 'p2026' ) }
 				</p>
 			) }
-			<CommentTree comments={ tree } postId={ postId } />
+			<CommentTree
+				comments={ tree }
+				postId={ postId }
+				canCreateComments={ canCreateComments }
+			/>
 		</section>
 	);
 }

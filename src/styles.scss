@@ -384,6 +384,27 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	white-space: nowrap;
 }
 
+.p2026-comment-summary-more {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.9em;
+	padding: 0.1rem 0.38rem;
+	border-radius: 999px;
+	background: #e5edf6;
+	color: #32465a;
+	font-size: 0.72rem;
+	font-weight: 600;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.p2026-comment-summary-note {
+	font-size: 0.78rem;
+	line-height: 1.3;
+	color: #5a6773;
+}
+
 .p2026-comment-summary-action {
 	appearance: none;
 	border: 1px solid #c5d2df;
@@ -406,6 +427,11 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 		background-color: #eef5fb;
 		border-color: #9eb3c8;
 		outline: none;
+	}
+
+	&:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
 	}
 }
 
