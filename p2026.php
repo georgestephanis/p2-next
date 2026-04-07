@@ -388,6 +388,79 @@ function p2026_auto_title( $prepared_post, $request ) { // phpcs:ignore Generic.
 add_filter( 'rest_pre_insert_post', 'p2026_auto_title', 10, 2 );
 
 /**
+ * Extract a comment ID from REST field callback payloads.
+ *
+ * @param mixed $comment_obj Comment payload passed by register_rest_field.
+ * @return int
+ */
+function p2026_rest_comment_id( $comment_obj ) {
+	if ( is_array( $comment_obj ) && isset( $comment_obj['id'] ) ) {
+		return (int) $comment_obj['id'];
+	}
+
+	if ( is_object( $comment_obj ) && isset( $comment_obj->id ) ) {
+		return (int) $comment_obj->id;
+	}
+
+	if ( $comment_obj instanceof WP_Comment ) {
+		return (int) $comment_obj->comment_ID;
+	}
+
+	return 0;
+}
+
+/**
+ * Register additional comment REST fields used by the frontend UI.
+ */
+function p2026_register_comment_rest_fields() {
+	register_rest_field(
+		'comment',
+		'p2026CanEdit',
+		array(
+			'get_callback' => static function ( $comment_obj ) {
+				$comment_id = p2026_rest_comment_id( $comment_obj );
+				if ( $comment_id <= 0 ) {
+					return false;
+				}
+
+				return current_user_can( 'edit_comment', $comment_id );
+			},
+			'schema'       => array(
+				'description' => __( 'Whether the current user can edit this comment.', 'p2026' ),
+				'type'        => 'boolean',
+				'context'     => array( 'view', 'edit' ),
+			),
+		)
+	);
+
+	register_rest_field(
+		'comment',
+		'p2026EditableContent',
+		array(
+			'get_callback' => static function ( $comment_obj ) {
+				$comment_id = p2026_rest_comment_id( $comment_obj );
+				if ( $comment_id <= 0 || ! current_user_can( 'edit_comment', $comment_id ) ) {
+					return '';
+				}
+
+				$comment = get_comment( $comment_id );
+				if ( ! $comment instanceof WP_Comment ) {
+					return '';
+				}
+
+				return (string) $comment->comment_content;
+			},
+			'schema'       => array(
+				'description' => __( 'Raw comment content for edit-capable users.', 'p2026' ),
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'p2026_register_comment_rest_fields' );
+
+/**
  * Add a "New Post" node to the admin bar on the front-end blog index.
  *
  * Only shown to users who can create posts. The JS click handler in
