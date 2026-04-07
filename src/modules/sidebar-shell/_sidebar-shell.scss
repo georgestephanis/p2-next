@@ -1,6 +1,8 @@
 :root {
 	--p2026-sidebar-shell-panel-width: min(360px, calc(100vw - 28px));
 	--p2026-sidebar-shell-reserve-width: min(392px, calc(100vw - 4px));
+	--p2026-sidebar-shell-motion-duration: 0.22s;
+	--p2026-sidebar-shell-motion-ease: linear;
 }
 
 .p2026-sidebar-shell {
@@ -31,7 +33,7 @@
 	&.is-collapsed {
 
 		.p2026-sidebar-shell__panel {
-			transform: translateX( calc(100% + 16px) );
+			transform: translateX(100%);
 			opacity: 0;
 			pointer-events: none;
 		}
@@ -56,7 +58,7 @@ html {
 	@media ( min-width: 960px ) {
 		width: 100vw;
 		overflow-x: hidden;
-		transition: width 0.2s ease;
+		transition: width var(--p2026-sidebar-shell-motion-duration) var(--p2026-sidebar-shell-motion-ease);
 	}
 }
 
@@ -89,7 +91,9 @@ body.p2026-sidebar-shell-visible {
 	height: 42px;
 	cursor: pointer;
 	box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
-	transition: right 0.22s ease, background-color 0.2s ease;
+	transition:
+		right var(--p2026-sidebar-shell-motion-duration) var(--p2026-sidebar-shell-motion-ease),
+		background-color var(--p2026-sidebar-shell-motion-duration) var(--p2026-sidebar-shell-motion-ease);
 	z-index: 2;
 
 	&::before {
@@ -111,7 +115,9 @@ body.p2026-sidebar-shell-visible {
 	border-right: 0;
 	border-radius: 12px 0 0 12px;
 	box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
-	transition: transform 0.2s ease, opacity 0.2s ease;
+	transition:
+		transform var(--p2026-sidebar-shell-motion-duration) var(--p2026-sidebar-shell-motion-ease),
+		opacity var(--p2026-sidebar-shell-motion-duration) var(--p2026-sidebar-shell-motion-ease);
 	z-index: 1;
 }
 
