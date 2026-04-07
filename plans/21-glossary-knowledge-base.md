@@ -2,9 +2,26 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+-   Editor UX
+
 Depends on:
 
 -   Optional dependency: [Support Tags Via Hashtag](./15-tags-via-hashtag.md) if inline term parsing infrastructure is shared.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The basic feature is tractable, but term matching and over-linkification can degrade the reading experience if the content model is too naive.
 
 Issue Reference:
 

@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   Data model and storage
+-   Theme integration
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) if the UI should match `p2020` closely.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The feature touches feed rendering, user preferences, and theme-agnostic UI placement at the same time.
 
 ## Summary
 

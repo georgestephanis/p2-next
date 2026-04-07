@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   Editor UX
+-   Accessibility and focus management
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: settled interaction targets for post focus, comments toggle, and post editing.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Medium. The shortcut layer itself is compact, but it depends on having a stable focus model and avoiding collisions with forms, assistive tech, and browser behaviors.
 
 Issue Reference:
 

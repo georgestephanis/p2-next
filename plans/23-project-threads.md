@@ -2,10 +2,27 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   Data model and storage
+-   Theme integration
+-   REST API
+
 Depends on:
 
 -   Optional dependency: [Sticky Posts](./11-sticky-posts.md) if both features share grouped top-of-feed presentation.
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) depending on final placement and controls.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The feature is feasible, but it needs a clear project-thread model so it does not collapse into ad hoc sticky-post grouping.
 
 Issue Reference:
 

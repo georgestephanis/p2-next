@@ -2,9 +2,25 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Editor UX
+
 Depends on:
 
 -   No hard dependency.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The feature is straightforward conceptually, but it needs clear capability and resume-edit behavior to avoid awkward draft flows.
 
 ## Summary
 

@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Now
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: existing audit-log module for recording edits.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The behavior is bounded, but comment permissions, anonymous authorship, and edit-state UX need careful handling.
 
 ## Summary
 

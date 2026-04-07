@@ -2,11 +2,28 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Multisite
+-   REST API
+-   Data model and storage
+-   Admin and settings
+
 Depends on:
 
 -   No hard dependency.
 -   Practical dependency: a deliberate decision that multisite belongs in `p2026` scope.
 -   Optional dependency: [External Integrations](./20-external-integrations.md) if shared event-routing patterns are useful.
+
+## Estimated Size
+
+Architectural
+
+## Risk
+
+High. This changes core assumptions around site boundaries, authorship, permissions, and content identity.
 
 Issue Reference:
 

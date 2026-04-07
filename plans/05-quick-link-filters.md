@@ -2,10 +2,27 @@
 
 Status: Draft
 
+Priority: Now
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+-   Theme integration
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) depending on placement.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The main challenge is defining a durable filter model that works across themes and continues to cooperate with polling and unread state.
 
 ## Summary
 

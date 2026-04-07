@@ -2,10 +2,27 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Integrations
+-   REST API
+-   Admin and settings
+-   Data model and storage
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Following Threads](./10-following-threads.md), notifications, and audit-log primitives for event routing.
+
+## Estimated Size
+
+Architectural
+
+## Risk
+
+High. This requires a reusable provider architecture, credentials handling, delivery observability, and clear decisions about inbound mirrored content.
 
 Issue Reference:
 

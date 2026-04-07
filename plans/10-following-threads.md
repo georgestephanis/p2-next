@@ -2,9 +2,26 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+-   Notifications
+
 Depends on:
 
 -   Hard dependency: the existing notifications module as the delivery mechanism.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The implementation can reuse existing notification infrastructure, but subscription semantics and noise control need good defaults.
 
 ## Summary
 

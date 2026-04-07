@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Now
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: reuse current post menu placement and audit-log hooks.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Low. This is a focused extension of existing post-menu behavior and native WordPress sticky-post APIs.
 
 ## Summary
 

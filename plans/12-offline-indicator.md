@@ -2,9 +2,24 @@
 
 Status: Draft
 
+Priority: Now
+
+Implementation Areas:
+
+-   Frontend UI
+-   Network request handling
+
 Depends on:
 
 -   No hard dependency.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Low. The core challenge is mostly UX polish around failure states rather than heavy backend work.
 
 ## Summary
 

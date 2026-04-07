@@ -2,10 +2,27 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+-   Theme integration
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) if a navigation-heavy layout is desired.
+
+## Estimated Size
+
+Architectural
+
+## Risk
+
+High. This introduces a page-centric workflow that is meaningfully different from the current posts-first collaboration model.
 
 ## Summary
 

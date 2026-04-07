@@ -2,9 +2,25 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Editor UX
+-   Frontend UI
+-   Content rendering
+
 Depends on:
 
 -   No hard dependency.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Medium. The implementation is not large, but the feature may cut against the plugin's more modern editor direction.
 
 ## Summary
 

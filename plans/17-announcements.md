@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Now
+
+Implementation Areas:
+
+-   Frontend UI
+-   Data model and storage
+-   Admin and settings
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) if announcements should have a persistent layout slot.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Low. The main work is choosing the right content model and ensuring dismissal state is per-user and predictable.
 
 Issue Reference:
 

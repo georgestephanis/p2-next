@@ -2,10 +2,27 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   Editor UX
+-   Data model and storage
+-   REST API
+
 Depends on:
 
 -   No hard dependency for post-level checklists.
 -   Optional dependency: [Frontend Comment Editing](./08-frontend-comment-editing.md) for full comment-level parity.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+High. The feature affects authoring, rendering, permissions, and possibly multiple content models if comments are included.
 
 ## Summary
 

@@ -2,10 +2,27 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+-   Notifications
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Following Threads](./10-following-threads.md) if reacting should be able to auto-follow a thread.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The core mechanics are manageable, but notifications, digests, and provider coexistence can make the behavior noisy if left underspecified.
 
 Issue Reference:
 

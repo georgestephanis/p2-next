@@ -2,9 +2,26 @@
 
 Status: Draft
 
+Priority: Now
+
+Implementation Areas:
+
+-   Editor UX
+-   Frontend UI
+-   REST API
+-   Data model and storage
+
 Depends on:
 
 -   Optional dependency: [Drafts Index](./04-drafts-index.md) for a destination to manage saved drafts.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The feature is valuable and well-bounded, but draft persistence and recovery logic can create awkward edge cases if the source of truth is unclear.
 
 Issue Reference:
 

@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) if the feature should appear as a sidebar widget rather than a standalone panel.
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The UI is manageable, but the event model needs to avoid becoming a second feed implementation.
 
 ## Summary
 

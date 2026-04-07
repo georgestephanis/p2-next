@@ -2,10 +2,26 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Editor UX
+-   Data model and storage
+-   Content rendering
+
 Depends on:
 
 -   No hard dependency.
 -   Optional dependency: [Quick-Link Filters And Saved Views](./05-quick-link-filters.md) if hashtag support should immediately power tag-specific views.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Medium. Parsing inline author syntax sounds simple, but it can become messy around editor serialization and ambiguous hashtag text.
 
 Issue Reference:
 

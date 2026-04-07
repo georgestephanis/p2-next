@@ -2,9 +2,25 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Frontend UI
+-   Theme integration
+-   Data model and storage
+
 Depends on:
 
 -   No hard dependency.
+
+## Estimated Size
+
+Architectural
+
+## Risk
+
+High. This is partly a product-scope decision and could push `p2026` away from its theme-agnostic design if handled poorly.
 
 ## Summary
 

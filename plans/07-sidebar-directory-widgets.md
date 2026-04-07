@@ -2,9 +2,25 @@
 
 Status: Draft
 
+Priority: Later
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Theme integration
+
 Depends on:
 
 -   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md)
+
+## Estimated Size
+
+Medium
+
+## Risk
+
+Medium. The work is modular, but the harder question is deciding which widgets belong in core plugin scope versus a theme or companion package.
 
 ## Summary
 

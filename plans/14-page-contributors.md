@@ -2,9 +2,25 @@
 
 Status: Draft
 
+Priority: Exploratory
+
+Implementation Areas:
+
+-   Frontend UI
+-   REST API
+-   Data model and storage
+
 Depends on:
 
 -   No hard dependency.
+
+## Estimated Size
+
+Small
+
+## Risk
+
+Low. The technical work is limited, but the bigger question is whether this belongs in core plugin scope.
 
 ## Summary
 

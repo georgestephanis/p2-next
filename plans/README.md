@@ -4,6 +4,16 @@ This folder captures feature plans derived from the audit of the `p2020` theme a
 
 These are planning documents only. They are intended to support later evaluation, prioritization, and implementation.
 
+## Plan Metadata
+
+-   `Priority` is a rough planning signal:
+    -   `Now` means the feature is a reasonable near-term candidate.
+    -   `Later` means the feature is valuable but should follow more foundational work.
+    -   `Exploratory` means the feature needs product or architecture decisions before it is a good build candidate.
+-   `Implementation Areas` identify the main parts of `p2026` likely to be affected.
+-   `Estimated Size` is a rough delivery size, not a commitment.
+-   `Risk` is a rough implementation and product-risk signal.
+
 ## Backlog Buckets
 
 These buckets are rough planning sizes, not delivery commitments.
