@@ -65,8 +65,8 @@ Evaluate a set of lightweight people, taxonomy, and navigation widgets inspired 
 
 ## Source References
 
--   `wp-content/themes/p2020/widgets/load.php`
--   `wp-content/themes/p2020/widgets/my-team/my-team.php`
--   `wp-content/themes/p2020/widgets/tags/tags.php`
--   `wp-content/themes/p2020/widgets/sidebar-menus/page-menu.php`
--   `wp-content/themes/p2020/widgets/sidebar-menus/nav-menu.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/widgets/load.php](https://wpcom-themes.svn.automattic.com/p2020/widgets/load.php)
+-   [https://wpcom-themes.svn.automattic.com/p2020/widgets/my-team/my-team.php](https://wpcom-themes.svn.automattic.com/p2020/widgets/my-team/my-team.php)
+-   [https://wpcom-themes.svn.automattic.com/p2020/widgets/tags/tags.php](https://wpcom-themes.svn.automattic.com/p2020/widgets/tags/tags.php)
+-   [https://wpcom-themes.svn.automattic.com/p2020/widgets/sidebar-menus/page-menu.php](https://wpcom-themes.svn.automattic.com/p2020/widgets/sidebar-menus/page-menu.php)
+-   [https://wpcom-themes.svn.automattic.com/p2020/widgets/sidebar-menus/nav-menu.php](https://wpcom-themes.svn.automattic.com/p2020/widgets/sidebar-menus/nav-menu.php)

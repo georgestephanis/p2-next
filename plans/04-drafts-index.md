@@ -61,4 +61,4 @@ Add a dedicated drafts view for the current user, separate from the public feed.
 
 ## Source References
 
--   `wp-content/themes/p2020/inc/drafts-index/class-drafts-index.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/drafts-index/class-drafts-index.php](https://wpcom-themes.svn.automattic.com/p2020/inc/drafts-index/class-drafts-index.php)

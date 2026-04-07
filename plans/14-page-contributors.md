@@ -61,4 +61,4 @@ Evaluate a page-level contributors panel derived from revision history.
 
 ## Source References
 
--   `wp-content/themes/p2020/inc/contributors.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/contributors.php](https://wpcom-themes.svn.automattic.com/p2020/inc/contributors.php)

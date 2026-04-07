@@ -63,4 +63,4 @@ Evaluate whether `p2026` should offer an optional collapsible sidebar shell for 
 
 ## Source References
 
--   `wp-content/themes/p2020/inc/toggle-sidebar/toggle-sidebar.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/toggle-sidebar/toggle-sidebar.php](https://wpcom-themes.svn.automattic.com/p2020/inc/toggle-sidebar/toggle-sidebar.php)

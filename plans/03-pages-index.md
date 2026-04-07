@@ -64,4 +64,4 @@ Add a pages-focused index view inspired by `p2020`, including hierarchical displ
 
 ## Source References
 
--   `wp-content/themes/p2020/inc/pages-index/class-pages-index.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/pages-index/class-pages-index.php](https://wpcom-themes.svn.automattic.com/p2020/inc/pages-index/class-pages-index.php)

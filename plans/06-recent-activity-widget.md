@@ -62,4 +62,4 @@ The current `p2026` feed shows new posts in context, but it does not offer a sep
 
 ## Source References
 
--   `wp-content/themes/p2020/widgets/activity/activity.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/widgets/activity/activity.php](https://wpcom-themes.svn.automattic.com/p2020/widgets/activity/activity.php)

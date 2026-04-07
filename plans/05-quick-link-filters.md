@@ -73,8 +73,8 @@ Add quick access to canned feed views such as unread posts, unread comments, rec
 
 ## Source References
 
--   `wp-content/themes/p2020/inc/filter/controls.php`
--   `wp-content/themes/p2020/inc/filter/view.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/filter/controls.php](https://wpcom-themes.svn.automattic.com/p2020/inc/filter/controls.php)
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/filter/view.php](https://wpcom-themes.svn.automattic.com/p2020/inc/filter/view.php)
 -   `wp-content/plugins/o2/modules/filter-widget/load.php`
 -   `wp-content/plugins/o2/modules/recent-comments/load.php`
 -   `wp-content/plugins/o2/modules/unreplied-posts/load.php`

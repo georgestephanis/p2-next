@@ -68,4 +68,4 @@ Add user-selectable feed display modes comparable to `p2020`'s Default, Expanded
 
 ## Source References
 
--   `wp-content/themes/p2020/inc/view-selector/class-view-selector.php`
+-   [https://wpcom-themes.svn.automattic.com/p2020/inc/view-selector/class-view-selector.php](https://wpcom-themes.svn.automattic.com/p2020/inc/view-selector/class-view-selector.php)
