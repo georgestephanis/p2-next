@@ -299,7 +299,7 @@ function p2026_render_settings_page() {
 						</tbody>
 					</table>
 
-					<?php endif; ?>
+				<?php endif; ?>
 
 				<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
 			<?php else : ?>

@@ -17,21 +17,40 @@ function mountSidebarShell() {
 	const defaultOpen = root.dataset.defaultOpen !== '0';
 	const canToggle = allowCollapse && !! toggleButton;
 
-	const applyCollapsedState = ( collapsed ) => {
-		root.classList.toggle( 'is-collapsed', collapsed );
+	// Resolve the initial collapsed state before defining the closures that
+	// mutate it, so the `let` declaration is always visible before its uses.
+	let collapsed;
+	if ( ! canToggle ) {
+		collapsed = false;
+	} else {
+		collapsed = ! defaultOpen;
+		try {
+			const persisted = localStorage.getItem( STORAGE_KEY );
+			if ( persisted === 'false' ) {
+				collapsed = false;
+			} else if ( persisted === 'true' ) {
+				collapsed = true;
+			}
+		} catch {
+			collapsed = ! defaultOpen;
+		}
+	}
+
+	const applyCollapsedState = ( isCollapsed ) => {
+		root.classList.toggle( 'is-collapsed', isCollapsed );
 		document.body.classList.toggle(
 			'p2026-sidebar-shell-visible',
-			! collapsed
+			! isCollapsed
 		);
 		document.documentElement.classList.toggle(
 			'p2026-sidebar-shell-visible',
-			! collapsed
+			! isCollapsed
 		);
 
 		if ( toggleButton ) {
 			toggleButton.setAttribute(
 				'aria-expanded',
-				collapsed ? 'false' : 'true'
+				isCollapsed ? 'false' : 'true'
 			);
 		}
 	};
@@ -85,22 +104,6 @@ function mountSidebarShell() {
 			toggleButton.focus();
 		}
 	};
-
-	let collapsed = ! defaultOpen;
-	if ( canToggle ) {
-		try {
-			const persisted = localStorage.getItem( STORAGE_KEY );
-			if ( persisted === 'false' ) {
-				collapsed = false;
-			} else if ( persisted === 'true' ) {
-				collapsed = true;
-			}
-		} catch {
-			collapsed = ! defaultOpen;
-		}
-	} else {
-		collapsed = false;
-	}
 
 	applyCollapsedState( collapsed );
 

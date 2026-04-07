@@ -245,9 +245,16 @@ function p2026_discover_modules() {
  * @return bool
  */
 function p2026_theme_has_sidebar_functionality() {
+	static $result = null;
+
+	if ( null !== $result ) {
+		return $result;
+	}
+
 	// Classic themes often expose a dedicated sidebar template file.
 	if ( locate_template( array( 'sidebar.php' ), false, false ) ) {
-		return true;
+		$result = true;
+		return $result;
 	}
 
 	// Common block and hybrid theme sidebar template-part locations.
@@ -260,11 +267,13 @@ function p2026_theme_has_sidebar_functionality() {
 
 	foreach ( $candidates as $candidate ) {
 		if ( file_exists( $candidate ) ) {
-			return true;
+			$result = true;
+			return $result;
 		}
 	}
 
-	return false;
+	$result = false;
+	return $result;
 }
 
 /**

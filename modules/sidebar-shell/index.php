@@ -116,8 +116,8 @@ function p2026_sidebar_shell_render() {
 	<div
 		class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
 		data-p2026-sidebar-shell
-		data-default-open="<?php echo $default_open ? '1' : '0'; ?>"
-		data-allow-collapse="<?php echo $allow_collapse ? '1' : '0'; ?>"
+		data-default-open="<?php echo esc_attr( $default_open ? '1' : '0' ); ?>"
+		data-allow-collapse="<?php echo esc_attr( $allow_collapse ? '1' : '0' ); ?>"
 	>
 		<?php if ( $allow_collapse ) : ?>
 			<button
