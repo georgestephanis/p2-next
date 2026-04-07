@@ -11,6 +11,12 @@ function mountSidebarShell() {
 		return;
 	}
 
+	// If Interactivity API directives are present, that implementation owns
+	// behavior. This script remains as a fallback for older environments.
+	if ( root.hasAttribute( 'data-wp-interactive' ) ) {
+		return;
+	}
+
 	const panel = root.querySelector( '#p2026-sidebar-shell-panel' );
 	const toggleButton = root.querySelector( '.p2026-sidebar-shell__toggle' );
 	const allowCollapse = root.dataset.allowCollapse !== '0';
