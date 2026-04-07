@@ -129,8 +129,9 @@ function p2026_sidebar_shell_render() {
 				<span class="screen-reader-text"><?php esc_html_e( 'Toggle sidebar', 'p2026' ); ?></span>
 			</button>
 		<?php endif; ?>
-		<aside id="p2026-sidebar-shell-panel" class="p2026-sidebar-shell__panel" aria-label="<?php esc_attr_e( 'Sidebar', 'p2026' ); ?>">
+		<aside id="p2026-sidebar-shell-panel" class="p2026-sidebar-shell__panel" aria-labelledby="p2026-sidebar-shell-title">
 			<div class="p2026-sidebar-shell__inner">
+				<h2 id="p2026-sidebar-shell-title" class="screen-reader-text"><?php esc_html_e( 'Sidebar', 'p2026' ); ?></h2>
 				<div class="p2026-sidebar-shell__tools" data-p2026-sidebar-shell-tools></div>
 
 				<?php if ( $has_widgets ) : ?>
