@@ -3,8 +3,9 @@
 Status: Draft
 
 Depends on:
-- No hard dependency.
-- Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) depending on placement.
+
+-   No hard dependency.
+-   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) depending on placement.
 
 ## Summary
 
@@ -16,47 +17,47 @@ Add quick access to canned feed views such as unread posts, unread comments, rec
 
 ## Goals
 
-- Define a durable filter model that works across themes.
-- Support both URL-addressable filters and mountable quick-access UI.
-- Reuse current search, mentions, read-state, and post-state infrastructure where possible.
+-   Define a durable filter model that works across themes.
+-   Support both URL-addressable filters and mountable quick-access UI.
+-   Reuse current search, mentions, read-state, and post-state infrastructure where possible.
 
 ## Non-Goals
 
-- Building a fully generic report builder.
-- Tying filters exclusively to a sidebar UI.
+-   Building a fully generic report builder.
+-   Tying filters exclusively to a sidebar UI.
 
 ## Proposed Approach
 
-- Define a small filter registry with labels, capabilities, URL state, and resolver logic.
-- Start with a limited set:
-  - Unread posts
-  - Unread comments
-  - Recent comments
-  - No replies
-  - My posts
-  - My mentions
-  - Open only or unresolved-only, where it aligns with existing post-state work
-- Expose the filters in one or more UI surfaces:
-  - Header dropdown
-  - Sidebar widget or panel
-  - Saved views entry point
+-   Define a small filter registry with labels, capabilities, URL state, and resolver logic.
+-   Start with a limited set:
+    -   Unread posts
+    -   Unread comments
+    -   Recent comments
+    -   No replies
+    -   My posts
+    -   My mentions
+    -   Open only or unresolved-only, where it aligns with existing post-state work
+-   Expose the filters in one or more UI surfaces:
+    -   Header dropdown
+    -   Sidebar widget or panel
+    -   Saved views entry point
 
 ## Open Questions
 
-- Should filters be implemented as URL params, REST presets, or both?
-- Should anonymous users get any quick-link views?
-- Does search expand into a command palette instead of a filter menu?
+-   Should filters be implemented as URL params, REST presets, or both?
+-   Should anonymous users get any quick-link views?
+-   Does search expand into a command palette instead of a filter menu?
 
 ## Acceptance Criteria
 
-- Each supported filter is directly navigable.
-- Filtered results remain compatible with polling and unread state where applicable.
-- The UI can be rendered without assuming `p2020` theme structure.
+-   Each supported filter is directly navigable.
+-   Filtered results remain compatible with polling and unread state where applicable.
+-   The UI can be rendered without assuming `p2020` theme structure.
 
 ## Source References
 
-- `wp-content/themes/p2020/inc/filter/controls.php`
-- `wp-content/themes/p2020/inc/filter/view.php`
-- `wp-content/plugins/o2/modules/filter-widget/load.php`
-- `wp-content/plugins/o2/modules/recent-comments/load.php`
-- `wp-content/plugins/o2/modules/unreplied-posts/load.php`
+-   `wp-content/themes/p2020/inc/filter/controls.php`
+-   `wp-content/themes/p2020/inc/filter/view.php`
+-   `wp-content/plugins/o2/modules/filter-widget/load.php`
+-   `wp-content/plugins/o2/modules/recent-comments/load.php`
+-   `wp-content/plugins/o2/modules/unreplied-posts/load.php`

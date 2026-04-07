@@ -3,10 +3,16 @@
 Status: Draft
 
 Depends on:
-- Optional dependency: [Support Tags Via Hashtag](./15-tags-via-hashtag.md) if inline term parsing infrastructure is shared.
+
+-   Optional dependency: [Support Tags Via Hashtag](./15-tags-via-hashtag.md) if inline term parsing infrastructure is shared.
 
 Issue Reference:
-- GitHub issue `#18` — Glossary / Knowledge Base
+
+-   GitHub issue `#18` — Glossary / Knowledge Base
+
+Issue URL:
+
+-   https://github.com/georgestephanis/p2026/issues/18
 
 ## Summary
 
@@ -18,30 +24,30 @@ The issue targets onboarding and shared vocabulary. It is conceptually similar t
 
 ## Goals
 
-- Let teams define reusable terms and acronyms.
-- Surface definitions contextually in posts and comments.
-- Keep the authoring and reading experience lightweight.
+-   Let teams define reusable terms and acronyms.
+-   Surface definitions contextually in posts and comments.
+-   Keep the authoring and reading experience lightweight.
 
 ## Non-Goals
 
-- Building a full wiki before validating the glossary use case.
-- Auto-defining terms without editorial review.
+-   Building a full wiki before validating the glossary use case.
+-   Auto-defining terms without editorial review.
 
 ## Proposed Approach
 
-- Model terms with a dedicated CPT or taxonomy-backed object.
-- Linkify recognized terms in rendered content, likely with hovercards or tooltips.
-- Reuse hover infrastructure patterns from mentions and link previews where possible.
-- Evaluate a later authoring affordance for selecting text and creating a term inline.
+-   Model terms with a dedicated CPT or taxonomy-backed object.
+-   Linkify recognized terms in rendered content, likely with hovercards or tooltips.
+-   Reuse hover infrastructure patterns from mentions and link previews where possible.
+-   Evaluate a later authoring affordance for selecting text and creating a term inline.
 
 ## Open Questions
 
-- Should term matching be exact, case-insensitive, or context-aware?
-- How do we avoid over-linkifying common words?
-- Is this a glossary first, with richer knowledge-base behavior later?
+-   Should term matching be exact, case-insensitive, or context-aware?
+-   How do we avoid over-linkifying common words?
+-   Is this a glossary first, with richer knowledge-base behavior later?
 
 ## Acceptance Criteria
 
-- Editors can define glossary entries.
-- Defined terms are surfaced in posts and comments with an accessible inline definition affordance.
-- Term matching is predictable and does not create excessive false positives.
+-   Editors can define glossary entries.
+-   Defined terms are surfaced in posts and comments with an accessible inline definition affordance.
+-   Term matching is predictable and does not create excessive false positives.

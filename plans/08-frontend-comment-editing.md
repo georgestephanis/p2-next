@@ -3,8 +3,9 @@
 Status: Draft
 
 Depends on:
-- No hard dependency.
-- Optional dependency: existing audit-log module for recording edits.
+
+-   No hard dependency.
+-   Optional dependency: existing audit-log module for recording edits.
 
 ## Summary
 
@@ -16,36 +17,36 @@ Legacy `o2` allows comment authors and privileged users to edit comments inline.
 
 ## Goals
 
-- Support inline editing for comment authors and authorized moderators.
-- Keep permission checks aligned with WordPress capabilities.
-- Preserve mentions and rendered comment formatting.
+-   Support inline editing for comment authors and authorized moderators.
+-   Keep permission checks aligned with WordPress capabilities.
+-   Preserve mentions and rendered comment formatting.
 
 ## Non-Goals
 
-- Full moderation workflow redesign.
-- Reintroducing legacy admin-ajax architecture.
+-   Full moderation workflow redesign.
+-   Reintroducing legacy admin-ajax architecture.
 
 ## Proposed Approach
 
-- Extend the comment UI with an edit action when permissions allow.
-- Add REST support for comment updates if core endpoints are insufficient for current frontend needs.
-- Reuse `MentionTextareaControl` for editing content.
-- Emit audit events when comments are updated.
+-   Extend the comment UI with an edit action when permissions allow.
+-   Add REST support for comment updates if core endpoints are insufficient for current frontend needs.
+-   Reuse `MentionTextareaControl` for editing content.
+-   Emit audit events when comments are updated.
 
 ## Open Questions
 
-- Should comment deletion and trash restore also be added at the same time?
-- Are there moderation edge cases for anonymous comments that need special handling?
-- Should edit history be visible in the UI?
+-   Should comment deletion and trash restore also be added at the same time?
+-   Are there moderation edge cases for anonymous comments that need special handling?
+-   Should edit history be visible in the UI?
 
 ## Acceptance Criteria
 
-- Eligible users can edit a comment inline and save it without leaving the page.
-- The updated comment re-renders in place.
-- Unauthorized users do not see the edit affordance.
+-   Eligible users can edit a comment inline and save it without leaving the page.
+-   The updated comment re-renders in place.
+-   Unauthorized users do not see the edit affordance.
 
 ## Source References
 
-- `wp-content/plugins/o2/inc/tpl/comment-edit.php`
-- `wp-content/plugins/o2/js/views/comment.js`
-- `wp-content/plugins/p2026/src/components/Comment.js`
+-   `wp-content/plugins/o2/inc/tpl/comment-edit.php`
+-   `wp-content/plugins/o2/js/views/comment.js`
+-   `wp-content/plugins/p2026/src/components/Comment.js`

@@ -3,11 +3,17 @@
 Status: Draft
 
 Depends on:
-- No hard dependency.
-- Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) if announcements should have a persistent layout slot.
+
+-   No hard dependency.
+-   Optional dependency: [Sidebar Shell And Layout](./02-sidebar-shell.md) if announcements should have a persistent layout slot.
 
 Issue Reference:
-- GitHub issue `#14` — Announcements
+
+-   GitHub issue `#14` — Announcements
+
+Issue URL:
+
+-   https://github.com/georgestephanis/p2026/issues/14
 
 ## Summary
 
@@ -19,29 +25,29 @@ Some information should not scroll away in the normal feed. Announcements need m
 
 ## Goals
 
-- Support a dedicated announcement model or post type.
-- Allow per-user dismiss state.
-- Keep announcements visibly separate from the normal chronological stream.
+-   Support a dedicated announcement model or post type.
+-   Allow per-user dismiss state.
+-   Keep announcements visibly separate from the normal chronological stream.
 
 ## Non-Goals
 
-- Replacing email or incident-management tooling.
-- Building a full enterprise notification center.
+-   Replacing email or incident-management tooling.
+-   Building a full enterprise notification center.
 
 ## Proposed Approach
 
-- Decide between a flagged post state, dedicated taxonomy, or custom post type.
-- Render active announcements in a distinct top-of-page surface.
-- Store dismiss state in user meta for logged-in users.
+-   Decide between a flagged post state, dedicated taxonomy, or custom post type.
+-   Render active announcements in a distinct top-of-page surface.
+-   Store dismiss state in user meta for logged-in users.
 
 ## Open Questions
 
-- Should announcements expire automatically?
-- Should there be more than one simultaneous announcement?
-- Is this best modeled as content in the feed or as a separate banner system?
+-   Should announcements expire automatically?
+-   Should there be more than one simultaneous announcement?
+-   Is this best modeled as content in the feed or as a separate banner system?
 
 ## Acceptance Criteria
 
-- Authorized users can publish an announcement.
-- Active announcements are visibly distinct from normal feed items.
-- A user can dismiss an announcement without affecting other users.
+-   Authorized users can publish an announcement.
+-   Active announcements are visibly distinct from normal feed items.
+-   A user can dismiss an announcement without affecting other users.
