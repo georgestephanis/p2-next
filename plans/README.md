@@ -42,17 +42,21 @@ These buckets are rough planning sizes, not delivery commitments.
 -   [Draft Auto-Save And Preview](./18-draft-autosave-preview.md)
 -   [Glossary And Knowledge Base](./21-glossary-knowledge-base.md)
 -   [Project Threads](./23-project-threads.md)
+-   [Per-Post Read/Unread Tracking](./24-per-post-read-state.md)
+
+### Shipped
+
+-   [Sidebar Shell And Layout](./02-sidebar-shell.md) ✓ shipped in `add/02-sidebar-shell`
 
 ### Architectural
 
--   [Sidebar Shell And Layout](./02-sidebar-shell.md)
 -   [Pages Index](./03-pages-index.md)
 -   [External Integrations](./20-external-integrations.md)
 -   [Multisite Xposting](./22-multisite-xposting.md)
 
 ## Suggested Evaluation Order
 
-1. [Sidebar Shell And Layout](./02-sidebar-shell.md)
+1. ~~[Sidebar Shell And Layout](./02-sidebar-shell.md)~~ ✓ shipped
 2. [View Modes](./01-view-modes.md)
 3. [Quick-Link Filters And Saved Views](./05-quick-link-filters.md)
 4. [Recent Activity Widget](./06-recent-activity-widget.md)
@@ -71,14 +75,15 @@ These buckets are rough planning sizes, not delivery commitments.
 17. [Announcements](./17-announcements.md)
 18. [Keyboard Shortcuts](./19-keyboard-shortcuts.md)
 19. [Project Threads](./23-project-threads.md)
-20. [Time Shortcode](./13-time-shortcode.md)
-21. [Page Contributors](./14-page-contributors.md)
-22. [External Integrations](./20-external-integrations.md)
-23. [Multisite Xposting](./22-multisite-xposting.md)
+20. [Per-Post Read/Unread Tracking](./24-per-post-read-state.md)
+21. [Time Shortcode](./13-time-shortcode.md)
+22. [Page Contributors](./14-page-contributors.md)
+23. [External Integrations](./20-external-integrations.md)
+24. [Multisite Xposting](./22-multisite-xposting.md)
 
 ## Dependency Notes
 
--   The sidebar-related plans are not strict prerequisites for all other work, but they are a practical dependency if the goal is to recreate the `p2020` experience rather than offer theme-agnostic equivalents.
+-   The Sidebar Shell is now shipped. Sidebar-dependent features — widgets, quick-link views, directory navigation — can proceed without waiting for layout infrastructure.
 -   [Checklists](./09-checklists.md) is partly independent, but full parity for comment-hosted checklists becomes easier after [Frontend Comment Editing](./08-frontend-comment-editing.md).
 -   [Following Threads](./10-following-threads.md) should build on the existing notifications module rather than invent a second notification system.
 -   [Quick-Link Filters And Saved Views](./05-quick-link-filters.md) should be evaluated before or alongside widget work because it affects whether filters belong in a sidebar, header, command palette, or user-specific saved views UI.
