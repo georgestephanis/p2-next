@@ -20,6 +20,15 @@ These are planning documents only. They are intended to support later evaluation
 12. [Drafts Index](./04-drafts-index.md)
 13. [Time Shortcode](./13-time-shortcode.md)
 14. [Page Contributors](./14-page-contributors.md)
+15. [Support Tags Via Hashtag](./15-tags-via-hashtag.md)
+16. [Reactions On Posts And Comments](./16-reactions.md)
+17. [Announcements](./17-announcements.md)
+18. [Draft Auto-Save And Preview](./18-draft-autosave-preview.md)
+19. [Keyboard Shortcuts](./19-keyboard-shortcuts.md)
+20. [External Integrations](./20-external-integrations.md)
+21. [Glossary And Knowledge Base](./21-glossary-knowledge-base.md)
+22. [Multisite Xposting](./22-multisite-xposting.md)
+23. [Project Threads](./23-project-threads.md)
 
 ## Dependency Notes
 
@@ -28,9 +37,21 @@ These are planning documents only. They are intended to support later evaluation
 - [Following Threads](./10-following-threads.md) should build on the existing notifications module rather than invent a second notification system.
 - [Quick-Link Filters And Saved Views](./05-quick-link-filters.md) should be evaluated before or alongside widget work because it affects whether filters belong in a sidebar, header, command palette, or user-specific saved views UI.
 - [Pages Index](./03-pages-index.md) and [Drafts Index](./04-drafts-index.md) are special-purpose views that can be built independently, but they need a shared decision about routing, capabilities, and how much `p2026` should own page-oriented workflows.
+- [Support Tags Via Hashtag](./15-tags-via-hashtag.md) should be evaluated before [Glossary And Knowledge Base](./21-glossary-knowledge-base.md) if both need shared inline-term parsing or editor transforms.
+- [Reactions On Posts And Comments](./16-reactions.md) has a practical relationship with [Following Threads](./10-following-threads.md) because the open issue suggests optional auto-follow behavior.
+- [Draft Auto-Save And Preview](./18-draft-autosave-preview.md) overlaps with [Drafts Index](./04-drafts-index.md) and should share persistence and resume-edit decisions.
+- [Keyboard Shortcuts](./19-keyboard-shortcuts.md) should be layered after the main interaction model is stable so shortcuts target settled UI affordances.
+- [External Integrations](./20-external-integrations.md) becomes much easier if notification and audit event surfaces remain reusable and documented.
+- [Multisite Xposting](./22-multisite-xposting.md) is the most architectural item in the backlog and should be treated as late-stage work unless it becomes a product-level priority.
 
 ## Themes For Review
 
 - Preserve `p2026`'s theme-agnostic design unless there is a deliberate decision to add optional layout opinionation.
 - Prefer feature modules and REST endpoints over theme-coupled PHP templates where possible.
 - Reuse the existing post menu, notifications, mentions, audit-log, and read-state systems instead of creating parallel infrastructure.
+
+## Open Issues Already Represented Elsewhere
+
+- Open issue `#8` overlaps with [Quick-Link Filters And Saved Views](./05-quick-link-filters.md).
+- Open issue `#7` overlaps with [Checklists](./09-checklists.md).
+- Open issue `#11` partially overlaps with [Sticky Posts](./11-sticky-posts.md); the remaining gap is tracked in [Project Threads](./23-project-threads.md).
