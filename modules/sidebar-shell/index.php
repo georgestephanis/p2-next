@@ -177,7 +177,7 @@ function p2026_sidebar_shell_enqueue_admin_assets( $hook ) {
 	wp_enqueue_script(
 		'p2026-sidebar-shell-admin',
 		P2026_URL . 'build/sidebar-shell-admin.js',
-		$asset['dependencies'],
+		array_merge( $asset['dependencies'], array( 'wp-block-library' ) ),
 		$asset['version'],
 		true
 	);
@@ -205,16 +205,17 @@ function p2026_sidebar_shell_render_settings_tab() {
 		<?php esc_html_e( 'Block markup rendered in the Sidebar Shell when no sidebar widgets are active. Add or remove blocks using the editor below; leave empty to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>
 	</p>
 
-	<div id="p2026-sidebar-shell-block-editor" data-default-content="<?php echo esc_attr( p2026_sidebar_shell_get_default_block_content() ); ?>"></div>
+	<div class="p2026-sidebar-shell-admin-shell">
+		<div id="p2026-sidebar-shell-block-editor" data-default-content="<?php echo esc_attr( p2026_sidebar_shell_get_default_block_content() ); ?>"></div>
 
-	<textarea
-		id="p2026-sidebar-shell-blocks-field"
-		name="p2026_sidebar_shell_default_blocks"
-		rows="7"
-		class="large-text code"
-		style="max-width:1000px;"
-	><?php echo esc_textarea( $current ); ?></textarea>
+		<textarea
+			id="p2026-sidebar-shell-blocks-field"
+			name="p2026_sidebar_shell_default_blocks"
+			rows="10"
+			class="large-text code p2026-sidebar-shell-admin-fallback"
+		><?php echo esc_textarea( $current ); ?></textarea>
+	</div>
 	<?php
-	submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false );
+	submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings' );
 }
 add_action( 'p2026_settings_render_tab_sidebar-shell', 'p2026_sidebar_shell_render_settings_tab' );
