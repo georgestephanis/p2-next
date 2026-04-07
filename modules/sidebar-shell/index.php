@@ -162,8 +162,11 @@ function p2026_sidebar_shell_enqueue_admin_assets( $hook ) {
 	// wp-block-library registers all core block types when it runs.
 	wp_enqueue_script( 'wp-block-library' );
 	wp_enqueue_style( 'wp-block-library' );
+	wp_enqueue_style( 'wp-block-library-theme' ); // Editorial presentation styles for each block type.
 	wp_enqueue_style( 'wp-block-editor' );
+	wp_enqueue_style( 'wp-edit-blocks' );          // Block editing chrome: selection, toolbar, placeholders.
 	wp_enqueue_style( 'wp-components' );
+	wp_enqueue_style( 'wp-format-library' );
 
 	$asset_file = P2026_DIR . 'build/sidebar-shell-admin.asset.php';
 	if ( ! file_exists( $asset_file ) ) {
@@ -174,7 +177,7 @@ function p2026_sidebar_shell_enqueue_admin_assets( $hook ) {
 	wp_enqueue_script(
 		'p2026-sidebar-shell-admin',
 		P2026_URL . 'build/sidebar-shell-admin.js',
-		array_merge( $asset['dependencies'], array( 'wp-block-library' ) ),
+		$asset['dependencies'],
 		$asset['version'],
 		true
 	);
@@ -183,7 +186,7 @@ function p2026_sidebar_shell_enqueue_admin_assets( $hook ) {
 		wp_enqueue_style(
 			'p2026-sidebar-shell-admin',
 			P2026_URL . 'build/sidebar-shell-admin.css',
-			array( 'wp-block-editor', 'wp-components' ),
+			array( 'wp-edit-blocks', 'wp-block-editor', 'wp-components' ),
 			$asset['version']
 		);
 	}
@@ -202,7 +205,7 @@ function p2026_sidebar_shell_render_settings_tab() {
 		<?php esc_html_e( 'Block markup rendered in the Sidebar Shell when no sidebar widgets are active. Add or remove blocks using the editor below; leave empty to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>
 	</p>
 
-	<div id="p2026-sidebar-shell-block-editor"></div>
+	<div id="p2026-sidebar-shell-block-editor" data-default-content="<?php echo esc_attr( p2026_sidebar_shell_get_default_block_content() ); ?>"></div>
 
 	<textarea
 		id="p2026-sidebar-shell-blocks-field"

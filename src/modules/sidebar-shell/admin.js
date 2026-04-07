@@ -139,9 +139,16 @@ function init() {
 	// script fails to execute the textarea remains visible as a fallback.
 	textarea.hidden = true;
 
+	// Use the saved content; fall back to the default markup injected by PHP
+	// so the editor isn't blank when no custom content has been saved yet.
+	// The textarea intentionally stays empty until the user makes a change,
+	// preserving the "empty option = use built-in defaults" semantic.
+	const initialContent =
+		textarea.value || container.dataset.defaultContent || '';
+
 	createRoot( container ).render(
 		<SidebarShellEditor
-			initialContent={ textarea.value }
+			initialContent={ initialContent }
 			onUpdate={ ( markup ) => {
 				textarea.value = markup;
 			} }
