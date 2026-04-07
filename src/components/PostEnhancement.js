@@ -19,11 +19,12 @@ import {
 	useRef,
 	useState,
 	useCallback,
+	useMemo,
 	createPortal,
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comments from './Comments';
 import PostEditor from './PostEditor';
@@ -81,6 +82,7 @@ export default function PostEnhancement( {
 	);
 	const isEditing = editingPost === postId;
 	const [ restCommentCount, setRestCommentCount ] = useState( null );
+	const [ previewContributors, setPreviewContributors ] = useState( [] );
 
 	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
@@ -254,6 +256,101 @@ export default function PostEnhancement( {
 	} else {
 		commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
 	}
+
+	const commentCountSummary =
+		commentCount > 0
+			? sprintf(
+					_n( '%d comment', '%d comments', commentCount, 'p2026' ),
+					commentCount
+			  )
+			: __( 'No comments yet', 'p2026' );
+
+	const contributorPreview = useMemo( () => {
+		if ( comments.length > 0 ) {
+			const seen = new Set();
+			const unique = [];
+
+			comments.forEach( ( commentItem ) => {
+				const key = String(
+					commentItem.author || commentItem.author_name || commentItem.id
+				);
+				if ( seen.has( key ) ) {
+					return;
+				}
+				seen.add( key );
+				unique.push( {
+					id: key,
+					name: commentItem.author_name || __( 'Someone', 'p2026' ),
+					avatar:
+						commentItem.author_avatar_urls?.[ '48' ] ||
+						commentItem.author_avatar_urls?.[ 48 ] ||
+						null,
+				} );
+			} );
+
+			return unique.slice( 0, 3 );
+		}
+
+		return previewContributors;
+	}, [ comments, previewContributors ] );
+
+	useEffect( () => {
+		if ( comments.length > 0 || commentCount < 1 ) {
+			if ( comments.length > 0 && previewContributors.length > 0 ) {
+				setPreviewContributors( [] );
+			}
+			return;
+		}
+
+		let cancelled = false;
+
+		apiFetch( {
+			path: `/wp/v2/comments?post=${ postId }&per_page=3&orderby=date&order=desc&_fields=id,author,author_name,author_avatar_urls`,
+		} )
+			.then( ( results ) => {
+				if ( cancelled || ! Array.isArray( results ) ) {
+					return;
+				}
+
+				const seen = new Set();
+				const unique = [];
+
+				results.forEach( ( commentItem ) => {
+					const key = String(
+						commentItem.author ||
+							commentItem.author_name ||
+							commentItem.id
+					);
+					if ( seen.has( key ) ) {
+						return;
+					}
+					seen.add( key );
+					unique.push( {
+						id: key,
+						name: commentItem.author_name || __( 'Someone', 'p2026' ),
+						avatar:
+							commentItem.author_avatar_urls?.[ '48' ] ||
+							commentItem.author_avatar_urls?.[ 48 ] ||
+							null,
+					} );
+				} );
+
+				setPreviewContributors( unique.slice( 0, 3 ) );
+			} )
+			.catch( () => {
+				if ( ! cancelled ) {
+					setPreviewContributors( [] );
+				}
+			} );
+
+		return () => {
+			cancelled = true;
+		};
+	}, [ comments.length, commentCount, postId, previewContributors.length ] );
+
+	const summaryActionLabel = isExpanded
+		? __( 'Hide discussion', 'p2026' )
+		: __( 'View discussion', 'p2026' );
 
 	const onToggleComments = useCallback( () => {
 		closeMenu();
@@ -496,6 +593,49 @@ export default function PostEnhancement( {
 					/>,
 					editorContainer
 				) }
+
+			{ ! isEditing && (
+				<div className="p2026-comment-summary-bar">
+					<div className="p2026-comment-summary-main">
+						<span className="p2026-comment-summary-count">
+							{ commentCountSummary }
+						</span>
+						{ contributorPreview.length > 0 && (
+							<div className="p2026-comment-summary-contributors">
+								<div
+									className="p2026-comment-summary-avatars"
+									aria-hidden="true"
+								>
+									{ contributorPreview.map( ( contributor ) =>
+										contributor.avatar ? (
+											<img
+												key={ contributor.id }
+												className="p2026-comment-summary-avatar"
+												src={ contributor.avatar }
+												alt=""
+												width={ 24 }
+												height={ 24 }
+											/>
+										) : null
+									) }
+								</div>
+								<span className="p2026-comment-summary-names">
+									{ contributorPreview
+										.map( ( contributor ) => contributor.name )
+										.join( ', ' ) }
+								</span>
+							</div>
+						) }
+					</div>
+					<button
+						type="button"
+						className="p2026-comment-summary-action"
+						onClick={ onToggleComments }
+					>
+						{ summaryActionLabel }
+					</button>
+				</div>
+			) }
 
 			{ /* Comment thread — renders in normal flow below the post content */ }
 			{ isExpanded && ! isEditing && <Comments postId={ postId } /> }

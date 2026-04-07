@@ -249,7 +249,10 @@ export const actions = {
 				} );
 
 				dispatch(
-					actions.updateCommentSuccess( comment.post || postId, comment )
+					actions.updateCommentSuccess(
+						comment.post || postId,
+						comment
+					)
 				);
 			} finally {
 				dispatch( actions.setSavingComment( false ) );
