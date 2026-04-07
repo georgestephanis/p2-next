@@ -88,9 +88,13 @@ export default function PostEnhancement( {
 	const canEdit =
 		currentUser && ( currentUser.canUpdatePosts || currentUser.canPublish );
 	const commentsClosed = post?.comment_status === 'closed';
-	const canCreateComments =
+	const fallbackCanComment =
 		( window.p2026Config?.canComment ?? !! currentUser ) &&
 		! commentsClosed;
+	const canCreateComments =
+		typeof post?.p2026CanCreateComment === 'boolean'
+			? post.p2026CanCreateComment
+			: fallbackCanComment;
 
 	const activeModules = window.p2026Config?.activeModules;
 	const isPostStateActive =

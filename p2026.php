@@ -64,6 +64,42 @@ function p2026_ability_can_update_post( $input = null ) {
 }
 
 /**
+ * Permission callback for creating comments.
+ *
+ * @param array|null $input Optional input payload.
+ * @return bool
+ */
+function p2026_ability_can_create_comment( $input = null ) {
+	$post_id = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+
+	if ( $post_id > 0 && ! comments_open( $post_id ) ) {
+		return false;
+	}
+
+	if ( is_user_logged_in() ) {
+		return true;
+	}
+
+	return get_option( 'comment_registration' ) === '0';
+}
+
+/**
+ * Permission callback for updating comments.
+ *
+ * @param array|null $input Optional input payload.
+ * @return bool
+ */
+function p2026_ability_can_update_comment( $input = null ) {
+	$comment_id = isset( $input['comment_id'] ) ? (int) $input['comment_id'] : 0;
+
+	if ( $comment_id > 0 ) {
+		return current_user_can( 'edit_comment', $comment_id );
+	}
+
+	return current_user_can( 'edit_posts' );
+}
+
+/**
  * Register p2026 abilities, if the Abilities API is available.
  */
 function p2026_register_abilities() {
@@ -139,6 +175,86 @@ function p2026_register_abilities() {
 			),
 		)
 	);
+
+	wp_register_ability(
+		'p2026/comment-create',
+		array(
+			'label'               => __( 'Create Comment', 'p2026' ),
+			'description'         => __( 'Checks whether the current user can create comments via P2026.', 'p2026' ),
+			'category'            => 'p2026',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'post_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional post ID to check commentability against.', 'p2026' ),
+						'minimum'     => 1,
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'allowed' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether comment creation is allowed.', 'p2026' ),
+					),
+				),
+			),
+			'execute_callback'    => static function () {
+				return array( 'allowed' => true );
+			},
+			'permission_callback' => 'p2026_ability_can_create_comment',
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'p2026/comment-update',
+		array(
+			'label'               => __( 'Update Comment', 'p2026' ),
+			'description'         => __( 'Checks whether the current user can update comments via P2026.', 'p2026' ),
+			'category'            => 'p2026',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'comment_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional comment ID to check edit permission against.', 'p2026' ),
+						'minimum'     => 1,
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'allowed' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether comment updates are allowed.', 'p2026' ),
+					),
+				),
+			),
+			'execute_callback'    => static function () {
+				return array( 'allowed' => true );
+			},
+			'permission_callback' => 'p2026_ability_can_update_comment',
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
 }
 add_action( 'wp_abilities_api_init', 'p2026_register_abilities' );
 
@@ -198,6 +314,53 @@ function p2026_can_update_posts( $post_id = 0 ) {
 		static function () use ( $post_id ) {
 			if ( $post_id > 0 ) {
 				return current_user_can( 'edit_post', $post_id );
+			}
+			return current_user_can( 'edit_posts' );
+		},
+		$input
+	);
+}
+
+/**
+ * Whether current user can create comments.
+ *
+ * @param int $post_id Optional post ID for object-level checks.
+ * @return bool
+ */
+function p2026_can_create_comments( $post_id = 0 ) {
+	$input = $post_id > 0 ? array( 'post_id' => (int) $post_id ) : array();
+
+	return p2026_check_permission(
+		'p2026/comment-create',
+		static function () use ( $post_id ) {
+			if ( $post_id > 0 && ! comments_open( $post_id ) ) {
+				return false;
+			}
+
+			if ( is_user_logged_in() ) {
+				return true;
+			}
+
+			return get_option( 'comment_registration' ) === '0';
+		},
+		$input
+	);
+}
+
+/**
+ * Whether current user can update comments.
+ *
+ * @param int $comment_id Optional comment ID for object-level checks.
+ * @return bool
+ */
+function p2026_can_update_comments( $comment_id = 0 ) {
+	$input = $comment_id > 0 ? array( 'comment_id' => (int) $comment_id ) : array();
+
+	return p2026_check_permission(
+		'p2026/comment-update',
+		static function () use ( $comment_id ) {
+			if ( $comment_id > 0 ) {
+				return current_user_can( 'edit_comment', $comment_id );
 			}
 			return current_user_can( 'edit_posts' );
 		},
@@ -319,7 +482,7 @@ function p2026_enqueue_frontend() {
 	$user_data          = null;
 	$can_publish        = p2026_can_create_posts();
 	$can_update_posts   = p2026_can_update_posts();
-	$can_comment        = is_user_logged_in() || get_option( 'comment_registration' ) === '0';
+	$can_comment        = p2026_can_create_comments();
 	$require_name_email = get_option( 'require_name_email' ) === '1';
 	$debug_telemetry    = defined( 'WP_DEBUG' ) && WP_DEBUG;
 	$is_archive_view    = is_home() || is_front_page() || is_archive() || is_search();
@@ -410,9 +573,51 @@ function p2026_rest_comment_id( $comment_obj ) {
 }
 
 /**
+ * Extract a post ID from REST field callback payloads.
+ *
+ * @param mixed $post_obj Post payload passed by register_rest_field.
+ * @return int
+ */
+function p2026_rest_post_id( $post_obj ) {
+	if ( is_array( $post_obj ) && isset( $post_obj['id'] ) ) {
+		return (int) $post_obj['id'];
+	}
+
+	if ( is_object( $post_obj ) && isset( $post_obj->id ) ) {
+		return (int) $post_obj->id;
+	}
+
+	if ( $post_obj instanceof WP_Post ) {
+		return (int) $post_obj->ID;
+	}
+
+	return 0;
+}
+
+/**
  * Register additional comment REST fields used by the frontend UI.
  */
 function p2026_register_comment_rest_fields() {
+	register_rest_field(
+		'post',
+		'p2026CanCreateComment',
+		array(
+			'get_callback' => static function ( $post_obj ) {
+				$post_id = p2026_rest_post_id( $post_obj );
+				if ( $post_id <= 0 ) {
+					return false;
+				}
+
+				return p2026_can_create_comments( $post_id );
+			},
+			'schema'       => array(
+				'description' => __( 'Whether the current user can create comments on this post.', 'p2026' ),
+				'type'        => 'boolean',
+				'context'     => array( 'view', 'edit' ),
+			),
+		)
+	);
+
 	register_rest_field(
 		'comment',
 		'p2026CanEdit',
@@ -423,7 +628,7 @@ function p2026_register_comment_rest_fields() {
 					return false;
 				}
 
-				return current_user_can( 'edit_comment', $comment_id );
+				return p2026_can_update_comments( $comment_id );
 			},
 			'schema'       => array(
 				'description' => __( 'Whether the current user can edit this comment.', 'p2026' ),
@@ -439,7 +644,7 @@ function p2026_register_comment_rest_fields() {
 		array(
 			'get_callback' => static function ( $comment_obj ) {
 				$comment_id = p2026_rest_comment_id( $comment_obj );
-				if ( $comment_id <= 0 || ! current_user_can( 'edit_comment', $comment_id ) ) {
+				if ( $comment_id <= 0 || ! p2026_can_update_comments( $comment_id ) ) {
 					return '';
 				}
 
