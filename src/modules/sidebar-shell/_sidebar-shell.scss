@@ -1,4 +1,6 @@
 .p2026-sidebar-shell {
+	--p2026-sidebar-shell-panel-width: min(360px, calc(100vw - 28px));
+	--p2026-sidebar-shell-reserve-width: min(392px, calc(100vw - 4px));
 	position: fixed;
 	top: 46px;
 	right: 0;
@@ -25,6 +27,14 @@
 	}
 }
 
+body.p2026-sidebar-shell-visible {
+
+	@media ( min-width: 960px ) {
+		padding-right: var(--p2026-sidebar-shell-reserve-width);
+		box-sizing: border-box;
+	}
+}
+
 .p2026-sidebar-shell__toggle {
 	border: 1px solid #d0d7de;
 	border-right: 0;
@@ -44,7 +54,7 @@
 }
 
 .p2026-sidebar-shell__panel {
-	width: min(360px, calc(100vw - 28px));
+	width: var(--p2026-sidebar-shell-panel-width);
 	max-height: calc(100vh - 56px);
 	overflow: auto;
 	background: #fff;
@@ -53,6 +63,13 @@
 	border-radius: 12px 0 0 12px;
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.p2026-sidebar-shell[data-allow-collapse="0"] {
+
+	.p2026-sidebar-shell__panel {
+		border-radius: 12px 0 0 12px;
+	}
 }
 
 .p2026-sidebar-shell__inner {

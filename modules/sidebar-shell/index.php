@@ -63,6 +63,26 @@ function p2026_sidebar_shell_get_default_block_content() {
 }
 
 /**
+ * Whether the Sidebar Shell should default to visible on page load.
+ *
+ * @return bool
+ */
+function p2026_sidebar_shell_default_visible() {
+	$value = get_option( 'p2026_sidebar_shell_default_visible', '1' );
+	return '0' !== (string) $value;
+}
+
+/**
+ * Whether visitors are allowed to collapse the Sidebar Shell.
+ *
+ * @return bool
+ */
+function p2026_sidebar_shell_allow_collapse() {
+	$value = get_option( 'p2026_sidebar_shell_allow_collapse', '1' );
+	return '0' !== (string) $value;
+}
+
+/**
  * Print the sidebar shell container near the end of the page.
  */
 function p2026_sidebar_shell_render() {
@@ -73,6 +93,12 @@ function p2026_sidebar_shell_render() {
 	$has_widgets    = is_active_sidebar( 'p2026-sidebar-shell' );
 	$supports_block = p2026_sidebar_shell_supports_blocks();
 	$block_markup   = '';
+	$allow_collapse = p2026_sidebar_shell_allow_collapse();
+	$default_open   = p2026_sidebar_shell_default_visible();
+
+	if ( ! $allow_collapse ) {
+		$default_open = true;
+	}
 
 	if ( $supports_block ) {
 		$default_block_markup = ! $has_widgets ? p2026_sidebar_shell_get_default_block_content() : '';
@@ -82,16 +108,27 @@ function p2026_sidebar_shell_render() {
 	if ( ! $has_widgets && '' === trim( $block_markup ) ) {
 		return;
 	}
+	$classes = array( 'p2026-sidebar-shell' );
+	if ( ! $default_open ) {
+		$classes[] = 'is-collapsed';
+	}
 	?>
-	<div class="p2026-sidebar-shell is-collapsed" data-p2026-sidebar-shell>
-		<button
-			type="button"
-			class="p2026-sidebar-shell__toggle"
-			aria-expanded="false"
-			aria-controls="p2026-sidebar-shell-panel"
-		>
-			<span class="screen-reader-text"><?php esc_html_e( 'Toggle sidebar', 'p2026' ); ?></span>
-		</button>
+	<div
+		class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
+		data-p2026-sidebar-shell
+		data-default-open="<?php echo $default_open ? '1' : '0'; ?>"
+		data-allow-collapse="<?php echo $allow_collapse ? '1' : '0'; ?>"
+	>
+		<?php if ( $allow_collapse ) : ?>
+			<button
+				type="button"
+				class="p2026-sidebar-shell__toggle"
+				aria-expanded="<?php echo $default_open ? 'true' : 'false'; ?>"
+				aria-controls="p2026-sidebar-shell-panel"
+			>
+				<span class="screen-reader-text"><?php esc_html_e( 'Toggle sidebar', 'p2026' ); ?></span>
+			</button>
+		<?php endif; ?>
 		<aside id="p2026-sidebar-shell-panel" class="p2026-sidebar-shell__panel" aria-label="<?php esc_attr_e( 'Sidebar', 'p2026' ); ?>">
 			<div class="p2026-sidebar-shell__inner">
 				<div class="p2026-sidebar-shell__tools" data-p2026-sidebar-shell-tools></div>
@@ -133,12 +170,16 @@ function p2026_sidebar_shell_save_settings() {
 	$value = isset( $_POST['p2026_sidebar_shell_default_blocks'] )
 		? wp_unslash( $_POST['p2026_sidebar_shell_default_blocks'] )
 		: '';
+	$default_visible = isset( $_POST['p2026_sidebar_shell_default_visible'] ) ? '1' : '0';
+	$allow_collapse  = isset( $_POST['p2026_sidebar_shell_allow_collapse'] ) ? '1' : '0';
 
 	if ( ! is_string( $value ) ) {
 		$value = '';
 	}
 
 	update_option( 'p2026_sidebar_shell_default_blocks', trim( str_replace( "\0", '', $value ) ) );
+	update_option( 'p2026_sidebar_shell_default_visible', $default_visible );
+	update_option( 'p2026_sidebar_shell_allow_collapse', $allow_collapse );
 }
 add_action( 'p2026_settings_save_tab_sidebar-shell', 'p2026_sidebar_shell_save_settings' );
 
@@ -199,9 +240,37 @@ add_action( 'admin_enqueue_scripts', 'p2026_sidebar_shell_enqueue_admin_assets' 
  * Render the Sidebar Shell settings tab content.
  */
 function p2026_sidebar_shell_render_settings_tab() {
-	$current = (string) get_option( 'p2026_sidebar_shell_default_blocks', '' );
+	$current         = (string) get_option( 'p2026_sidebar_shell_default_blocks', '' );
+	$default_visible = p2026_sidebar_shell_default_visible();
+	$allow_collapse  = p2026_sidebar_shell_allow_collapse();
 	?>
 	<h2 class="title"><?php esc_html_e( 'Sidebar Shell', 'p2026' ); ?></h2>
+
+	<h3><?php esc_html_e( 'Display Behavior', 'p2026' ); ?></h3>
+	<fieldset style="max-width:1000px; margin:0 0 16px;">
+		<label style="display:block; margin:0 0 8px;">
+			<input
+				type="checkbox"
+				name="p2026_sidebar_shell_default_visible"
+				value="1"
+				<?php checked( $default_visible ); ?>
+			/>
+			<?php esc_html_e( 'Default to visible on page load', 'p2026' ); ?>
+		</label>
+		<label style="display:block;">
+			<input
+				type="checkbox"
+				name="p2026_sidebar_shell_allow_collapse"
+				value="1"
+				<?php checked( $allow_collapse ); ?>
+			/>
+			<?php esc_html_e( 'Allow visitors to collapse the sidebar shell', 'p2026' ); ?>
+		</label>
+		<p class="description" style="margin:8px 0 0;">
+			<?php esc_html_e( 'If collapse is disabled, the sidebar remains permanently visible.', 'p2026' ); ?>
+		</p>
+	</fieldset>
+
 	<h3><?php esc_html_e( 'Default Block Content', 'p2026' ); ?></h3>
 	<p class="description" style="max-width:1000px; margin:0 0 10px;">
 		<?php esc_html_e( 'Block markup rendered in the Sidebar Shell when no sidebar widgets are active. Add or remove blocks using the editor below; leave empty to use the built-in defaults (search, latest posts, latest comments).', 'p2026' ); ?>

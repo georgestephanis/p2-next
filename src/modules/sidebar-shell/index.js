@@ -13,38 +13,56 @@ function mountSidebarShell() {
 	}
 
 	const toggleButton = root.querySelector( '.p2026-sidebar-shell__toggle' );
-	if ( ! toggleButton ) {
-		return;
-	}
+	const allowCollapse = root.dataset.allowCollapse !== '0';
+	const defaultOpen = root.dataset.defaultOpen !== '0';
+	const canToggle = allowCollapse && !! toggleButton;
 
 	const toolsSlot = root.querySelector( '[data-p2026-sidebar-shell-tools]' );
 
 	const applyCollapsedState = ( collapsed ) => {
 		root.classList.toggle( 'is-collapsed', collapsed );
-		toggleButton.setAttribute(
-			'aria-expanded',
-			collapsed ? 'false' : 'true'
+		document.body.classList.toggle(
+			'p2026-sidebar-shell-visible',
+			! collapsed
 		);
+
+		if ( toggleButton ) {
+			toggleButton.setAttribute(
+				'aria-expanded',
+				collapsed ? 'false' : 'true'
+			);
+		}
 	};
 
-	let collapsed = true;
-	try {
-		collapsed = localStorage.getItem( STORAGE_KEY ) !== 'false';
-	} catch {
-		collapsed = true;
+	let collapsed = ! defaultOpen;
+	if ( canToggle ) {
+		try {
+			const persisted = localStorage.getItem( STORAGE_KEY );
+			if ( persisted === 'false' ) {
+				collapsed = false;
+			} else if ( persisted === 'true' ) {
+				collapsed = true;
+			}
+		} catch {
+			collapsed = ! defaultOpen;
+		}
+	} else {
+		collapsed = false;
 	}
 
 	applyCollapsedState( collapsed );
 
-	toggleButton.addEventListener( 'click', () => {
-		collapsed = ! collapsed;
-		applyCollapsedState( collapsed );
-		try {
-			localStorage.setItem( STORAGE_KEY, String( collapsed ) );
-		} catch {
-			// Ignore storage errors (private mode, quota, etc).
-		}
-	} );
+	if ( canToggle ) {
+		toggleButton.addEventListener( 'click', () => {
+			collapsed = ! collapsed;
+			applyCollapsedState( collapsed );
+			try {
+				localStorage.setItem( STORAGE_KEY, String( collapsed ) );
+			} catch {
+				// Ignore storage errors (private mode, quota, etc).
+			}
+		} );
+	}
 
 	if ( toolsSlot ) {
 		createRoot( toolsSlot ).render( createElement( SidebarControls ) );
