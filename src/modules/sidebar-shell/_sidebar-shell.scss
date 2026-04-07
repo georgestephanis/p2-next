@@ -169,6 +169,23 @@ body.p2026-sidebar-shell-visible {
 .p2026-sidebar-shell__blocks > * {
 	margin: 0;
 	padding: 12px;
+	box-sizing: border-box;
+	border: 1px solid rgba(203, 213, 225, 0.95);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+
+// Some themes/plugins style latest-posts/latest-comments blocks directly,
+// which can bypass the generic direct-child card selector. Re-apply the
+// shell card treatment for those common sidebar blocks explicitly.
+.p2026-sidebar-shell__blocks .wp-block-latest-posts,
+.p2026-sidebar-shell__blocks .wp-block-latest-comments,
+.p2026-sidebar-shell__blocks .wp-block-latest-comments__list,
+.p2026-sidebar-shell__blocks .wp-block-latest-posts__list {
+	margin: 0;
+	padding: 12px;
+	box-sizing: border-box;
 	border: 1px solid rgba(203, 213, 225, 0.95);
 	border-radius: 10px;
 	background: #fff;
