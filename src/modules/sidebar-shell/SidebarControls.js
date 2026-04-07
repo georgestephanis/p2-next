@@ -15,10 +15,12 @@ export default function SidebarControls() {
 	const postStateFilter = useSelect( ( select ) =>
 		select( STORE_NAME ).getPostStateFilter()
 	);
-	const unresolvedCount = useSelect( ( select ) =>
-		select( STORE_NAME ).getPosts().filter(
-			( post ) => post?.p2026State?.slug === 'unresolved'
-		).length
+	const unresolvedCount = useSelect(
+		( select ) =>
+			select( STORE_NAME )
+				.getPosts()
+				.filter( ( post ) => post?.p2026State?.slug === 'unresolved' )
+				.length
 	);
 
 	if ( ! isLoggedIn ) {
