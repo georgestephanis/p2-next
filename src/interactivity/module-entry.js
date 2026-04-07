@@ -44,6 +44,7 @@ async function bootstrap() {
 		import(
 			/* webpackChunkName: "polling-visibility" */ './polling-visibility'
 		),
+		import( /* webpackChunkName: "sidebar-shell" */ './sidebar-shell' ),
 		import( /* webpackChunkName: "new-post-modal" */ './new-post-modal' ),
 		import( /* webpackChunkName: "unread-badge" */ './unread-badge' ),
 		import(

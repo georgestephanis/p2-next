@@ -90,6 +90,9 @@ function p2026_sidebar_shell_render() {
 		return;
 	}
 
+	$interactivity_asset_file      = P2026_DIR . 'build/interactivity.module.asset.php';
+	$supports_interactivity_module = function_exists( 'wp_register_script_module' ) && function_exists( 'wp_enqueue_script_module' ) && file_exists( $interactivity_asset_file );
+
 	$has_widgets    = is_active_sidebar( 'p2026-sidebar-shell' );
 	$supports_block = p2026_sidebar_shell_supports_blocks();
 	$block_markup   = '';
@@ -118,6 +121,11 @@ function p2026_sidebar_shell_render() {
 		data-p2026-sidebar-shell
 		data-default-open="<?php echo esc_attr( $default_open ? '1' : '0' ); ?>"
 		data-allow-collapse="<?php echo esc_attr( $allow_collapse ? '1' : '0' ); ?>"
+		<?php if ( $supports_interactivity_module ) : ?>
+			data-wp-interactive="p2026/sidebar-shell"
+			data-wp-init="actions.init"
+			data-wp-on-document--keydown="actions.handleDocumentKeydown"
+		<?php endif; ?>
 	>
 		<?php if ( $allow_collapse ) : ?>
 			<button
@@ -125,6 +133,9 @@ function p2026_sidebar_shell_render() {
 				class="p2026-sidebar-shell__toggle"
 				aria-expanded="<?php echo $default_open ? 'true' : 'false'; ?>"
 				aria-controls="p2026-sidebar-shell-panel"
+				<?php if ( $supports_interactivity_module ) : ?>
+					data-wp-on--click="actions.toggle"
+				<?php endif; ?>
 			>
 				<span class="screen-reader-text"><?php esc_html_e( 'Toggle sidebar', 'p2026' ); ?></span>
 			</button>
