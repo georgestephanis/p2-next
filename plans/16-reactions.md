@@ -94,11 +94,11 @@ All endpoints support `object_id` + `object_type` (post|comment) + `emoji`.
 ### Complete ✓
 
 -   `modules/reactions/index.php` — Full backend with:
-  - Custom comment type registration.
-  - CRUD functions: `p2026_reactions_add()`, `p2026_reactions_remove()`, `p2026_reactions_get_for_object()`, `p2026_reactions_count()`.
-  - REST endpoints (POST/GET/DELETE).
-  - Admin settings tab with mode selection and emoji configuration.
-  - Permission checks (respects `require_name_email` for anonymous reactions).
+-   Custom comment type registration.
+-   CRUD functions: `p2026_reactions_add()`, `p2026_reactions_remove()`, `p2026_reactions_get_for_object()`, `p2026_reactions_count()`.
+-   REST endpoints (POST/GET/DELETE).
+-   Admin settings tab with mode selection and emoji configuration.
+-   Permission checks (respects `require_name_email` for anonymous reactions).
 -   `modules/reactions/README.md` — Complete API and feature documentation.
 -   `src/modules/reactions/index.js` — Scaffold with `useReactions()` hook.
 
@@ -141,16 +141,18 @@ All endpoints support `object_id` + `object_type` (post|comment) + `emoji`.
 ### Comment-on-Comment Support
 
 Reactions on comments are stored as parent comments on the same post:
-- `comment_post_ID` = post housing the comment
-- `comment_parent` = comment being reacted to
-- User perceives it as a reaction on a comment; technically a child comment targeting the post.
+
+-   `comment_post_ID` = post housing the comment
+-   `comment_parent` = comment being reacted to
+-   User perceives it as a reaction on a comment; technically a child comment targeting the post.
 
 This avoids nested comment trees while maintaining semantic clarity.
 
 ### Admin Settings Integration
 
 Uses p2026 settings tab filter and hook system:
-- `p2026_settings_tabs` filter to register "Reactions" tab.
-- `p2026_settings_render_tab_reactions` hook to render UI.
-- `p2026_settings_save_tab_reactions` hook to save configuration.
-- Configuration stored in `p2026_reactions_config` option.
+
+-   `p2026_settings_tabs` filter to register "Reactions" tab.
+-   `p2026_settings_render_tab_reactions` hook to render UI.
+-   `p2026_settings_save_tab_reactions` hook to save configuration.
+-   Configuration stored in `p2026_reactions_config` option.

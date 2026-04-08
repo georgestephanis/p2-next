@@ -290,7 +290,7 @@ function p2026_reactions_register_routes() {
 		array(
 			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'p2026_reactions_rest_add',
-			'permission_callback' => '__return_true',
+			'permission_callback' => 'p2026_can_create_reactions',
 			'args'                => array(
 				'object_id'   => array(
 					'type'              => 'integer',
@@ -341,7 +341,7 @@ function p2026_reactions_register_routes() {
 		array(
 			'methods'             => WP_REST_Server::DELETABLE,
 			'callback'            => 'p2026_reactions_rest_remove',
-			'permission_callback' => '__return_true',
+			'permission_callback' => 'p2026_can_remove_reactions',
 			'args'                => array(
 				'object_id'   => array(
 					'type'              => 'integer',
@@ -376,6 +376,16 @@ function p2026_reactions_rest_add( WP_REST_Request $request ) {
 	$object_id   = $request->get_param( 'object_id' );
 	$object_type = $request->get_param( 'object_type' );
 	$emoji       = $request->get_param( 'emoji' );
+	$post_id     = 'post' === $object_type ? $object_id : (int) get_comment_post_id( $object_id );
+
+	// Check permission via Abilities API (or fallback).
+	if ( ! p2026_can_create_reactions( $post_id ) ) {
+		return new WP_Error(
+			'p2026_reaction_forbidden',
+			__( 'You are not allowed to add reactions.', 'p2026' ),
+			array( 'status' => 403 )
+		);
+	}
 
 	$comment_id = p2026_reactions_add(
 		$object_id,
@@ -445,6 +455,31 @@ function p2026_reactions_rest_remove( WP_REST_Request $request ) {
 	$object_type = $request->get_param( 'object_type' );
 	$emoji       = $request->get_param( 'emoji' );
 
+	// Check permission via Abilities API (or fallback).
+	if ( ! p2026_can_remove_reactions() ) {
+		return new WP_Error(
+			'p2026_reaction_forbidden',
+			__( 'You are not allowed to remove reactions.', 'p2026' ),
+			array( 'status' => 403 )
+		);
+	}
+
+	// Verify user owns this reaction.
+	$reaction = p2026_reactions_get_user_reaction(
+		$object_id,
+		$emoji,
+		$user_id,
+		$object_type
+	);
+
+	if ( ! $reaction ) {
+		return new WP_Error(
+			'p2026_reaction_not_found',
+			__( 'Reaction not found.', 'p2026' ),
+			array( 'status' => 404 )
+		);
+	}
+
 	$removed = p2026_reactions_remove(
 		$object_id,
 		$emoji,
@@ -454,9 +489,9 @@ function p2026_reactions_rest_remove( WP_REST_Request $request ) {
 
 	if ( ! $removed ) {
 		return new WP_Error(
-			'p2026_reaction_not_found',
-			__( 'Reaction not found.', 'p2026' ),
-			array( 'status' => 404 )
+			'p2026_reaction_removal_failed',
+			__( 'Unable to remove reaction.', 'p2026' ),
+			array( 'status' => 400 )
 		);
 	}
 

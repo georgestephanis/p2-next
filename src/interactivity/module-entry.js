@@ -36,6 +36,7 @@ async function bootstrap() {
 		linkPreviewsModule,
 		mentionsHoverModule,
 		pollingVisibilityModule,
+		reactionsModule,
 	] = await Promise.all( [
 		import( /* webpackChunkName: "admin-bar" */ './admin-bar' ),
 		import( /* webpackChunkName: "post-menu" */ './post-menu' ),
@@ -44,6 +45,7 @@ async function bootstrap() {
 		import(
 			/* webpackChunkName: "polling-visibility" */ './polling-visibility'
 		),
+		import( /* webpackChunkName: "reactions" */ './reactions' ),
 		import( /* webpackChunkName: "sidebar-shell" */ './sidebar-shell' ),
 		import( /* webpackChunkName: "new-post-modal" */ './new-post-modal' ),
 		import( /* webpackChunkName: "unread-badge" */ './unread-badge' ),
@@ -59,6 +61,7 @@ async function bootstrap() {
 			linkPreviewsModule.initLinkPreviewInteractivity,
 		initMentionsHoverInteractivity:
 			mentionsHoverModule.initMentionsHoverInteractivity,
+		initReactionsInteractivity: reactionsModule.initReactionsInteractivity,
 		registerPollingVisibilityCallback:
 			pollingVisibilityModule.registerPollingVisibilityCallback,
 	};

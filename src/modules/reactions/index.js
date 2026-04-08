@@ -89,7 +89,9 @@ export const useReactions = ( objectId, objectType = 'post' ) => {
 			try {
 				const result = await apiFetch( {
 					method: 'DELETE',
-					path: `/p2026/v1/reactions?object_id=${ objectId }&object_type=${ objectType }&emoji=${ encodeURIComponent( emoji ) }`,
+					path: `/p2026/v1/reactions?object_id=${ objectId }&object_type=${ objectType }&emoji=${ encodeURIComponent(
+						emoji
+					) }`,
 				} );
 
 				// Optimistically update local state.
