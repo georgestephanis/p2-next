@@ -349,6 +349,15 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	font-weight: 600;
 	color: #1f2933;
 	white-space: nowrap;
+
+	&.is-loaded {
+		animation: p2026-count-fade-in 0.25s ease;
+	}
+}
+
+@keyframes p2026-count-fade-in {
+	from { opacity: 0; }
+	to   { opacity: 1; }
 }
 
 .p2026-comment-summary-contributors {

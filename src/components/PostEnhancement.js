@@ -256,6 +256,15 @@ export default function PostEnhancement( {
 	if ( comments.length > 0 ) {
 		commentCount = comments.length;
 	}
+
+	// True while we have no reliable count from any source yet.
+	// Avoids flashing "No comments yet" before the API responds.
+	const isCountLoading =
+		initialCommentCount === null &&
+		storedCommentCount === 0 &&
+		restCommentCount === null &&
+		comments.length === 0;
+
 	let commentLabel;
 	if ( isExpanded ) {
 		commentLabel = __( 'Hide comments', 'p2026' );
@@ -266,12 +275,14 @@ export default function PostEnhancement( {
 	}
 
 	const commentCountSummary =
-		commentCount > 0
-			? sprintf(
-					_n( '%d comment', '%d comments', commentCount, 'p2026' ),
-					commentCount
-			  )
-			: __( 'No comments yet', 'p2026' );
+		isCountLoading
+		? null
+		: commentCount > 0
+		? sprintf(
+				_n( '%d comment', '%d comments', commentCount, 'p2026' ),
+				commentCount
+		  )
+		: __( 'No comments yet', 'p2026' );
 
 	const contributorPreview = useMemo( () => {
 		if ( comments.length > 0 ) {
@@ -617,7 +628,11 @@ export default function PostEnhancement( {
 			{ ! isEditing && (
 				<div className="p2026-comment-summary-bar">
 					<div className="p2026-comment-summary-main">
-						<span className="p2026-comment-summary-count">
+						<span
+							className={ `p2026-comment-summary-count${
+								! isCountLoading ? ' is-loaded' : ''
+							}` }
+						>
 							{ commentCountSummary }
 						</span>
 						{ contributorPreview.length > 0 && (
