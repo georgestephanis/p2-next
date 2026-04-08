@@ -4,147 +4,138 @@
  * Frontend reactions UI, REST API integration, and state management.
  */
 
-import { useCallback, useState, useEffect } from '@wordpress/element';
-import apiFetch from '@wordpress/api-fetch';
+export { useReactions } from './hooks';
+export { default as ReactionUI } from './ReactionUI';
+export { default as ReactionButton } from './ReactionButton';
+export { default as ReactionPicker } from './ReactionPicker';
+export { default as ParticipantList } from './ParticipantList';
+export { default as PostReactionsWrapper } from './PostReactionsWrapper';
+export { default as CommentReactionsWrapper } from './CommentReactionsWrapper';
+
+import { createRoot } from '@wordpress/element';
+import onDomReady from '../../utils/on-dom-ready';
+import PostReactionsWrapper from './PostReactionsWrapper';
+import CommentReactionsWrapper from './CommentReactionsWrapper';
+import './_reaction-ui.scss';
+import './_reaction-picker.scss';
+import './_participant-list.scss';
 
 /**
- * Hook to manage reactions for a given post or comment.
+ * Get reactions configuration from server.
  *
- * @param {number} objectId   - Post or comment ID.
- * @param {string} objectType - 'post' or 'comment'.
- * @return {Object} reactions state and actions.
+ * @return {Object} Configuration with mode and available emoji.
  */
-export const useReactions = ( objectId, objectType = 'post' ) => {
-	const [ reactions, setReactions ] = useState( {} );
-	const [ userReaction, setUserReaction ] = useState( null );
-	const [ loading, setLoading ] = useState( false );
-	const [ error, setError ] = useState( null );
-
-	// Fetch reactions for this object.
-	const fetchReactions = useCallback( async () => {
-		setLoading( true );
-		setError( null );
-		try {
-			const data = await apiFetch( {
-				path: `/p2026/v1/reactions?object_id=${ objectId }&object_type=${ objectType }`,
-			} );
-			setReactions( data );
-		} catch ( err ) {
-			setError( err );
-		} finally {
-			setLoading( false );
-		}
-	}, [ objectId, objectType ] );
-
-	// Initial fetch.
-	useEffect( () => {
-		if ( objectId ) {
-			fetchReactions();
-		}
-	}, [ objectId, objectType, fetchReactions ] );
-
-	// Add a reaction.
-	const addReaction = useCallback(
-		async ( emoji ) => {
-			try {
-				const result = await apiFetch( {
-					method: 'POST',
-					path: '/p2026/v1/reactions',
-					data: {
-						object_id: objectId,
-						object_type: objectType,
-						emoji,
-					},
-				} );
-
-				// Optimistically update local state.
-				if ( ! reactions[ emoji ] ) {
-					reactions[ emoji ] = {
-						emoji,
-						count: 0,
-						users: [],
-					};
-				}
-				reactions[ emoji ].count++;
-				setUserReaction( emoji );
-				setReactions( { ...reactions } );
-
-				// Re-fetch to ensure consistency.
-				await fetchReactions();
-				return result;
-			} catch ( err ) {
-				setError( err );
-				throw err;
-			}
-		},
-		[ objectId, objectType, reactions, fetchReactions ]
-	);
-
-	// Remove a reaction.
-	const removeReaction = useCallback(
-		async ( emoji ) => {
-			try {
-				const result = await apiFetch( {
-					method: 'DELETE',
-					path: `/p2026/v1/reactions?object_id=${ objectId }&object_type=${ objectType }&emoji=${ encodeURIComponent(
-						emoji
-					) }`,
-				} );
-
-				// Optimistically update local state.
-				if ( reactions[ emoji ] ) {
-					reactions[ emoji ].count--;
-					if ( reactions[ emoji ].count <= 0 ) {
-						delete reactions[ emoji ];
-					}
-				}
-				setUserReaction( null );
-				setReactions( { ...reactions } );
-
-				// Re-fetch to ensure consistency.
-				await fetchReactions();
-				return result;
-			} catch ( err ) {
-				setError( err );
-				throw err;
-			}
-		},
-		[ objectId, objectType, reactions, fetchReactions ]
-	);
-
-	return {
-		reactions,
-		userReaction,
-		loading,
-		error,
-		addReaction,
-		removeReaction,
-		refetch: fetchReactions,
+function getReactionsConfig() {
+	return window.p2026Config?.reactionsConfig || {
+		mode: 'single',
+		emoji: [ '👍' ],
 	};
-};
+}
 
 /**
- * Reactions UI Component (to be implemented).
+ * Check if user can react (has permission).
  *
- * This is a placeholder for the React component that renders reaction buttons,
- * counts, and participant lists. Implementation should:
- *
- * - Display available emoji based on config mode.
- * - Show aggregate counts per emoji.
- * - Handle click to add/remove reaction.
- * - Display participant list on hover/focus.
- * - Debounce rapid clicks.
- * - Integrate with post/comment enhancement portals.
- *
- * TODO: Implement ReactionUI component.
+ * @return {boolean}
  */
+function canUserReact() {
+	return (
+		!! window.p2026Config?.currentUser ||
+		! window.p2026Config?.requireNameEmail ||
+		( window.p2026Config?.canComment ?? true )
+	);
+}
 
 /**
- * Initialize reactions module.
+ * Initialize reactions module and mount components on posts/comments.
  *
- * This function will be called by the main frontend module bootstrap
- * to set up reaction UI on discovered post and comment elements.
+ * Called by the main frontend module bootstrap.
  */
 export const initReactionsModule = () => {
-	// TODO: Discover post and comment elements and mount ReactionUI components.
+	const config = getReactionsConfig();
+	const canReact = canUserReact();
+
+	if ( ! canReact ) {
+		return;
+	}
+
+	onDomReady( () => {
+		// Mount on posts.
+		document.querySelectorAll( 'article[id^="post-"]' ).forEach( ( el ) => {
+			const match = el.id.match( /post-(\d+)/ );
+			if ( ! match ) {
+				return;
+			}
+
+			const postId = parseInt( match[ 1 ], 10 );
+
+			// Find or create a reactions mount point.
+			let reactionsContainer = el.querySelector(
+				'.p2026-reactions-mount'
+			);
+			if ( ! reactionsContainer ) {
+				reactionsContainer = document.createElement( 'div' );
+				reactionsContainer.className = 'p2026-reactions-mount';
+
+				// Insert at the end of the article.
+				el.appendChild( reactionsContainer );
+			}
+
+			// Mount React component.
+			try {
+				const root = createRoot( reactionsContainer );
+				root.render(
+					<PostReactionsWrapper postId={ postId } />
+				);
+			} catch ( err ) {
+				if ( window.p2026Config?.debugTelemetry ) {
+					console.error(
+						'Failed to mount post reactions',
+						err
+					);
+				}
+			}
+		} );
+
+		// Mount on comments (if already expanded).
+		document.querySelectorAll( 'li[id^="comment-"]' ).forEach( ( el ) => {
+			const match = el.id.match( /comment-(\d+)/ );
+			if ( ! match ) {
+				return;
+			}
+
+			const commentId = parseInt( match[ 1 ], 10 );
+
+			// Find or create a reactions mount point.
+			let reactionsContainer = el.querySelector(
+				'.p2026-reactions-mount'
+			);
+			if ( ! reactionsContainer ) {
+				reactionsContainer = document.createElement( 'div' );
+				reactionsContainer.className = 'p2026-reactions-mount';
+
+				// Insert at the end of the comment.
+				el.appendChild( reactionsContainer );
+			}
+
+			// Mount React component.
+			try {
+				const root = createRoot( reactionsContainer );
+				root.render(
+					<CommentReactionsWrapper
+						commentId={ commentId }
+					/>
+				);
+			} catch ( err ) {
+				if ( window.p2026Config?.debugTelemetry ) {
+					console.error(
+						'Failed to mount comment reactions',
+						err
+					);
+				}
+			}
+		} );
+	} );
 };
+
+// Initialize on module load.
+initReactionsModule();

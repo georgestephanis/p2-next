@@ -1,0 +1,128 @@
+.p2026-reaction-ui {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+
+.p2026-reactions-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.p2026-reaction-wrapper {
+	position: relative;
+}
+
+.p2026-reaction-button-wrapper {
+	display: inline-block;
+}
+
+.p2026-reaction-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.5rem;
+	border: 1px solid transparent;
+	border-radius: 0.25rem;
+	background-color: #f0f0f0;
+	color: #333;
+	font-size: 0.875rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	text-decoration: none;
+
+	&:hover {
+		background-color: #e0e0e0;
+		border-color: #ccc;
+	}
+
+	&:focus-visible {
+		outline: 2px solid #0073aa;
+		outline-offset: 2px;
+	}
+
+	&:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	&.is-active {
+		background-color: #0073aa;
+		color: #fff;
+		border-color: #0073aa;
+
+		&:hover {
+			background-color: #005a87;
+			border-color: #005a87;
+		}
+	}
+}
+
+.p2026-reaction-emoji {
+	display: inline-block;
+	font-size: 1rem;
+	line-height: 1;
+	margin-right: 0.125rem;
+}
+
+.p2026-reaction-count {
+	display: inline-block;
+	font-size: 0.75rem;
+	font-weight: 500;
+	min-width: 1rem;
+	text-align: center;
+}
+
+.p2026-add-reaction-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	padding: 0;
+	border: 1px solid #ccc;
+	border-radius: 0.25rem;
+	background-color: transparent;
+	color: #666;
+	font-size: 1rem;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		border-color: #999;
+		color: #333;
+		background-color: #f5f5f5;
+	}
+
+	&:focus-visible {
+		outline: 2px solid #0073aa;
+		outline-offset: 2px;
+	}
+
+	&:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	&[aria-pressed="true"] {
+		border-color: #0073aa;
+		background-color: #0073aa;
+		color: #fff;
+	}
+}
+
+.p2026-reaction-picker-wrapper {
+	display: inline-block;
+	position: relative;
+}
+
+.p2026-reaction-error {
+	padding: 0.5rem;
+	margin-top: 0.5rem;
+	background-color: #fcc;
+	color: #c00;
+	border-radius: 0.25rem;
+	font-size: 0.875rem;
+}

@@ -24,6 +24,7 @@ if ( ! activeModules ) {
 	import( /* webpackChunkName: "link-previews" */ './link-previews' );
 	import( /* webpackChunkName: "mentions" */ './mentions' );
 	import( /* webpackChunkName: "notifications" */ './notifications' );
+	import( /* webpackChunkName: "reactions" */ './reactions' );
 	import( /* webpackChunkName: "sidebar-shell" */ './sidebar-shell' );
 } else {
 	// Only load modules that are in the active list.
@@ -38,6 +39,9 @@ if ( ! activeModules ) {
 	}
 	if ( activeModules.includes( 'notifications' ) ) {
 		import( /* webpackChunkName: "notifications" */ './notifications' );
+	}
+	if ( activeModules.includes( 'reactions' ) ) {
+		import( /* webpackChunkName: "reactions" */ './reactions' );
 	}
 	if ( activeModules.includes( 'sidebar-shell' ) ) {
 		import( /* webpackChunkName: "sidebar-shell" */ './sidebar-shell' );

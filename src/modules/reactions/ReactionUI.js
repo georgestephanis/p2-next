@@ -1,0 +1,175 @@
+/**
+ * ReactionUI — main reactions container for posts and comments.
+ *
+ * Displays all reactions grouped by emoji with counts, and a button to add a new reaction.
+ * Integrates with the Interactivity API store for state management.
+ */
+import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
+import { Popover } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
+import ReactionButton from './ReactionButton';
+import ReactionPicker from './ReactionPicker';
+import ParticipantList from './ParticipantList';
+import './_reaction-ui.scss';
+
+export default function ReactionUI( {
+	objectId,
+	objectType = 'post',
+	reactions = {},
+	userReaction = null,
+	isLoading = false,
+	error = null,
+	canReact = true,
+	onToggleReaction = () => {},
+	availableEmoji = [ '👍' ],
+} ) {
+	const [ showPicker, setShowPicker ] = useState( false );
+	const [ visibleParticipantEmoji, setVisibleParticipantEmoji ] =
+		useState( null );
+	const [ displayReactions, setDisplayReactions ] = useState( {} );
+	const containerRef = useRef( null );
+	const pickerButtonRef = useRef( null );
+
+	// Debounce reaction toggling.
+	const debounceTimerRef = useRef( null );
+	const debouncedToggleReaction = useCallback(
+		( emoji ) => {
+			clearTimeout( debounceTimerRef.current );
+			debounceTimerRef.current = setTimeout( () => {
+				onToggleReaction( emoji );
+			}, 100 );
+		},
+		[ onToggleReaction ]
+	);
+
+	// Sync external reactions to local display state.
+	useEffect( () => {
+		setDisplayReactions( reactions );
+	}, [ reactions ] );
+
+	const handleShowPicker = useCallback( () => {
+		setShowPicker( true );
+	}, [] );
+
+	const handleClosePicker = useCallback( () => {
+		setShowPicker( false );
+	}, [] );
+
+	const handleAddReaction = useCallback(
+		( emoji ) => {
+			debouncedToggleReaction( emoji );
+			handleClosePicker();
+		},
+		[ debouncedToggleReaction, handleClosePicker ]
+	);
+
+	const handleToggleReaction = useCallback(
+		( emoji ) => {
+			debouncedToggleReaction( emoji );
+		},
+		[ debouncedToggleReaction ]
+	);
+
+	// Count total reactions.
+	const totalReactions = Object.values( displayReactions ).reduce(
+		( sum, reaction ) => sum + reaction.count,
+		0
+	);
+
+	if ( ! canReact ) {
+		return null;
+	}
+
+	return (
+		<div
+			ref={ containerRef }
+			className="p2026-reaction-ui"
+			data-object-id={ objectId }
+			data-object-type={ objectType }
+		>
+			<div className="p2026-reactions-container">
+				{ Object.entries( displayReactions ).map( (
+					[ emoji, reactionData ]
+				) => (
+					<div
+						key={ emoji }
+						className="p2026-reaction-wrapper"
+					>
+						<ReactionButton
+							emoji={ emoji }
+							count={ reactionData.count || 0 }
+							isActive={
+								userReaction === emoji
+							}
+							onToggle={ handleToggleReaction }
+							onShowParticipants={
+								setVisibleParticipantEmoji
+							}
+						/>
+						{ visibleParticipantEmoji === emoji && (
+							<ParticipantList
+								emoji={ emoji }
+								participants={
+									reactionData.users || []
+								}
+								isVisible={
+									visibleParticipantEmoji === emoji
+								}
+								onClose={ () =>
+									setVisibleParticipantEmoji(
+										null
+									)
+								}
+							/>
+						) }
+					</div>
+				) ) }
+
+				{ canReact && (
+					<div className="p2026-reaction-picker-wrapper">
+						<button
+							ref={ pickerButtonRef }
+							className="p2026-add-reaction-button"
+							onClick={ handleShowPicker }
+							disabled={ isLoading }
+							aria-label={ __(
+								'Add reaction',
+								'p2026'
+							) }
+							aria-pressed={ showPicker }
+						>
+							+
+						</button>
+
+						{ showPicker && (
+							<Popover
+								className="p2026-reaction-picker-popover"
+								focusOnMount={ false }
+								noArrow={ false }
+								onClose={ handleClosePicker }
+							>
+								<ReactionPicker
+									availableEmoji={
+										availableEmoji
+									}
+									onSelect={
+										handleAddReaction
+									}
+								/>
+							</Popover>
+						) }
+					</div>
+				) }
+			</div>
+
+			{ error && (
+				<div className="p2026-reaction-error">
+					{ __(
+						'Error managing reactions.',
+						'p2026'
+					) }
+				</div>
+			) }
+		</div>
+	);
+}

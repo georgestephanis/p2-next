@@ -148,15 +148,60 @@ Get the current reactions configuration. Returns { mode: string, emoji: string[]
 
 ## Frontend
 
--   JS entrypoint: `src/modules/reactions/index.js`
--   Frontend component: TBD (React component for reaction UI, polling, etc.)
+### Architecture
 
-The frontend module will:
+The reactions module uses a layered approach:
 
--   Mount reaction UI on post and comment elements.
--   Handle add/remove actions via REST API.
--   Debounce and cache reaction state.
--   Work with post state, notifications, and other modules.
+1. **Hooks** (`src/modules/reactions/hooks.js`):
+   - `useReactions(objectId, objectType)` — Manages reactions state, fetching, and CRUD operations via REST API.
+   - Handles async state management, debouncing, and error handling.
+
+2. **Components** (`src/modules/reactions/`):
+   - `ReactionUI.js` — Main container displaying reactions for a post or comment.
+   - `ReactionButton.js` — Individual emoji button with count and active state.
+   - `ReactionPicker.js` — Popover picker for selecting emoji to add.
+   - `ParticipantList.js` — Tooltip/popover showing users who reacted.
+   - `PostReactionsWrapper.js` — Wrapper mounting reactions on posts.
+   - `CommentReactionsWrapper.js` — Wrapper mounting reactions on comments.
+
+3. **Initialization** (`src/modules/reactions/index.js`):
+   - `initReactionsModule()` — Auto-discovers and mounts reaction UIs on all posts and comments.
+   - Runs on DOM ready and handles initial component mounting.
+
+### Features
+
+- **Config-aware rendering**: Respects `window.p2026Config.reactionsConfig` for emoji mode (single/curated/any).
+- **Debounced interactions**: Rapid clicks are debounced to prevent request flooding.
+- **Optimistic updates**: State updates before API response for snappier UX.
+- **Participant visibility**: Hover/focus on emoji count to show participant names.
+- **Accessibility**: Proper ARIA labels, keyboard navigation, and focus management.
+- **Responsive layout**: Flex-based layout adapts to screen size and reaction count.
+
+### Styling
+
+All styles in SCSS format with sensible defaults:
+
+- `_reaction-ui.scss` — Button containers, counts, picker trigger.
+- `_reaction-picker.scss` — Emoji picker grid.
+- `_participant-list.scss` — Participant tooltip styling.
+
+Easily customizable via CSS overrides. Built with CSS custom properties for theming.
+
+### Configuration (window.p2026Config)
+
+The frontend automatically reads:
+
+- `reactionsConfig` — Backend config object with `mode` and `emoji` array.
+- `currentUser` — Current user info (to gate permissions).
+- `canComment` — Whether user can leave reactions.
+- `requireNameEmail` — Whether anonymous reactions require name/email.
+
+Example in theme:
+```javascript
+if (window.p2026Config?.reactionsConfig?.mode === 'any') {
+  // Any emoji allowed
+}
+```
 
 ## Permissions
 

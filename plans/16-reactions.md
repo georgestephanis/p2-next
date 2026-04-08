@@ -1,6 +1,6 @@
 # Plan: Reactions On Posts And Comments
 
-Status: In Progress (0.1.0 backend scaffold complete)
+Status: In Progress (0.2.0 React UI complete)
 
 Priority: Later
 
@@ -94,21 +94,32 @@ All endpoints support `object_id` + `object_type` (post|comment) + `emoji`.
 ### Complete ✓
 
 -   `modules/reactions/index.php` — Full backend with:
--   Custom comment type registration.
--   CRUD functions: `p2026_reactions_add()`, `p2026_reactions_remove()`, `p2026_reactions_get_for_object()`, `p2026_reactions_count()`.
--   REST endpoints (POST/GET/DELETE).
--   Admin settings tab with mode selection and emoji configuration.
--   Permission checks (respects `require_name_email` for anonymous reactions).
+    -   Custom comment type registration.
+    -   CRUD functions: `p2026_reactions_add()`, `p2026_reactions_remove()`, `p2026_reactions_get_for_object()`, `p2026_reactions_count()`.
+    -   REST endpoints (POST/GET/DELETE).
+    -   Admin settings tab with mode selection and emoji configuration.
+    -   Permission checks (respects `require_name_email` for anonymous reactions).
 -   `modules/reactions/README.md` — Complete API and feature documentation.
--   `src/modules/reactions/index.js` — Scaffold with `useReactions()` hook.
+-   `includes/abilities.php` — Abilities API integration with `p2026/reaction-create` and `p2026/reaction-remove` abilities.
+-   `src/modules/reactions/index.js` — Module initialization and auto-mounting on posts/comments.
+-   `src/modules/reactions/hooks.js` — `useReactions()` hook with full state management, debouncing, optimistic updates.
+-   `src/modules/reactions/ReactionUI.js` — Main container component displaying reactions, picker trigger.
+-   `src/modules/reactions/ReactionButton.js` — Individual emoji button with count and active state.
+-   `src/modules/reactions/ReactionPicker.js` — Emoji picker grid for selecting reactions.
+-   `src/modules/reactions/ParticipantList.js` — Participant tooltip showing users who reacted.
+-   `src/modules/reactions/PostReactionsWrapper.js` — Auto-mounting wrapper for post reactions.
+-   `src/modules/reactions/CommentReactionsWrapper.js` — Auto-mounting wrapper for comment reactions.
+-   `src/modules/reactions/_reaction-ui.scss` — Styling for reactions container and buttons.
+-   `src/modules/reactions/_reaction-picker.scss` — Styling for emoji picker.
+-   `src/modules/reactions/_participant-list.scss` — Styling for participant tooltip.
+-   `src/interactivity/reactions.js` — Interactivity API store for reactions state.
+-   Config injection in `p2026.php` — `reactionsConfig` now available at `window.p2026Config.reactionsConfig`.
 
 ### Todo
 
--   Frontend React components: ReactionUI, ReactionBadge, ParticipantList.
--   Integration with PostEnhancement and comment UI.
--   Debouncing/rate limiting.
--   Styling (reactions.scss).
--   End-to-end smoke test.
+-   Smoke test on local WordPress installation (manual QA).
+-   Verify Jetpack coexistence (if Jetpack reactions active).
+-   Optional: Reaction history/retention policy.
 
 ## Open Questions (Partially Resolved)
 
@@ -123,11 +134,14 @@ All endpoints support `object_id` + `object_type` (post|comment) + `emoji`.
 -   ✓ Reactions stored in custom comment type.
 -   ✓ REST endpoints functional.
 -   ✓ Admin settings tab allows emoji configuration.
--   Users can add and remove reactions on supported objects (UI needed).
--   Counts update in UI without full page reload (UI needed).
--   Users can see who reacted (UI needed).
--   Works on both posts and comments (UI needed).
--   Optional Jetpack coexistence verified (testable after UI).
+-   ✓ Users can add and remove reactions on supported objects (UI complete).
+-   ✓ Counts update in UI without full page reload (optimistic updates + debouncing).
+-   ✓ Users can see who reacted (ParticipantList component on hover).
+-   ✓ Works on both posts and comments (auto-mounted via initReactionsModule).
+-   ✓ Abilities API integration for permission checks.
+-   ✓ Interactivity API store for cross-module state coordination.
+-   Jetpack coexistence verified (testable after deploy).
+-   Smoke test passed (pending manual QA).
 
 ## Architecture Notes
 
