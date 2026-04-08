@@ -20,12 +20,16 @@ const activeModules =
 // If activeModules is not provided (null), fallback to loading all modules.
 // This maintains backwards compatibility if config is not injected.
 if ( ! activeModules ) {
+	import( /* webpackChunkName: "comment-editor" */ './comment-editor' );
 	import( /* webpackChunkName: "link-previews" */ './link-previews' );
 	import( /* webpackChunkName: "mentions" */ './mentions' );
 	import( /* webpackChunkName: "notifications" */ './notifications' );
 	import( /* webpackChunkName: "sidebar-shell" */ './sidebar-shell' );
 } else {
 	// Only load modules that are in the active list.
+	if ( activeModules.includes( 'comment-editor' ) ) {
+		import( /* webpackChunkName: "comment-editor" */ './comment-editor' );
+	}
 	if ( activeModules.includes( 'link-previews' ) ) {
 		import( /* webpackChunkName: "link-previews" */ './link-previews' );
 	}

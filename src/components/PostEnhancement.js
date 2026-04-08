@@ -19,11 +19,12 @@ import {
 	useRef,
 	useState,
 	useCallback,
+	useMemo,
 	createPortal,
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comments from './Comments';
 import PostEditor from './PostEditor';
@@ -81,10 +82,19 @@ export default function PostEnhancement( {
 	);
 	const isEditing = editingPost === postId;
 	const [ restCommentCount, setRestCommentCount ] = useState( null );
+	const [ previewContributors, setPreviewContributors ] = useState( [] );
 
 	const currentUser = window.p2026Config?.currentUser;
 	const canEdit =
 		currentUser && ( currentUser.canUpdatePosts || currentUser.canPublish );
+	const commentsClosed = post?.comment_status === 'closed';
+	const fallbackCanComment =
+		( window.p2026Config?.canComment ?? !! currentUser ) &&
+		! commentsClosed;
+	const canCreateComments =
+		typeof post?.p2026CanCreateComment === 'boolean'
+			? post.p2026CanCreateComment
+			: fallbackCanComment;
 
 	const activeModules = window.p2026Config?.activeModules;
 	const isPostStateActive =
@@ -246,6 +256,15 @@ export default function PostEnhancement( {
 	if ( comments.length > 0 ) {
 		commentCount = comments.length;
 	}
+
+	// True while we have no reliable count from any source yet.
+	// Avoids flashing "No comments yet" before the API responds.
+	const isCountLoading =
+		initialCommentCount === null &&
+		storedCommentCount === 0 &&
+		restCommentCount === null &&
+		comments.length === 0;
+
 	let commentLabel;
 	if ( isExpanded ) {
 		commentLabel = __( 'Hide comments', 'p2026' );
@@ -253,6 +272,114 @@ export default function PostEnhancement( {
 		commentLabel = __( '1 comment', 'p2026' );
 	} else {
 		commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
+	}
+
+	const commentCountSummary = isCountLoading
+		? null
+		: commentCount > 0
+		? sprintf(
+				_n( '%d comment', '%d comments', commentCount, 'p2026' ),
+				commentCount
+		  )
+		: __( 'No comments yet', 'p2026' );
+
+	const contributorPreview = useMemo( () => {
+		if ( comments.length > 0 ) {
+			const seen = new Set();
+			const unique = [];
+
+			comments.forEach( ( commentItem ) => {
+				const key = String(
+					commentItem.author ||
+						commentItem.author_name ||
+						commentItem.id
+				);
+				if ( seen.has( key ) ) {
+					return;
+				}
+				seen.add( key );
+				unique.push( {
+					id: key,
+					name: commentItem.author_name || __( 'Someone', 'p2026' ),
+					avatar:
+						commentItem.author_avatar_urls?.[ '48' ] ||
+						commentItem.author_avatar_urls?.[ 48 ] ||
+						null,
+				} );
+			} );
+
+			return unique.slice( 0, 3 );
+		}
+
+		return previewContributors;
+	}, [ comments, previewContributors ] );
+
+	const contributorOverflowCount = Math.max(
+		0,
+		commentCount - contributorPreview.length
+	);
+
+	useEffect( () => {
+		if ( comments.length > 0 || commentCount < 1 ) {
+			if ( comments.length > 0 && previewContributors.length > 0 ) {
+				setPreviewContributors( [] );
+			}
+			return;
+		}
+
+		let cancelled = false;
+
+		apiFetch( {
+			path: `/wp/v2/comments?post=${ postId }&per_page=3&orderby=date&order=desc&_fields=id,author,author_name,author_avatar_urls`,
+		} )
+			.then( ( results ) => {
+				if ( cancelled || ! Array.isArray( results ) ) {
+					return;
+				}
+
+				const seen = new Set();
+				const unique = [];
+
+				results.forEach( ( commentItem ) => {
+					const key = String(
+						commentItem.author ||
+							commentItem.author_name ||
+							commentItem.id
+					);
+					if ( seen.has( key ) ) {
+						return;
+					}
+					seen.add( key );
+					unique.push( {
+						id: key,
+						name:
+							commentItem.author_name || __( 'Someone', 'p2026' ),
+						avatar:
+							commentItem.author_avatar_urls?.[ '48' ] ||
+							commentItem.author_avatar_urls?.[ 48 ] ||
+							null,
+					} );
+				} );
+
+				setPreviewContributors( unique.slice( 0, 3 ) );
+			} )
+			.catch( () => {
+				if ( ! cancelled ) {
+					setPreviewContributors( [] );
+				}
+			} );
+
+		return () => {
+			cancelled = true;
+		};
+	}, [ comments.length, commentCount, postId, previewContributors.length ] );
+
+	const canViewDiscussion = commentCount > 0 || canCreateComments;
+	let summaryActionLabel = __( 'View all comments and reply', 'p2026' );
+	if ( isExpanded ) {
+		summaryActionLabel = __( 'Hide discussion', 'p2026' );
+	} else if ( commentsClosed ) {
+		summaryActionLabel = __( 'View existing comments', 'p2026' );
 	}
 
 	const onToggleComments = useCallback( () => {
@@ -497,8 +624,82 @@ export default function PostEnhancement( {
 					editorContainer
 				) }
 
+			{ ! isEditing && (
+				<div className="p2026-comment-summary-bar">
+					<div className="p2026-comment-summary-main">
+						<span
+							className={ `p2026-comment-summary-count${
+								! isCountLoading ? ' is-loaded' : ''
+							}` }
+						>
+							{ commentCountSummary }
+						</span>
+						{ contributorPreview.length > 0 && (
+							<div className="p2026-comment-summary-contributors">
+								<div
+									className="p2026-comment-summary-avatars"
+									aria-hidden="true"
+								>
+									{ contributorPreview.map(
+										( contributor ) =>
+											contributor.avatar ? (
+												<img
+													key={ contributor.id }
+													className="p2026-comment-summary-avatar"
+													src={ contributor.avatar }
+													alt=""
+													width={ 24 }
+													height={ 24 }
+												/>
+											) : null
+									) }
+								</div>
+								<span className="p2026-comment-summary-names">
+									{ contributorPreview
+										.map(
+											( contributor ) => contributor.name
+										)
+										.join( ', ' ) }
+								</span>
+								{ contributorOverflowCount > 0 && (
+									<span className="p2026-comment-summary-more">
+										+{ contributorOverflowCount }
+									</span>
+								) }
+							</div>
+						) }
+						{ commentsClosed && (
+							<span className="p2026-comment-summary-note">
+								{ commentCount > 0
+									? __(
+											'Replies are closed, but you can still read existing comments.',
+											'p2026'
+									  )
+									: __(
+											'Comments are closed for this post.',
+											'p2026'
+									  ) }
+							</span>
+						) }
+					</div>
+					<button
+						type="button"
+						className="p2026-comment-summary-action"
+						onClick={ onToggleComments }
+						disabled={ ! isExpanded && ! canViewDiscussion }
+					>
+						{ summaryActionLabel }
+					</button>
+				</div>
+			) }
+
 			{ /* Comment thread — renders in normal flow below the post content */ }
-			{ isExpanded && ! isEditing && <Comments postId={ postId } /> }
+			{ isExpanded && ! isEditing && (
+				<Comments
+					postId={ postId }
+					canCreateComments={ canCreateComments }
+				/>
+			) }
 		</>
 	);
 }

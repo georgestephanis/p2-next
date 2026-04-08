@@ -7,7 +7,14 @@ import { Button, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comment from './Comment';
-import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
+import {
+	getCommentEditorFormat,
+	renderCommentEditor,
+} from './comment-editor-registry';
+
+function isMarkdownEmpty( markdown = '' ) {
+	return ! markdown || ! markdown.trim();
+}
 
 /**
  * Nest flat comment array into a tree by parent ID.
@@ -22,7 +29,7 @@ function buildTree( comments, parentId = 0 ) {
 		.map( ( c ) => ( { ...c, children: buildTree( comments, c.id ) } ) );
 }
 
-function CommentTree( { comments, postId, depth = 0 } ) {
+function CommentTree( { comments, postId, depth = 0, canCreateComments } ) {
 	return (
 		<>
 			{ comments.map( ( comment ) => (
@@ -30,13 +37,18 @@ function CommentTree( { comments, postId, depth = 0 } ) {
 					key={ comment.id }
 					className={ `p2026-comment-thread depth-${ depth }` }
 				>
-					<Comment comment={ comment } postId={ postId } />
+					<Comment
+						comment={ comment }
+						postId={ postId }
+						canCreateComments={ canCreateComments }
+					/>
 					{ comment.children.length > 0 && (
 						<div className="p2026-comment-children">
 							<CommentTree
 								comments={ comment.children }
 								postId={ postId }
 								depth={ depth + 1 }
+								canCreateComments={ canCreateComments }
 							/>
 						</div>
 					) }
@@ -46,7 +58,7 @@ function CommentTree( { comments, postId, depth = 0 } ) {
 	);
 }
 
-export default function Comments( { postId } ) {
+export default function Comments( { postId, canCreateComments = true } ) {
 	const { createComment } = useDispatch( STORE_NAME );
 	const comments = useSelect( ( select ) =>
 		select( STORE_NAME ).getComments( postId )
@@ -61,14 +73,25 @@ export default function Comments( { postId } ) {
 	const [ guestUrl, setGuestUrl ] = useState( '' );
 
 	const currentUser = window.p2026Config?.currentUser;
-	const canComment = window.p2026Config?.canComment ?? !! currentUser;
+	const canComment =
+		( window.p2026Config?.canComment ?? !! currentUser ) &&
+		canCreateComments;
+	const editorContext = {
+		scope: 'new-comment',
+		postId,
+	};
+	const commentFormat = getCommentEditorFormat( editorContext );
 	const requireNameEmail =
 		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 
 	const onCommentSubmit = useCallback( async () => {
-		if ( ! canComment || ! content.trim() || missingGuestIdentity ) {
+		if (
+			! canComment ||
+			isMarkdownEmpty( content ) ||
+			missingGuestIdentity
+		) {
 			return;
 		}
 
@@ -83,6 +106,7 @@ export default function Comments( { postId } ) {
 		await createComment( {
 			postId,
 			content,
+			format: commentFormat,
 			authorData,
 		} );
 
@@ -102,6 +126,7 @@ export default function Comments( { postId } ) {
 		guestUrl,
 		createComment,
 		postId,
+		commentFormat,
 	] );
 
 	const tree = buildTree( comments );
@@ -136,21 +161,24 @@ export default function Comments( { postId } ) {
 							/>
 						</>
 					) }
-					<MentionTextareaControl
-						label={ __( 'Comment', 'p2026' ) }
-						hideLabelFromVision
-						placeholder={ __( 'Write a comment…', 'p2026' ) }
-						value={ content }
-						onChange={ setContent }
-						rows={ 4 }
-					/>
+					{ renderCommentEditor(
+						{
+							label: __( 'Comment', 'p2026' ),
+							hideLabelFromVision: true,
+							placeholder: __( 'Write a comment…', 'p2026' ),
+							value: content,
+							onChange: setContent,
+							rows: 4,
+						},
+						editorContext
+					) }
 					<div className="p2026-reply-actions">
 						<Button
 							variant="primary"
 							onClick={ onCommentSubmit }
 							disabled={
 								isSaving ||
-								! content.trim() ||
+								isMarkdownEmpty( content ) ||
 								missingGuestIdentity
 							}
 							isBusy={ isSaving }
@@ -168,7 +196,11 @@ export default function Comments( { postId } ) {
 					{ __( 'No comments yet.', 'p2026' ) }
 				</p>
 			) }
-			<CommentTree comments={ tree } postId={ postId } />
+			<CommentTree
+				comments={ tree }
+				postId={ postId }
+				canCreateComments={ canCreateComments }
+			/>
 		</section>
 	);
 }

@@ -194,6 +194,10 @@ function p2026_sidebar_shell_save_settings() {
 	$default_visible = isset( $_POST['p2026_sidebar_shell_default_visible'] ) ? '1' : '0';
 	$allow_collapse  = isset( $_POST['p2026_sidebar_shell_allow_collapse'] ) ? '1' : '0';
 
+	if ( '1' !== $allow_collapse ) {
+		$default_visible = '1';
+	}
+
 	if ( ! is_string( $value ) ) {
 		$value = '';
 	}

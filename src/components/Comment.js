@@ -1,31 +1,90 @@
 /**
  * Comment — single comment with inline reply form.
  */
-import { useState, useCallback } from '@wordpress/element';
+import { useState, useCallback, useEffect } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button, TextControl } from '@wordpress/components';
-import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
+import {
+	getCommentEditorFormat,
+	renderCommentEditor,
+} from './comment-editor-registry';
 
-export default function Comment( { comment, postId } ) {
+function isMarkdownEmpty( markdown = '' ) {
+	return ! markdown || ! markdown.trim();
+}
+
+function renderedHtmlToText( html = '' ) {
+	if ( ! html ) {
+		return '';
+	}
+
+	const container = document.createElement( 'div' );
+	container.innerHTML = html;
+	return ( container.textContent || '' ).trim();
+}
+
+function getEditableContent( comment ) {
+	if ( typeof comment?.p2026EditableContent === 'string' ) {
+		return comment.p2026EditableContent;
+	}
+
+	return renderedHtmlToText( comment?.content?.rendered ?? '' );
+}
+
+export default function Comment( {
+	comment,
+	postId,
+	canCreateComments = true,
+} ) {
 	const [ replying, setReplying ] = useState( false );
 	const [ replyContent, setReplyContent ] = useState( '' );
+	const [ editing, setEditing ] = useState( false );
+	const [ editContent, setEditContent ] = useState( () =>
+		getEditableContent( comment )
+	);
 	const [ guestName, setGuestName ] = useState( '' );
 	const [ guestEmail, setGuestEmail ] = useState( '' );
 	const [ guestUrl, setGuestUrl ] = useState( '' );
 
-	const { createComment } = useDispatch( STORE_NAME );
+	const { createComment, updateComment } = useDispatch( STORE_NAME );
 	const isSaving = useSelect( ( select ) =>
 		select( STORE_NAME ).isSavingComment()
 	);
 
 	const currentUser = window.p2026Config?.currentUser;
-	const canComment = window.p2026Config?.canComment ?? !! currentUser;
+	const canComment =
+		( window.p2026Config?.canComment ?? !! currentUser ) &&
+		canCreateComments;
 	const requireNameEmail =
 		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
+	const canEditComment = !! comment.p2026CanEdit;
+	const replyEditorContext = {
+		scope: 'reply',
+		postId,
+		commentId: comment.id,
+	};
+	const editEditorContext = {
+		scope: 'edit-comment',
+		postId,
+		commentId: comment.id,
+	};
+	const replyFormat = getCommentEditorFormat( replyEditorContext );
+	const editFormat = getCommentEditorFormat( editEditorContext );
+
+	useEffect( () => {
+		if ( ! editing ) {
+			setEditContent( getEditableContent( comment ) );
+		}
+	}, [
+		editing,
+		comment.id,
+		comment.p2026EditableContent,
+		comment.content?.rendered,
+	] );
 
 	const onReplySubmit = useCallback( async () => {
 		if ( ! replyContent.trim() || missingGuestIdentity ) {
@@ -44,6 +103,7 @@ export default function Comment( { comment, postId } ) {
 			postId,
 			parentId: comment.id,
 			content: replyContent,
+			format: replyFormat,
 			authorData,
 		} );
 		setReplyContent( '' );
@@ -63,11 +123,34 @@ export default function Comment( { comment, postId } ) {
 		guestEmail,
 		guestUrl,
 		createComment,
+		replyFormat,
 	] );
 
 	const avatarUrl =
 		comment.author_avatar_urls?.[ '48' ] ??
 		comment.author_avatar_urls?.[ 48 ];
+
+	const onEditSubmit = useCallback( async () => {
+		if ( ! canEditComment || isMarkdownEmpty( editContent ) ) {
+			return;
+		}
+
+		await updateComment( {
+			postId,
+			commentId: comment.id,
+			content: editContent,
+			format: editFormat,
+		} );
+
+		setEditing( false );
+	}, [
+		canEditComment,
+		editContent,
+		updateComment,
+		postId,
+		comment.id,
+		editFormat,
+	] );
 
 	return (
 		<div className="p2026-comment" id={ `comment-${ comment.id }` }>
@@ -95,16 +178,58 @@ export default function Comment( { comment, postId } ) {
 				</div>
 			</header>
 
-			<div
-				className="p2026-comment-content"
-				dangerouslySetInnerHTML={ {
-					__html: comment.content?.rendered ?? '',
-				} }
-			/>
+			{ ! editing && (
+				<div
+					className="p2026-comment-content"
+					dangerouslySetInnerHTML={ {
+						__html: comment.content?.rendered ?? '',
+					} }
+				/>
+			) }
 
-			{ canComment && (
+			{ editing && (
+				<div className="p2026-reply-form p2026-comment-edit-form">
+					{ renderCommentEditor(
+						{
+							label: __( 'Edit comment', 'p2026' ),
+							hideLabelFromVision: true,
+							placeholder: __( 'Edit your comment…', 'p2026' ),
+							value: editContent,
+							onChange: setEditContent,
+							rows: 4,
+						},
+						editEditorContext
+					) }
+					<div className="p2026-reply-actions">
+						<Button
+							variant="primary"
+							onClick={ onEditSubmit }
+							disabled={
+								isSaving || isMarkdownEmpty( editContent )
+							}
+							isBusy={ isSaving }
+						>
+							{ isSaving
+								? __( 'Saving…', 'p2026' )
+								: __( 'Save', 'p2026' ) }
+						</Button>
+						<Button
+							variant="tertiary"
+							onClick={ () => {
+								setEditing( false );
+								setEditContent( getEditableContent( comment ) );
+							} }
+							disabled={ isSaving }
+						>
+							{ __( 'Cancel', 'p2026' ) }
+						</Button>
+					</div>
+				</div>
+			) }
+
+			{ ( canComment || canEditComment ) && (
 				<footer className="p2026-comment-footer">
-					{ ! replying && (
+					{ canComment && ! replying && ! editing && (
 						<Button
 							variant="link"
 							onClick={ () => setReplying( true ) }
@@ -113,7 +238,28 @@ export default function Comment( { comment, postId } ) {
 						</Button>
 					) }
 
-					{ replying && (
+					{ canComment &&
+						canEditComment &&
+						! replying &&
+						! editing && (
+							<span
+								className="p2026-comment-action-sep"
+								aria-hidden="true"
+							>
+								{ '·' }
+							</span>
+						) }
+
+					{ canEditComment && ! editing && ! replying && (
+						<Button
+							variant="link"
+							onClick={ () => setEditing( true ) }
+						>
+							{ __( 'Edit', 'p2026' ) }
+						</Button>
+					) }
+
+					{ canComment && replying && ! editing && (
 						<div className="p2026-reply-form">
 							{ ! currentUser && (
 								<>
@@ -141,14 +287,20 @@ export default function Comment( { comment, postId } ) {
 									/>
 								</>
 							) }
-							<MentionTextareaControl
-								label={ __( 'Reply', 'p2026' ) }
-								hideLabelFromVision
-								placeholder={ __( 'Write a reply…', 'p2026' ) }
-								value={ replyContent }
-								onChange={ setReplyContent }
-								rows={ 3 }
-							/>
+							{ renderCommentEditor(
+								{
+									label: __( 'Reply', 'p2026' ),
+									hideLabelFromVision: true,
+									placeholder: __(
+										'Write a reply…',
+										'p2026'
+									),
+									value: replyContent,
+									onChange: setReplyContent,
+									rows: 3,
+								},
+								replyEditorContext
+							) }
 							<div className="p2026-reply-actions">
 								<Button
 									variant="primary"

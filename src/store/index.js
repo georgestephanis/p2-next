@@ -59,6 +59,9 @@ export const actions = {
 	createCommentSuccess( postId, comment ) {
 		return { type: 'CREATE_COMMENT_SUCCESS', postId, comment };
 	},
+	updateCommentSuccess( postId, comment ) {
+		return { type: 'UPDATE_COMMENT_SUCCESS', postId, comment };
+	},
 	expandPost( postId ) {
 		return { type: 'EXPAND_POST', postId };
 	},
@@ -212,7 +215,13 @@ export const actions = {
 		};
 	},
 
-	createComment( { postId, parentId = 0, content, authorData = {} } ) {
+	createComment( {
+		postId,
+		parentId = 0,
+		content,
+		authorData = {},
+		format = null,
+	} ) {
 		return async ( { dispatch } ) => {
 			dispatch( actions.setSavingComment( true ) );
 			try {
@@ -223,10 +232,36 @@ export const actions = {
 						post: postId,
 						parent: parentId,
 						content,
+						p2026_format: format,
 						...authorData,
 					},
 				} );
 				dispatch( actions.createCommentSuccess( postId, comment ) );
+			} finally {
+				dispatch( actions.setSavingComment( false ) );
+			}
+		};
+	},
+
+	updateComment( { postId, commentId, content, format = null } ) {
+		return async ( { dispatch } ) => {
+			dispatch( actions.setSavingComment( true ) );
+			try {
+				const comment = await apiFetch( {
+					path: `/wp/v2/comments/${ commentId }`,
+					method: 'POST',
+					data: {
+						content,
+						p2026_format: format,
+					},
+				} );
+
+				dispatch(
+					actions.updateCommentSuccess(
+						comment.post || postId,
+						comment
+					)
+				);
 			} finally {
 				dispatch( actions.setSavingComment( false ) );
 			}
@@ -435,6 +470,27 @@ function reducer( state = DEFAULT_STATE, action ) {
 				comments: {
 					...state.comments,
 					[ action.postId ]: [ ...existing, action.comment ],
+				},
+			};
+		}
+
+		case 'UPDATE_COMMENT_SUCCESS': {
+			const existing = state.comments[ action.postId ] ?? [];
+			const hasExisting = existing.some(
+				( comment ) => comment.id === action.comment.id
+			);
+
+			return {
+				...state,
+				comments: {
+					...state.comments,
+					[ action.postId ]: hasExisting
+						? existing.map( ( comment ) =>
+								comment.id === action.comment.id
+									? action.comment
+									: comment
+						  )
+						: [ ...existing, action.comment ],
 				},
 			};
 		}

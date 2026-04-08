@@ -23,6 +23,31 @@ const pluginsWithoutDependencyExtraction = defaultPlugins.filter(
 		plugin?.constructor?.name !== 'DependencyExtractionWebpackPlugin'
 );
 
+// Keep async CSS chunks human-readable (for example: comment-editor.css)
+// instead of numeric ids (for example: 405.css).
+const pluginsWithNamedCssChunks = defaultPlugins.map( ( plugin ) => {
+	if ( plugin?.constructor?.name === 'MiniCssExtractPlugin' ) {
+		plugin.options = {
+			...( plugin.options || {} ),
+			chunkFilename: '[name].css',
+		};
+	}
+
+	return plugin;
+} );
+
+const interactivityPluginsWithNamedCssChunks =
+	pluginsWithoutDependencyExtraction.map( ( plugin ) => {
+		if ( plugin?.constructor?.name === 'MiniCssExtractPlugin' ) {
+			plugin.options = {
+				...( plugin.options || {} ),
+				chunkFilename: '[name].css',
+			};
+		}
+
+		return plugin;
+	} );
+
 const classicConfig = {
 	...defaultConfig,
 	entry: async () => ( {
@@ -39,9 +64,23 @@ const classicConfig = {
 	},
 	optimization: {
 		...defaultConfig.optimization,
-		chunkIds: 'deterministic',
+		chunkIds: 'named',
 		moduleIds: 'deterministic',
+		splitChunks: {
+			...( defaultConfig.optimization?.splitChunks || {} ),
+			cacheGroups: {
+				...( defaultConfig.optimization?.splitChunks?.cacheGroups ||
+					{} ),
+				commentEditorStyles: {
+					name: 'comment-editor-styles',
+					test: /[\\/]@uiw[\\/]react-md-editor[\\/]markdown-editor\.css$/,
+					chunks: 'all',
+					enforce: true,
+				},
+			},
+		},
 	},
+	plugins: pluginsWithNamedCssChunks,
 };
 
 const interactivityModuleConfig = {
@@ -75,7 +114,7 @@ const interactivityModuleConfig = {
 		moduleIds: 'deterministic',
 	},
 	plugins: [
-		...pluginsWithoutDependencyExtraction,
+		...interactivityPluginsWithNamedCssChunks,
 		new DependencyExtractionWebpackPlugin( {
 			useDefaults: false,
 			requestToExternalModule( request ) {

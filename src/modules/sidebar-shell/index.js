@@ -5,6 +5,14 @@ const STORAGE_KEY = 'p2026.sidebarShell.collapsed';
 const FOCUSABLE_SELECTOR =
 	'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+function clearPersistedCollapsedState() {
+	try {
+		localStorage.removeItem( STORAGE_KEY );
+	} catch {
+		// Ignore storage errors (private mode, quota, etc).
+	}
+}
+
 function mountSidebarShell() {
 	const root = document.querySelector( '[data-p2026-sidebar-shell]' );
 	if ( ! root ) {
@@ -28,6 +36,7 @@ function mountSidebarShell() {
 	let collapsed;
 	if ( ! canToggle ) {
 		collapsed = false;
+		clearPersistedCollapsedState();
 	} else {
 		collapsed = ! defaultOpen;
 		try {
@@ -63,6 +72,7 @@ function mountSidebarShell() {
 
 	const persistCollapsedState = () => {
 		if ( ! canToggle ) {
+			clearPersistedCollapsedState();
 			return;
 		}
 

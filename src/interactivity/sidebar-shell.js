@@ -10,6 +10,14 @@ const STORAGE_KEY = 'p2026.sidebarShell.collapsed';
 const FOCUSABLE_SELECTOR =
 	'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+function clearPersistedCollapsedState() {
+	try {
+		localStorage.removeItem( STORAGE_KEY );
+	} catch {
+		// Ignore storage failures.
+	}
+}
+
 function isManagedRoot( root ) {
 	return !! root?.matches?.( '[data-p2026-sidebar-shell]' );
 }
@@ -54,6 +62,8 @@ function setExpanded( root, expanded ) {
 		} catch {
 			// Ignore storage failures.
 		}
+	} else {
+		clearPersistedCollapsedState();
 	}
 }
 
@@ -89,6 +99,7 @@ interactivityStore( 'p2026/sidebar-shell', {
 
 			if ( ! canToggle ) {
 				expanded = true;
+				clearPersistedCollapsedState();
 			} else {
 				try {
 					const persisted = localStorage.getItem( STORAGE_KEY );

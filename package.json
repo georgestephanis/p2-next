@@ -39,6 +39,7 @@
   },
   "license": "GPL-2.0-or-later",
   "dependencies": {
+    "@uiw/react-md-editor": "^4.1.0",
     "@wordpress/dataviews": "^14.0.0"
   }
 }
