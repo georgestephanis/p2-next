@@ -44,6 +44,10 @@ These buckets are rough planning sizes, not delivery commitments.
 -   [Project Threads](./23-project-threads.md)
 -   [Per-Post Read/Unread Tracking](./24-per-post-read-state.md)
 
+### In Progress
+
+-   [Reactions On Posts And Comments](./16-reactions.md) — Backend complete (custom comment type, REST API, admin settings); UI scaffold started.
+
 ### Shipped
 
 -   [Sidebar Shell And Layout](./02-sidebar-shell.md) ✓ shipped in `add/02-sidebar-shell`
