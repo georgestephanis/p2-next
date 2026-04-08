@@ -10,7 +10,7 @@ import {
 	getCommentEditorFormat,
 	renderCommentEditor,
 } from './comment-editor-registry';
-import { CommentFooterMetaSlot } from '../slots/reactions';
+import CommentReactionsWrapper from '../modules/reactions/CommentReactionsWrapper';
 
 function isMarkdownEmpty( markdown = '' ) {
 	return ! markdown || ! markdown.trim();
@@ -58,6 +58,10 @@ export default function Comment( {
 	const canComment =
 		( window.p2026Config?.canComment ?? !! currentUser ) &&
 		canCreateComments;
+	const canReact =
+		!! currentUser ||
+		! window.p2026Config?.requireNameEmail ||
+		( window.p2026Config?.canComment ?? true );
 	const requireNameEmail =
 		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
@@ -228,8 +232,12 @@ export default function Comment( {
 				</div>
 			) }
 
-			{ ( canComment || canEditComment ) && (
+			{ ( canReact || canComment || canEditComment ) && (
 				<footer className="p2026-comment-footer">
+					{ canReact && ! replying && ! editing && (
+						<CommentReactionsWrapper commentId={ comment.id } />
+					) }
+
 					{ canComment && ! replying && ! editing && (
 						<Button
 							variant="link"
@@ -239,18 +247,6 @@ export default function Comment( {
 						</Button>
 					) }
 
-					{ canComment &&
-						canEditComment &&
-						! replying &&
-						! editing && (
-							<span
-								className="p2026-comment-action-sep"
-								aria-hidden="true"
-							>
-								{ '·' }
-							</span>
-						) }
-
 					{ canEditComment && ! editing && ! replying && (
 						<Button
 							variant="link"
@@ -258,22 +254,6 @@ export default function Comment( {
 						>
 							{ __( 'Edit', 'p2026' ) }
 						</Button>
-					) }
-
-					{ ! replying && ! editing && (
-						<>
-							<span
-								className="p2026-comment-action-sep"
-								aria-hidden="true"
-							>
-								{ '·' }
-							</span>
-							<CommentFooterMetaSlot
-								fillProps={ {
-									commentId: comment.id,
-								} }
-							/>
-						</>
 					) }
 
 					{ canComment && replying && ! editing && (

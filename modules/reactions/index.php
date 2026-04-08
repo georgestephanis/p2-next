@@ -587,6 +587,8 @@ function p2026_reactions_render_settings_tab() {
 				modeSelect.addEventListener( 'change', updateEmojiVisibility );
 			})();
 		</script>
+
+		<?php submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false ); ?>
 	</div>
 	<?php
 }

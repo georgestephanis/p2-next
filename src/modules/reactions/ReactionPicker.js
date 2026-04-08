@@ -20,6 +20,7 @@ export default function ReactionPicker( {
 			<div className="p2026-reaction-picker-grid">
 				{ availableEmoji.map( ( emoji ) => (
 					<button
+						type="button"
 						key={ emoji }
 						className="p2026-reaction-picker-item"
 						onClick={ () =>

@@ -751,10 +751,16 @@ export const selectors = {
 		return state.reactions[ key ] ?? {};
 	},
 	getUserReactionForObject: ( state, objectType, objectId, userId ) => {
+		if ( ! userId ) {
+			return null;
+		}
 		const key = `${ objectType }_${ objectId }`;
 		const reactions = state.reactions[ key ] ?? {};
 		for ( const [ emoji, data ] of Object.entries( reactions ) ) {
-			if ( data.users && data.users.includes( userId ) ) {
+			if (
+				Array.isArray( data.users ) &&
+				data.users.some( ( user ) => Number( user?.id ) === Number( userId ) )
+			) {
 				return emoji;
 			}
 		}

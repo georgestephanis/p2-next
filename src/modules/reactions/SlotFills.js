@@ -1,9 +1,7 @@
 import {
 	PostFooterMetaFill,
-	CommentFooterMetaFill,
 } from '../../slots/reactions';
 import PostReactionsWrapper from './PostReactionsWrapper';
-import CommentReactionsWrapper from './CommentReactionsWrapper';
 
 export default function ReactionSlotFills() {
 	const activeModules = window.p2026Config?.activeModules;
@@ -16,19 +14,10 @@ export default function ReactionSlotFills() {
 	}
 
 	return (
-		<>
-			<PostFooterMetaFill>
-				{ ( { postId } ) =>
-					postId ? <PostReactionsWrapper postId={ postId } /> : null
-				}
-			</PostFooterMetaFill>
-			<CommentFooterMetaFill>
-				{ ( { commentId } ) =>
-					commentId ? (
-						<CommentReactionsWrapper commentId={ commentId } />
-					) : null
-				}
-			</CommentFooterMetaFill>
-		</>
+		<PostFooterMetaFill>
+			{ ( { postId } ) =>
+				postId ? <PostReactionsWrapper postId={ postId } /> : null
+			}
+		</PostFooterMetaFill>
 	);
 }

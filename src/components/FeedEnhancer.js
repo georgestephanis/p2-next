@@ -28,7 +28,6 @@ import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
 import { setupPostToolbar } from '../enhancer';
 import UnreadBadge from './UnreadBadge';
-import ReactionSlotFills from '../modules/reactions/SlotFills';
 
 // How long to poll (seconds). Read from the config injected by PHP if present.
 const POLL_INTERVAL = window.p2026Config?.pollInterval ?? 15;
@@ -392,7 +391,6 @@ export default function FeedEnhancer( {
 
 	return (
 		<>
-			<ReactionSlotFills />
 			{ /* Header widgets portal — only for logged-in users */ }
 			{ isLoggedIn &&
 				headerContainerRef.current &&

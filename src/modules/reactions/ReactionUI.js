@@ -29,6 +29,7 @@ export default function ReactionUI( {
 	const [ displayReactions, setDisplayReactions ] = useState( {} );
 	const containerRef = useRef( null );
 	const pickerButtonRef = useRef( null );
+	const pickerPopoverRef = useRef( null );
 
 	// Debounce reaction toggling.
 	const debounceTimerRef = useRef( null );
@@ -47,8 +48,8 @@ export default function ReactionUI( {
 		setDisplayReactions( reactions );
 	}, [ reactions ] );
 
-	const handleShowPicker = useCallback( () => {
-		setShowPicker( true );
+	const handleTogglePicker = useCallback( () => {
+		setShowPicker( ( isOpen ) => ! isOpen );
 	}, [] );
 
 	const handleClosePicker = useCallback( () => {
@@ -69,6 +70,34 @@ export default function ReactionUI( {
 		},
 		[ debouncedToggleReaction ]
 	);
+
+	useEffect( () => {
+		if ( ! showPicker ) {
+			return undefined;
+		}
+
+		const handlePointerDown = ( event ) => {
+			const target = event.target;
+			if (
+				pickerButtonRef.current?.contains( target ) ||
+				pickerPopoverRef.current?.contains( target )
+			) {
+				return;
+			}
+
+			handleClosePicker();
+		};
+
+		document.addEventListener( 'pointerdown', handlePointerDown, true );
+
+		return () => {
+			document.removeEventListener(
+				'pointerdown',
+				handlePointerDown,
+				true
+			);
+		};
+	}, [ showPicker, handleClosePicker ] );
 
 	// Count total reactions.
 	const totalReactions = Object.values( displayReactions ).reduce(
@@ -128,15 +157,17 @@ export default function ReactionUI( {
 				{ canReact && (
 					<div className="p2026-reaction-picker-wrapper">
 						<button
+							type="button"
 							ref={ pickerButtonRef }
 							className="p2026-add-reaction-button"
-							onClick={ handleShowPicker }
+							onClick={ handleTogglePicker }
 							disabled={ isLoading }
 							aria-label={ __(
 								'Add reaction',
 								'p2026'
 							) }
 							aria-pressed={ showPicker }
+							aria-expanded={ showPicker }
 						>
 							+
 						</button>
@@ -144,18 +175,21 @@ export default function ReactionUI( {
 						{ showPicker && (
 							<Popover
 								className="p2026-reaction-picker-popover"
+								anchor={ pickerButtonRef.current }
 								focusOnMount={ false }
 								noArrow={ false }
 								onClose={ handleClosePicker }
 							>
-								<ReactionPicker
-									availableEmoji={
-										availableEmoji
-									}
-									onSelect={
-										handleAddReaction
-									}
-								/>
+								<div ref={ pickerPopoverRef }>
+									<ReactionPicker
+										availableEmoji={
+											availableEmoji
+										}
+										onSelect={
+											handleAddReaction
+										}
+									/>
+								</div>
 							</Popover>
 						) }
 					</div>

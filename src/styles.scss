@@ -326,8 +326,8 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 .p2026-comment-summary-bar {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
+	justify-content: flex-start;
+	gap: 16px;
 	padding: 10px 14px;
 	margin-top: 8px;
 	border: 1px solid #e2e7ee;
@@ -342,6 +342,12 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	align-items: center;
 	gap: 10px;
 	min-width: 0;
+}
+
+.p2026-comment-summary-meta {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
 }
 
 .p2026-comment-summary-count {
@@ -415,6 +421,13 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 }
 
 .p2026-comment-summary-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 10px;
+	text-align: left;
+	flex: 0 0 auto;
+	margin-left: auto;
 	appearance: none;
 	border: 1px solid #c5d2df;
 	border-radius: 4px;
@@ -441,6 +454,14 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 	&:disabled {
 		cursor: not-allowed;
 		opacity: 0.55;
+	}
+
+	.p2026-comment-summary-main {
+		flex-wrap: wrap;
+	}
+
+	.p2026-comment-summary-count {
+		white-space: normal;
 	}
 }
 
@@ -527,6 +548,47 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 		margin-top: 8px;
 		padding-top: 8px;
 		border-top: 1px solid #f0f0f0;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+
+		.p2026-reaction-ui {
+			margin: 0;
+			display: inline-flex;
+			align-items: center;
+		}
+
+		.p2026-reactions-container {
+			gap: 0.35rem;
+		}
+
+		.components-button.is-link {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.25rem;
+			padding: 0.25rem 0.5rem;
+			border: 1px solid transparent;
+			border-radius: 0.25rem;
+			background-color: #f0f0f0;
+			color: #333;
+			font-size: 0.875rem;
+			line-height: 1.2;
+			text-decoration: none;
+			box-shadow: none;
+
+			&:hover {
+				background-color: #e0e0e0;
+				border-color: #ccc;
+				color: #222;
+				text-decoration: none;
+			}
+
+			&:focus-visible {
+				outline: 2px solid #0073aa;
+				outline-offset: 2px;
+			}
+		}
 	}
 
 	.p2026-reply-form {

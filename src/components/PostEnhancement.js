@@ -376,9 +376,11 @@ export default function PostEnhancement( {
 	}, [ comments.length, commentCount, postId, previewContributors.length ] );
 
 	const canViewDiscussion = commentCount > 0 || canCreateComments;
-	let summaryActionLabel = __( 'View all comments and reply', 'p2026' );
+	let summaryActionLabel = commentCountSummary;
 	if ( isExpanded ) {
 		summaryActionLabel = __( 'Hide discussion', 'p2026' );
+	} else if ( isCountLoading ) {
+		summaryActionLabel = __( 'Loading comments…', 'p2026' );
 	} else if ( commentsClosed ) {
 		summaryActionLabel = __( 'View existing comments', 'p2026' );
 	}
@@ -627,62 +629,6 @@ export default function PostEnhancement( {
 
 			{ ! isEditing && (
 				<div className="p2026-comment-summary-bar">
-					<div className="p2026-comment-summary-main">
-						<span
-							className={ `p2026-comment-summary-count${
-								! isCountLoading ? ' is-loaded' : ''
-							}` }
-						>
-							{ commentCountSummary }
-						</span>
-						{ contributorPreview.length > 0 && (
-							<div className="p2026-comment-summary-contributors">
-								<div
-									className="p2026-comment-summary-avatars"
-									aria-hidden="true"
-								>
-									{ contributorPreview.map(
-										( contributor ) =>
-											contributor.avatar ? (
-												<img
-													key={ contributor.id }
-													className="p2026-comment-summary-avatar"
-													src={ contributor.avatar }
-													alt=""
-													width={ 24 }
-													height={ 24 }
-												/>
-											) : null
-									) }
-								</div>
-								<span className="p2026-comment-summary-names">
-									{ contributorPreview
-										.map(
-											( contributor ) => contributor.name
-										)
-										.join( ', ' ) }
-								</span>
-								{ contributorOverflowCount > 0 && (
-									<span className="p2026-comment-summary-more">
-										+{ contributorOverflowCount }
-									</span>
-								) }
-							</div>
-						) }
-						{ commentsClosed && (
-							<span className="p2026-comment-summary-note">
-								{ commentCount > 0
-									? __(
-											'Replies are closed, but you can still read existing comments.',
-											'p2026'
-									  )
-									: __(
-											'Comments are closed for this post.',
-											'p2026'
-									  ) }
-							</span>
-						) }
-					</div>
 					<div className="p2026-comment-summary-meta">
 						<PostFooterMetaSlot fillProps={ { postId } } />
 					</div>
@@ -692,7 +638,62 @@ export default function PostEnhancement( {
 						onClick={ onToggleComments }
 						disabled={ ! isExpanded && ! canViewDiscussion }
 					>
-						{ summaryActionLabel }
+						<div className="p2026-comment-summary-main">
+							<span
+								className={ `p2026-comment-summary-count${
+									! isCountLoading ? ' is-loaded' : ''
+								}` }
+							>
+								{ summaryActionLabel }
+							</span>
+							{ ! isExpanded && contributorPreview.length > 0 && (
+								<div className="p2026-comment-summary-contributors">
+									<div
+										className="p2026-comment-summary-avatars"
+										aria-hidden="true"
+									>
+										{ contributorPreview.map(
+											( contributor ) =>
+												contributor.avatar ? (
+													<img
+														key={ contributor.id }
+														className="p2026-comment-summary-avatar"
+														src={ contributor.avatar }
+														alt=""
+														width={ 24 }
+														height={ 24 }
+													/>
+												) : null
+										) }
+									</div>
+									<span className="p2026-comment-summary-names">
+										{ contributorPreview
+											.map(
+												( contributor ) => contributor.name
+											)
+											.join( ', ' ) }
+									</span>
+									{ contributorOverflowCount > 0 && (
+										<span className="p2026-comment-summary-more">
+											+{ contributorOverflowCount }
+										</span>
+									) }
+								</div>
+							) }
+							{ ! isExpanded && commentsClosed && (
+								<span className="p2026-comment-summary-note">
+									{ commentCount > 0
+										? __(
+												'Replies are closed, but you can still read existing comments.',
+												'p2026'
+										  )
+										: __(
+												'Comments are closed for this post.',
+												'p2026'
+										  ) }
+								</span>
+							) }
+						</div>
 					</button>
 				</div>
 			) }
