@@ -615,3 +615,18 @@ function p2026_reactions_save_settings() {
 	update_option( P2026_REACTIONS_OPTION, $config );
 }
 add_action( 'p2026_settings_save_tab_reactions', 'p2026_reactions_save_settings' );
+
+/**
+ * Exclude reaction comments from the Recent Comments widget.
+ *
+ * @param array $args WP_Comment_Query arguments.
+ * @return array
+ */
+function p2026_reactions_exclude_from_comments_widget( $args ) {
+	$args['type__not_in'] = array_merge(
+		(array) ( $args['type__not_in'] ?? array() ),
+		array( P2026_REACTION_COMMENT_TYPE )
+	);
+	return $args;
+}
+add_filter( 'widget_comments_args', 'p2026_reactions_exclude_from_comments_widget' );
