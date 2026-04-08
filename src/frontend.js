@@ -11,6 +11,7 @@
  * No custom block is needed for the feed; the theme owns post display.
  */
 import { createRoot, createElement } from '@wordpress/element';
+import { SlotFillProvider } from '@wordpress/components';
 import { registerCoreBlocks } from '@wordpress/block-library';
 import { setDefaultBlockName } from '@wordpress/blocks';
 import '@wordpress/format-library';
@@ -130,10 +131,14 @@ onDomReady( () => {
 	document.body.appendChild( mountPoint );
 
 	createRoot( mountPoint ).render(
-		createElement( FeedEnhancer, {
-			feedContainer,
-			postElements,
-			isMainQuery: shouldShowHeader,
-		} )
+		createElement(
+			SlotFillProvider,
+			null,
+			createElement( FeedEnhancer, {
+				feedContainer,
+				postElements,
+				isMainQuery: shouldShowHeader,
+			} )
+		)
 	);
 } );

@@ -10,6 +10,7 @@ import {
 	getCommentEditorFormat,
 	renderCommentEditor,
 } from './comment-editor-registry';
+import CommentReactionsWrapper from '../modules/reactions/CommentReactionsWrapper';
 
 function isMarkdownEmpty( markdown = '' ) {
 	return ! markdown || ! markdown.trim();
@@ -54,11 +55,14 @@ export default function Comment( {
 	);
 
 	const currentUser = window.p2026Config?.currentUser;
+	const requireNameEmail =
+		! currentUser && !! window.p2026Config?.requireNameEmail;
+	const canReact =
+		!! window.p2026Config?.activeModules?.includes( 'reactions' ) &&
+		!! currentUser;
 	const canComment =
 		( window.p2026Config?.canComment ?? !! currentUser ) &&
 		canCreateComments;
-	const requireNameEmail =
-		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 	const canEditComment = !! comment.p2026CanEdit;
@@ -79,12 +83,7 @@ export default function Comment( {
 		if ( ! editing ) {
 			setEditContent( getEditableContent( comment ) );
 		}
-	}, [
-		editing,
-		comment.id,
-		comment.p2026EditableContent,
-		comment.content?.rendered,
-	] );
+	}, [ editing, comment ] );
 
 	const onReplySubmit = useCallback( async () => {
 		if ( ! replyContent.trim() || missingGuestIdentity ) {
@@ -227,8 +226,12 @@ export default function Comment( {
 				</div>
 			) }
 
-			{ ( canComment || canEditComment ) && (
+			{ ( canReact || canComment || canEditComment ) && (
 				<footer className="p2026-comment-footer">
+					{ canReact && ! replying && ! editing && (
+						<CommentReactionsWrapper commentId={ comment.id } />
+					) }
+
 					{ canComment && ! replying && ! editing && (
 						<Button
 							variant="link"
@@ -237,18 +240,6 @@ export default function Comment( {
 							{ __( 'Reply', 'p2026' ) }
 						</Button>
 					) }
-
-					{ canComment &&
-						canEditComment &&
-						! replying &&
-						! editing && (
-							<span
-								className="p2026-comment-action-sep"
-								aria-hidden="true"
-							>
-								{ '·' }
-							</span>
-						) }
 
 					{ canEditComment && ! editing && ! replying && (
 						<Button

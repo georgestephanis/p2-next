@@ -12,7 +12,7 @@ const FOCUSABLE_SELECTOR =
 
 function clearPersistedCollapsedState() {
 	try {
-		localStorage.removeItem( STORAGE_KEY );
+		window.localStorage.removeItem( STORAGE_KEY );
 	} catch {
 		// Ignore storage failures.
 	}
@@ -63,7 +63,7 @@ function setExpanded( root, expanded ) {
 
 	if ( canToggle ) {
 		try {
-			localStorage.setItem( STORAGE_KEY, String( isCollapsed ) );
+			window.localStorage.setItem( STORAGE_KEY, String( isCollapsed ) );
 		} catch {
 			// Ignore storage failures.
 		}
@@ -107,7 +107,8 @@ interactivityStore( 'p2026/sidebar-shell', {
 				clearPersistedCollapsedState();
 			} else {
 				try {
-					const persisted = localStorage.getItem( STORAGE_KEY );
+					const persisted =
+						window.localStorage.getItem( STORAGE_KEY );
 					if ( persisted === 'false' ) {
 						expanded = true;
 					} else if ( persisted === 'true' ) {

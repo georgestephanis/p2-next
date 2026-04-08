@@ -53,6 +53,29 @@ function p2026_ability_can_update_post( $input = null ) {
 }
 
 /**
+ * Permission callback for creating reactions.
+ *
+ * @param array|null $input Optional input payload.
+ * @return bool
+ */
+function p2026_ability_can_create_reaction( $input = null ) {
+	// Reactions are low-friction; same permission as commenting.
+	return p2026_ability_can_create_comment( $input );
+}
+
+/**
+ * Permission callback for removing reactions.
+ *
+ * @param array|null $input Optional input payload.
+ * @return bool
+ */
+function p2026_ability_can_remove_reaction( $input = null ) {
+	// User can remove their own reactions (self-service).
+	// Handled at endpoint level by comparing user_id.
+	return true;
+}
+
+/**
  * Permission callback for creating comments.
  *
  * @param array|null $input Optional input payload.
@@ -244,6 +267,75 @@ function p2026_register_abilities() {
 			),
 		)
 	);
+
+	wp_register_ability(
+		'p2026/reaction-create',
+		array(
+			'label'               => __( 'Create Reaction', 'p2026' ),
+			'description'         => __( 'Checks whether the current user can create reactions on posts and comments via P2026.', 'p2026' ),
+			'category'            => 'p2026',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'post_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional post ID to check reactions are allowed.', 'p2026' ),
+						'minimum'     => 1,
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'allowed' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether reaction creation is allowed.', 'p2026' ),
+					),
+				),
+			),
+			'execute_callback'    => static function () {
+				return array( 'allowed' => true );
+			},
+			'permission_callback' => 'p2026_ability_can_create_reaction',
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'p2026/reaction-remove',
+		array(
+			'label'               => __( 'Remove Reaction', 'p2026' ),
+			'description'         => __( 'Checks whether the current user can remove their reactions via P2026.', 'p2026' ),
+			'category'            => 'p2026',
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'allowed' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether reaction removal is allowed.', 'p2026' ),
+					),
+				),
+			),
+			'execute_callback'    => static function () {
+				return array( 'allowed' => true );
+			},
+			'permission_callback' => 'p2026_ability_can_remove_reaction',
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => true,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
 }
 add_action( 'wp_abilities_api_init', 'p2026_register_abilities' );
 
@@ -354,5 +446,49 @@ function p2026_can_update_comments( $comment_id = 0 ) {
 			return current_user_can( 'edit_posts' );
 		},
 		$input
+	);
+}
+
+/**
+ * Whether current user can create reactions.
+ *
+ * Reactions require a logged-in user to avoid anonymous user_id=0 collisions
+ * where all guest reactions share the same identity and cannot be individually
+ * managed or removed.
+ *
+ * @param int $post_id Optional post ID for object-level checks.
+ * @return bool
+ */
+function p2026_can_create_reactions( $post_id = 0 ) {
+	$input = $post_id > 0 ? array( 'post_id' => (int) $post_id ) : array();
+
+	return p2026_check_permission(
+		'p2026/reaction-create',
+		static function () use ( $post_id ) {
+			if ( $post_id > 0 && ! comments_open( $post_id ) ) {
+				return false;
+			}
+
+			return is_user_logged_in();
+		},
+		$input
+	);
+}
+
+/**
+ * Whether current user can remove reactions.
+ *
+ * Anonymous reactions are keyed to user ID 0, so guests cannot be safely
+ * authorized to remove only their own reactions without an additional
+ * guest-specific identity mechanism.
+ *
+ * @return bool
+ */
+function p2026_can_remove_reactions() {
+	return p2026_check_permission(
+		'p2026/reaction-remove',
+		static function () {
+			return is_user_logged_in();
+		}
 	);
 }

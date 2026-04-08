@@ -12,5 +12,6 @@ export {
 	initLinkPreviewInteractivity,
 	initMentionsHoverInteractivity,
 	initPostMenuInteractivity,
+	initReactionsInteractivity,
 	registerPollingVisibilityCallback,
 } from './client-bridge';

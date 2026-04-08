@@ -8,6 +8,7 @@ import { __, sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comments from './Comments';
 import PostEditor from './PostEditor';
+import { PostFooterMetaSlot } from '../slots/reactions';
 
 export default function Post( { post } ) {
 	const { expandPost, collapsePost, setEditingPost, fetchComments } =
@@ -119,6 +120,7 @@ export default function Post( { post } ) {
 								commentCount
 						  ) }
 				</Button>
+				<PostFooterMetaSlot fillProps={ { postId: post.id } } />
 			</footer>
 
 			{ isExpanded && <Comments postId={ post.id } /> }

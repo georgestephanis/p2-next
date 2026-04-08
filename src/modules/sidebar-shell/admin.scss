@@ -26,8 +26,16 @@
 		min-height: 200px;
 		max-height: 480px;
 		overflow-y: auto;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-			'Oxygen-Sans', Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+		font-family:
+			-apple-system,
+			BlinkMacSystemFont,
+			"Segoe UI",
+			Roboto,
+			Oxygen-Sans,
+			Ubuntu,
+			Cantarell,
+			"Helvetica Neue",
+			sans-serif;
 		font-size: 13px;
 		line-height: 1.5;
 		color: #1e1e1e;
@@ -63,16 +71,6 @@
 	}
 }
 
-.p2026-sidebar-shell-admin-shell {
-	max-width: 380px;
-
-	&.is-editor-mounted {
-		.p2026-sidebar-shell-admin-fallback {
-			display: none;
-		}
-	}
-}
-
 .p2026-sidebar-shell-admin-fallback {
 	display: block;
 	width: 100%;
@@ -87,4 +85,15 @@
 	font-family: Menlo, Consolas, Monaco, monospace;
 	font-size: 12px;
 	line-height: 1.5;
+}
+
+.p2026-sidebar-shell-admin-shell {
+	max-width: 380px;
+
+	&.is-editor-mounted {
+
+		.p2026-sidebar-shell-admin-fallback {
+			display: none;
+		}
+	}
 }

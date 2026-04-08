@@ -69,3 +69,7 @@ export function registerPollingVisibilityCallback( callback ) {
 		);
 	};
 }
+
+export function initReactionsInteractivity() {
+	callOrQueue( 'initReactionsInteractivity' );
+}

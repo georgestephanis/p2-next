@@ -7,7 +7,7 @@ const FOCUSABLE_SELECTOR =
 
 function clearPersistedCollapsedState() {
 	try {
-		localStorage.removeItem( STORAGE_KEY );
+		window.localStorage.removeItem( STORAGE_KEY );
 	} catch {
 		// Ignore storage errors (private mode, quota, etc).
 	}
@@ -40,7 +40,7 @@ function mountSidebarShell() {
 	} else {
 		collapsed = ! defaultOpen;
 		try {
-			const persisted = localStorage.getItem( STORAGE_KEY );
+			const persisted = window.localStorage.getItem( STORAGE_KEY );
 			if ( persisted === 'false' ) {
 				collapsed = false;
 			} else if ( persisted === 'true' ) {
@@ -77,7 +77,7 @@ function mountSidebarShell() {
 		}
 
 		try {
-			localStorage.setItem( STORAGE_KEY, String( collapsed ) );
+			window.localStorage.setItem( STORAGE_KEY, String( collapsed ) );
 		} catch {
 			// Ignore storage errors (private mode, quota, etc).
 		}

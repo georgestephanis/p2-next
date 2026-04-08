@@ -2,7 +2,7 @@
 
 This file documents the current architecture and contribution conventions for the p2026 plugin.
 
-This document reflects the 0.4.0 release line.
+This document reflects the 0.4.0 release line, with notes on unreleased work in progress.
 
 ## What This Plugin Is
 
@@ -19,12 +19,14 @@ It is intentionally not a complete SPA replacement.
 
 ## Top-Level Layout
 
--   p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, abilities integration, admin bar node, PHP module loader.
+-   p2026.php: bootstrap, block registration, frontend enqueue, runtime config injection, admin bar node, PHP module loader. Abilities registration and all permission helpers live in `includes/abilities.php`.
+-   includes/abilities.php: Abilities API registration (all `p2026/*` abilities) and the `p2026_can_*` permission helper functions used throughout the plugin. This file is always loaded, not gated behind a module.
 -   src/frontend.js: enhancement bootstrap for existing loop pages; mounts modal root, wires admin bar button, and side-effect-imports all JS modules.
 -   src/enhancer.js: exports `setupPostToolbar` (mounts per-post PostEnhancement React root) and `observePosts` (no-op stub retained for API compatibility).
 -   src/blocks/new-post/: dynamic block server render + frontend mount.
 -   src/blocks/feed-tools/: dynamic block server render (logged-in only) + frontend `view.js` that mounts `SidebarControls`.
 -   src/components/: comments UI, post editor/new post editor, new post modal, search widget, unread badge.
+-   src/slots/reactions.js: shared SlotFill registry — `PostFooterMetaSlot`/`PostFooterMetaFill` and `CommentFooterMetaSlot`/`CommentFooterMetaFill`. Consumed by `Post.js`, `PostEnhancement.js`, and `Comment.js` as Slot hosts; filled by `src/modules/reactions/SlotFills.js`.
 -   src/interactivity/: shared Interactivity API stores and directive-host initializers for lightweight interaction islands.
 -   src/interactivity/module-entry.js: script-module entrypoint that loads interactivity implementations and publishes a bridge API for classic frontend callers.
 -   src/interactivity/client-bridge.js: classic-script bridge used by `src/frontend.js`, `src/api/index.js`, and modules/components to call module-loaded interactivity initializers.
@@ -37,12 +39,15 @@ It is intentionally not a complete SPA replacement.
 -   src/modules/notifications/: JS notifications module — dock UI and item rendering.
 -   src/modules/sidebar-shell/: JS sidebar-shell module — vanilla JS mount/collapse controller (`index.js`), `SidebarControls.js` React component (search + state filter), and admin block editor for configuring default block content (`admin.js`).
 -   src/modules/comment-editor/: markdown WYSIWYG editor component for comment create/edit flows.
+-   src/modules/reactions/: JS reactions module — `useReactions()` hook (store-backed state + optimistic updates), `ReactionUI.js`, `ReactionButton.js`, `ReactionPicker.js`, `ParticipantList.js`, `PostReactionsWrapper.js`, `CommentReactionsWrapper.js`, `SlotFills.js`.
+-   src/interactivity/reactions.js: Interactivity API store (`p2026/reactions` namespace) for Script-Module-compatible reactions state — used for lightweight server-rendered reaction island hydration.
 -   modules/: PHP modules directory; each subdirectory contains an `index.php` loaded by glob on init.
 -   modules/mentions/index.php: REST endpoints for user search and hovercard detail, @mention linkification on `the_content`/`comment_text`, and the `p2026_mentions_found` notification hook.
 -   modules/notifications/index.php: per-user notification storage, REST endpoints, and hooks for mention/reply notifications.
 -   modules/post-state/index.php: taxonomy-backed workflow state, REST field + mutation endpoint, and audit event emission.
 -   modules/audit-log/index.php: backend listener for audit events persisted to JSONL or internal CPT, plus audit settings tab and admin REST endpoints.
 -   modules/comment-editor/index.php: optional markdown comment-processing hooks for REST create/update (`p2026_format=markdown`).
+-   modules/reactions/index.php: custom comment type (`p2026_reaction`) storage, CRUD functions, REST endpoints (POST/GET/DELETE `/p2026/v1/reactions`), admin settings tab (mode + emoji config).
 -   src/modules/audit-log/: admin DataViews app for browsing audit entries in the settings tab.
 -   .github/: WordPress Playground blueprint and setup script.
 -   build/: generated artifacts from @wordpress/scripts (do not hand-edit).
@@ -66,15 +71,22 @@ It is intentionally not a complete SPA replacement.
 
 ## Permission Model
 
-p2026 now uses an abilities-first model with fallback:
+p2026 uses an abilities-first model with fallback. All registration and helpers live in `includes/abilities.php`.
 
--   If Abilities API is present, plugin registers:
-    -   p2026/post-create
-    -   p2026/post-update
--   Permission checks use ability.check_permissions() when available.
--   If abilities are not available, checks fall back to core capability checks.
+Registered abilities:
 
-Runtime config includes:
+| Ability | Helper function | Notes |
+|---------|----------------|-------|
+| `p2026/post-create` | `p2026_can_create_posts()` | Requires `publish_posts` cap |
+| `p2026/post-update` | `p2026_can_update_posts( $post_id )` | Requires `edit_post` / `edit_posts` |
+| `p2026/comment-create` | `p2026_can_create_comments( $post_id )` | Logged-in or open registration; respects `comments_open()` |
+| `p2026/comment-update` | `p2026_can_update_comments( $comment_id )` | Requires `edit_comment` / `edit_posts` |
+| `p2026/reaction-create` | `p2026_can_create_reactions( $post_id )` | Requires logged-in user; anonymous reactions disallowed |
+| `p2026/reaction-remove` | `p2026_can_remove_reactions()` | Requires logged-in user; object-level ownership enforced at endpoint |
+
+Permission checks use `ability.check_permissions()` when the Abilities API is available; otherwise fall back to core capability checks via `p2026_check_permission()`.
+
+Runtime config (`window.p2026Config`) includes:
 
 -   canCreatePosts
 -   canUpdatePosts
@@ -82,6 +94,8 @@ Runtime config includes:
 -   requireNameEmail
 -   isArchiveView
 -   currentUser (logged-in metadata when available)
+-   activeModules (array of active module slugs)
+-   reactionsConfig (emoji mode + allowed emoji; null when reactions module inactive)
 
 New post mount rendering in src/blocks/new-post/render.php is gated by p2026_can_create_posts().
 
@@ -142,6 +156,23 @@ Per-user activity tracking to surface new content. Accessible to logged-in users
 -   Supports stable GitHub releases, optional prerelease opt-in, and a `trunk` channel for direct-update workflows.
 -   Uses `P2026_VERSION` as the installed version source for update comparisons.
 
+### Reactions Module
+
+Emoji reactions on posts and comments. Logged-in users only.
+
+-   `modules/reactions/index.php`: stores reactions as WordPress comments with `comment_type = p2026_reaction`. CRUD functions: `p2026_reactions_add()`, `p2026_reactions_remove()`, `p2026_reactions_get_for_object()`, `p2026_reactions_count()`. Three configurable modes: single emoji (👍 default), curated set (admin-specified space-separated list), or any emoji. Configuration stored in `p2026_reactions_config` option.
+-   REST endpoints:
+    -   `POST /p2026/v1/reactions` — add reaction (`object_id`, `object_type`, `emoji`).
+    -   `GET /p2026/v1/reactions` — fetch reactions for an object.
+    -   `DELETE /p2026/v1/reactions` — remove own reaction.
+-   `src/modules/reactions/hooks.js`: `useReactions( objectId, objectType )` hook — integrates with `@wordpress/data` store for global state, applies optimistic updates, debounces REST calls.
+-   `src/modules/reactions/ReactionUI.js`: container component showing reaction emoji buttons + counts; opens `ReactionPicker` for adding new reactions.
+-   `src/modules/reactions/ParticipantList.js`: tooltip listing users who reacted to a given emoji.
+-   `src/modules/reactions/SlotFills.js`: fills `PostFooterMetaFill` with `PostReactionsWrapper` to inject reactions into post footers without coupling to `PostEnhancement.js`.
+-   `src/modules/reactions/CommentReactionsWrapper.js`: mounts reactions directly inside `Comment.js` comment footer when `canReact` is true.
+-   Reactions are gated by `window.p2026Config.activeModules.includes('reactions')` on the JS side and `p2026_can_create_reactions()` / `p2026_can_remove_reactions()` on the PHP side.
+-   Full API docs: `modules/reactions/README.md`.
+
 ### Notifications Module (Independent)
 
 Optional real-time notifications dock for mentions and comment replies.
@@ -176,6 +207,7 @@ Key state:
 -   readState (lastActivity, unreadCount)
 -   notifications
 -   unreadNotificationCount
+-   reactions — keyed `"${objectType}_${objectId}"` → `{ emoji: { count, users[] } }`
 
 **Note:** Search state is managed locally by SearchWidget (not in global store) since search queries are transient and user-specific.
 
@@ -194,6 +226,9 @@ REST endpoints in use:
 -   POST /p2026/v1/notifications/read-all (bulk mark as read)
 -   GET /p2026/v1/audit-log/days (audit day shards)
 -   GET /p2026/v1/audit-log/entries (paged audit entries)
+-   POST /p2026/v1/reactions (add reaction)
+-   GET /p2026/v1/reactions (fetch reactions for object)
+-   DELETE /p2026/v1/reactions (remove own reaction)
 
 ## Module System
 
@@ -220,6 +255,7 @@ Each PHP module file is responsible for hooking into WordPress itself; there is 
 | audit-log      | active   | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes              | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                                                                                 |
 | comment-editor | active   | `modules/comment-editor/index.php` — markdown render/sanitize and markdown source persistence for comments          | Core comment UI integration (`src/components/Comments.js`, `src/components/Comment.js`) via `src/modules/comment-editor/MarkdownCommentEditor.js` |
 | sidebar-shell  | context¹ | `modules/sidebar-shell/index.php` — fixed collapsible sidebar panel, widget area, settings tab + block editor admin | `src/modules/sidebar-shell/` — collapse/expand controller, `SidebarControls.js` (search + state filter), admin block editor                       |
+| reactions      | active   | `modules/reactions/index.php` — custom comment type storage, CRUD functions, REST endpoints, admin settings tab     | `src/modules/reactions/` — `useReactions()` hook, `ReactionUI`, `ReactionButton`, `ReactionPicker`, `ParticipantList`, SlotFill injection           |
 
 ¹ `sidebar-shell` defaults to **active** when the theme has no detected sidebar (`sidebar.php` or `parts/sidebar.html`); defaults to **inactive** otherwise. Can be overridden on the Modules settings page.
 
@@ -264,8 +300,9 @@ Validation expectations after functional changes:
 -   Keep classic/frontend callers pointed at `src/interactivity/client-bridge.js`; avoid importing `src/interactivity/*` implementation files directly from classic bundles.
 -   In script-module interactivity code, use module dependencies for module IDs only and use `window.wp.*` for script interop (`wp-data`, etc.) per Script Modules limitations.
 -   Prefer `src/utils/on-dom-ready.js` over ad hoc `DOMContentLoaded` listeners in feature modules.
--   Prefer capability checks through centralized helpers in p2026.php.
+-   Prefer capability checks through the centralized helpers in `includes/abilities.php` (`p2026_can_create_posts()`, `p2026_can_create_reactions()`, etc.). Do not add new capability logic directly to `p2026.php`.
 -   For every dynamic `import()`, include an explicit human-readable `webpackChunkName` comment. Do not add anonymous split points that emit numeric chunk names.
+-   For cross-module UI injection into post or comment footers, use `PostFooterMetaFill` / `CommentFooterMetaFill` from `src/slots/reactions.js` rather than wiring directly into `PostEnhancement.js` or `Comment.js`. The Slot hosts are already in place in those components.
 
 ## Performance and Scale Notes
 

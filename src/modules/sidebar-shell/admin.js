@@ -23,7 +23,7 @@ import {
 	Inserter,
 } from '@wordpress/block-editor';
 import { SlotFillProvider, Popover, Button } from '@wordpress/components';
-import domReady from '@wordpress/dom-ready';
+import onDomReady from '../../utils/on-dom-ready';
 
 import './admin.scss';
 
@@ -72,7 +72,7 @@ const REQUIRED_CORE_BLOCKS = [
 /**
  * Whether all required core blocks are currently registered.
  *
- * @return {boolean}
+ * @return {boolean} True when all required core block types are registered.
  */
 function hasRequiredCoreBlocks() {
 	const getBlockType = window.wp?.blocks?.getBlockType;
@@ -90,7 +90,7 @@ function hasRequiredCoreBlocks() {
  * executed its registration path yet. In that case we call the exposed
  * registration function directly as a fallback.
  *
- * @return {boolean} Whether required blocks are available after ensuring.
+ * @return {boolean} Whether required blocks are available after ensuring registration.
  */
 function ensureRequiredCoreBlocks() {
 	if ( hasRequiredCoreBlocks() ) {
@@ -125,8 +125,8 @@ function ensureRequiredCoreBlocks() {
  * Minimal standalone block editor for configuring sidebar-shell block content.
  *
  * @param {Object}   props
- * @param {string}   props.initialContent  Serialised block markup to pre-populate.
- * @param {Function} props.onUpdate        Called with fresh serialised markup on every change.
+ * @param {string}   props.initialContent Serialised block markup to pre-populate.
+ * @param {Function} props.onUpdate       Called with fresh serialised markup on every change.
  */
 function SidebarShellEditor( { initialContent, onUpdate } ) {
 	const [ blocks, setBlocks ] = useState( () => parse( initialContent ) );
@@ -231,4 +231,4 @@ function init() {
 	shell.classList.add( 'is-editor-mounted' );
 }
 
-domReady( init );
+onDomReady( init );

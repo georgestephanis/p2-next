@@ -1,0 +1,39 @@
+.p2026-reaction-picker {
+	padding: 0.5rem;
+	background-color: #fff;
+	border-radius: 0.25rem;
+	min-width: 12rem;
+	max-width: 16rem;
+}
+
+.p2026-reaction-picker-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
+	gap: 0.25rem;
+}
+
+.p2026-reaction-picker-item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 2rem;
+	padding: 0;
+	border: 1px solid #eee;
+	border-radius: 0.25rem;
+	background-color: #f9f9f9;
+	font-size: 1.25rem;
+	cursor: pointer;
+	transition: all 0.15s ease;
+
+	&:hover {
+		background-color: #f0f0f0;
+		border-color: #ddd;
+		transform: scale(1.1);
+	}
+
+	&:focus-visible {
+		outline: 2px solid #0073aa;
+		outline-offset: -2px;
+	}
+}

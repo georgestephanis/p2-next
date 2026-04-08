@@ -11,7 +11,9 @@
  * render in normal flow inside the slot when active.
  */
 import { createRoot, createElement } from '@wordpress/element';
+import { SlotFillProvider } from '@wordpress/components';
 import PostEnhancement from './components/PostEnhancement';
+import ReactionSlotFills from './modules/reactions/SlotFills';
 
 /**
  * Read a post's comment count from server-rendered markup.
@@ -74,11 +76,16 @@ export function setupPostToolbar( postId, postElement ) {
 
 	const root = createRoot( slot );
 	root.render(
-		createElement( PostEnhancement, {
-			postId,
-			postElement,
-			initialCommentCount,
-		} )
+		createElement(
+			SlotFillProvider,
+			null,
+			createElement( ReactionSlotFills ),
+			createElement( PostEnhancement, {
+				postId,
+				postElement,
+				initialCommentCount,
+			} )
+		)
 	);
 
 	return () => root.unmount();
