@@ -239,24 +239,24 @@ export default function Comment( {
 					) }
 
 					{ canComment && canEditComment && ! replying && ! editing && (
-					<span
-						className="p2026-comment-action-sep"
-						aria-hidden="true"
-					>
-						{ '·' }
-					</span>
-				) }
+						<span
+							className="p2026-comment-action-sep"
+							aria-hidden="true"
+						>
+							{ '·' }
+						</span>
+					) }
 
-				{ canEditComment && ! editing && ! replying && (
-					<Button
-						variant="link"
-						onClick={ () => setEditing( true ) }
-					>
-						{ __( 'Edit', 'p2026' ) }
-					</Button>
-				) }
+					{ canEditComment && ! editing && ! replying && (
+						<Button
+							variant="link"
+							onClick={ () => setEditing( true ) }
+						>
+							{ __( 'Edit', 'p2026' ) }
+						</Button>
+					) }
 
-				{ canComment && replying && ! editing && (
+					{ canComment && replying && ! editing && (
 						<div className="p2026-reply-form">
 							{ ! currentUser && (
 								<>
