@@ -152,15 +152,15 @@ Current modules:
 
 ### Module Matrix
 
-| Module           | PHP Backend File                   | Frontend Entrypoint                                                             | REST Routes                                                                                                      |
-| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `mentions`       | `modules/mentions/index.php`       | `src/modules/mentions/index.js`                                                 | `GET /p2026/v1/users`, `GET /p2026/v1/users/{id}`                                                                |
-| `notifications`  | `modules/notifications/index.php`  | `src/modules/notifications/index.js`                                            | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
-| `link-previews`  | `modules/link-previews/index.php`  | `src/modules/link-previews/index.js`                                            | `GET /p2026/v1/link-preview?url=...`                                                                             |
-| `post-state`     | `modules/post-state/index.php`     | Core UI integration (`src/components/PostEnhancement.js`)                       | `POST /p2026/v1/posts/{id}/state`                                                                                |
-| `audit-log`      | `modules/audit-log/index.php`      | `src/modules/audit-log/audit-log-viewer.js`                                     | `GET /p2026/v1/audit-log/days`, `GET /p2026/v1/audit-log/entries`                                                |
-| `comment-editor` | `modules/comment-editor/index.php` | Core UI integration (`src/components/Comments.js`, `src/components/Comment.js`) | Extends `POST /wp/v2/comments` via `p2026_format=markdown` processing                                            |
-| `sidebar-shell`  | `modules/sidebar-shell/index.php`  | `src/modules/sidebar-shell/index.js`, `src/modules/sidebar-shell/SidebarControls.js` | No dedicated REST routes (theme/layout shell + settings-backed rendering)                                         |
+| Module           | PHP Backend File                   | Frontend Entrypoint                                                                  | REST Routes                                                                                                      |
+| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `mentions`       | `modules/mentions/index.php`       | `src/modules/mentions/index.js`                                                      | `GET /p2026/v1/users`, `GET /p2026/v1/users/{id}`                                                                |
+| `notifications`  | `modules/notifications/index.php`  | `src/modules/notifications/index.js`                                                 | `GET /p2026/v1/notifications`, `POST /p2026/v1/notifications/{id}/read`, `POST /p2026/v1/notifications/read-all` |
+| `link-previews`  | `modules/link-previews/index.php`  | `src/modules/link-previews/index.js`                                                 | `GET /p2026/v1/link-preview?url=...`                                                                             |
+| `post-state`     | `modules/post-state/index.php`     | Core UI integration (`src/components/PostEnhancement.js`)                            | `POST /p2026/v1/posts/{id}/state`                                                                                |
+| `audit-log`      | `modules/audit-log/index.php`      | `src/modules/audit-log/audit-log-viewer.js`                                          | `GET /p2026/v1/audit-log/days`, `GET /p2026/v1/audit-log/entries`                                                |
+| `comment-editor` | `modules/comment-editor/index.php` | Core UI integration (`src/components/Comments.js`, `src/components/Comment.js`)      | Extends `POST /wp/v2/comments` via `p2026_format=markdown` processing                                            |
+| `sidebar-shell`  | `modules/sidebar-shell/index.php`  | `src/modules/sidebar-shell/index.js`, `src/modules/sidebar-shell/SidebarControls.js` | No dedicated REST routes (theme/layout shell + settings-backed rendering)                                        |
 
 ## Key Files
 
