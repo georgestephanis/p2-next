@@ -4,10 +4,12 @@
 import { useState, useCallback, useEffect } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button, TextControl } from '@wordpress/components';
-import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
-import MarkdownCommentEditor from './MarkdownCommentEditor';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
+import {
+	getCommentEditorFormat,
+	renderCommentEditor,
+} from './comment-editor-registry';
 
 function isMarkdownEmpty( markdown = '' ) {
 	return ! markdown || ! markdown.trim();
@@ -60,6 +62,18 @@ export default function Comment( {
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 	const canEditComment = !! comment.p2026CanEdit;
+	const replyEditorContext = {
+		scope: 'reply',
+		postId,
+		commentId: comment.id,
+	};
+	const editEditorContext = {
+		scope: 'edit-comment',
+		postId,
+		commentId: comment.id,
+	};
+	const replyFormat = getCommentEditorFormat( replyEditorContext );
+	const editFormat = getCommentEditorFormat( editEditorContext );
 
 	useEffect( () => {
 		if ( ! editing ) {
@@ -89,6 +103,7 @@ export default function Comment( {
 			postId,
 			parentId: comment.id,
 			content: replyContent,
+			format: replyFormat,
 			authorData,
 		} );
 		setReplyContent( '' );
@@ -108,6 +123,7 @@ export default function Comment( {
 		guestEmail,
 		guestUrl,
 		createComment,
+		replyFormat,
 	] );
 
 	const avatarUrl =
@@ -123,11 +139,18 @@ export default function Comment( {
 			postId,
 			commentId: comment.id,
 			content: editContent,
-			format: 'markdown',
+			format: editFormat,
 		} );
 
 		setEditing( false );
-	}, [ canEditComment, editContent, updateComment, postId, comment.id ] );
+	}, [
+		canEditComment,
+		editContent,
+		updateComment,
+		postId,
+		comment.id,
+		editFormat,
+	] );
 
 	return (
 		<div className="p2026-comment" id={ `comment-${ comment.id }` }>
@@ -166,12 +189,17 @@ export default function Comment( {
 
 			{ editing && (
 				<div className="p2026-reply-form p2026-comment-edit-form">
-					<MarkdownCommentEditor
-						label={ __( 'Edit comment', 'p2026' ) }
-						placeholder={ __( 'Edit your comment…', 'p2026' ) }
-						value={ editContent }
-						onChange={ setEditContent }
-					/>
+					{ renderCommentEditor(
+						{
+							label: __( 'Edit comment', 'p2026' ),
+							hideLabelFromVision: true,
+							placeholder: __( 'Edit your comment…', 'p2026' ),
+							value: editContent,
+							onChange: setEditContent,
+							rows: 4,
+						},
+						editEditorContext
+					) }
 					<div className="p2026-reply-actions">
 						<Button
 							variant="primary"
@@ -247,14 +275,20 @@ export default function Comment( {
 									/>
 								</>
 							) }
-							<MentionTextareaControl
-								label={ __( 'Reply', 'p2026' ) }
-								hideLabelFromVision
-								placeholder={ __( 'Write a reply…', 'p2026' ) }
-								value={ replyContent }
-								onChange={ setReplyContent }
-								rows={ 3 }
-							/>
+							{ renderCommentEditor(
+								{
+									label: __( 'Reply', 'p2026' ),
+									hideLabelFromVision: true,
+									placeholder: __(
+										'Write a reply…',
+										'p2026'
+									),
+									value: replyContent,
+									onChange: setReplyContent,
+									rows: 3,
+								},
+								replyEditorContext
+							) }
 							<div className="p2026-reply-actions">
 								<Button
 									variant="primary"

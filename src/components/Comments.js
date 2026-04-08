@@ -7,7 +7,10 @@ import { Button, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comment from './Comment';
-import MarkdownCommentEditor from './MarkdownCommentEditor';
+import {
+	getCommentEditorFormat,
+	renderCommentEditor,
+} from './comment-editor-registry';
 
 function isMarkdownEmpty( markdown = '' ) {
 	return ! markdown || ! markdown.trim();
@@ -73,13 +76,22 @@ export default function Comments( { postId, canCreateComments = true } ) {
 	const canComment =
 		( window.p2026Config?.canComment ?? !! currentUser ) &&
 		canCreateComments;
+	const editorContext = {
+		scope: 'new-comment',
+		postId,
+	};
+	const commentFormat = getCommentEditorFormat( editorContext );
 	const requireNameEmail =
 		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 
 	const onCommentSubmit = useCallback( async () => {
-		if ( ! canComment || isMarkdownEmpty( content ) || missingGuestIdentity ) {
+		if (
+			! canComment ||
+			isMarkdownEmpty( content ) ||
+			missingGuestIdentity
+		) {
 			return;
 		}
 
@@ -94,7 +106,7 @@ export default function Comments( { postId, canCreateComments = true } ) {
 		await createComment( {
 			postId,
 			content,
-			format: 'markdown',
+			format: commentFormat,
 			authorData,
 		} );
 
@@ -114,6 +126,7 @@ export default function Comments( { postId, canCreateComments = true } ) {
 		guestUrl,
 		createComment,
 		postId,
+		commentFormat,
 	] );
 
 	const tree = buildTree( comments );
@@ -148,11 +161,17 @@ export default function Comments( { postId, canCreateComments = true } ) {
 							/>
 						</>
 					) }
-					<MarkdownCommentEditor
-						placeholder={ __( 'Write a comment…', 'p2026' ) }
-						value={ content }
-						onChange={ setContent }
-					/>
+					{ renderCommentEditor(
+						{
+							label: __( 'Comment', 'p2026' ),
+							hideLabelFromVision: true,
+							placeholder: __( 'Write a comment…', 'p2026' ),
+							value: content,
+							onChange: setContent,
+							rows: 4,
+						},
+						editorContext
+					) }
 					<div className="p2026-reply-actions">
 						<Button
 							variant="primary"

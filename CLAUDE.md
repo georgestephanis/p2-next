@@ -34,11 +34,13 @@ It is intentionally not a complete SPA replacement.
 -   src/modules/mentions/: JS mentions module — Block Editor autocomplete, textarea autocomplete (`MentionTextareaControl`), and hovercard host.
 -   src/modules/notifications/: JS notifications module — dock UI and item rendering.
 -   src/modules/sidebar-shell/: JS sidebar-shell module — vanilla JS mount/collapse controller (`index.js`), `SidebarControls.js` React component (search + state filter), and admin block editor for configuring default block content (`admin.js`).
+-   src/modules/comment-editor/: markdown WYSIWYG editor component for comment create/edit flows.
 -   modules/: PHP modules directory; each subdirectory contains an `index.php` loaded by glob on init.
 -   modules/mentions/index.php: REST endpoints for user search and hovercard detail, @mention linkification on `the_content`/`comment_text`, and the `p2026_mentions_found` notification hook.
 -   modules/notifications/index.php: per-user notification storage, REST endpoints, and hooks for mention/reply notifications.
 -   modules/post-state/index.php: taxonomy-backed workflow state, REST field + mutation endpoint, and audit event emission.
 -   modules/audit-log/index.php: backend listener for audit events persisted to JSONL or internal CPT, plus audit settings tab and admin REST endpoints.
+-   modules/comment-editor/index.php: optional markdown comment-processing hooks for REST create/update (`p2026_format=markdown`).
 -   src/modules/audit-log/: admin DataViews app for browsing audit entries in the settings tab.
 -   .github/: WordPress Playground blueprint and setup script.
 -   build/: generated artifacts from @wordpress/scripts (do not hand-edit).
@@ -198,7 +200,7 @@ p2026 has a lightweight module system for self-contained features.
 **PHP side:** `p2026.php` globs `modules/*/index.php` at init and requires each file if `p2026_is_module_active( $slug )` returns true. The activation model is dual-default:
 
 -   **Default-active modules** (the majority): active unless their slug appears in `p2026_disabled_modules`. Adding a new module to this category requires no opt-in from existing installs.
--   **Default-inactive modules** (`sidebar-shell` currently): inactive unless their slug appears in `p2026_enabled_modules`, *or* the context-aware default evaluates to active (e.g. `sidebar-shell` auto-activates when the theme lacks native sidebar support).
+-   **Default-inactive modules** (`sidebar-shell` currently): inactive unless their slug appears in `p2026_enabled_modules`, _or_ the context-aware default evaluates to active (e.g. `sidebar-shell` auto-activates when the theme lacks native sidebar support).
 -   `p2026_module_default_is_active( $slug )` in `p2026.php` encodes the per-module default; add new cases there when introducing a context-aware default.
 
 Each PHP module file is responsible for hooking into WordPress itself; there is no module API to call.
@@ -207,14 +209,15 @@ Each PHP module file is responsible for hooking into WordPress itself; there is 
 
 **Active modules:**
 
-| Module         | Default   | PHP                                                                                                    | JS                                                                                                              |
-| -------------- | --------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| mentions       | active    | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook              | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard                           |
-| notifications  | active    | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling                            |
-| link-previews  | active    | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache              | `src/modules/link-previews/` — Internal post/comment hover preview cards                                        |
-| post-state     | active    | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks             | N/A (UI lives in existing core components/store)                                                                |
-| audit-log      | active    | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                                               |
-| sidebar-shell  | context¹  | `modules/sidebar-shell/index.php` — fixed collapsible sidebar panel, widget area, settings tab + block editor admin | `src/modules/sidebar-shell/` — collapse/expand controller, `SidebarControls.js` (search + state filter), admin block editor |
+| Module         | Default  | PHP                                                                                                                 | JS                                                                                                                                                |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| mentions       | active   | `modules/mentions/index.php` — REST endpoints, linkification, `p2026_mentions_found` hook                           | `src/modules/mentions/` — Block Editor completer, `MentionTextareaControl`, hovercard                                                             |
+| notifications  | active   | `modules/notifications/index.php` — Notification CRUD, auto-create on mentions/replies, REST endpoints              | `src/modules/notifications/` — NotificationDock, NotificationItem, real-time polling                                                              |
+| link-previews  | active   | `modules/link-previews/index.php` — Internal link preview REST endpoint + transient cache                           | `src/modules/link-previews/` — Internal post/comment hover preview cards                                                                          |
+| post-state     | active   | `modules/post-state/index.php` — workflow taxonomy state, REST field/endpoint, audit hooks                          | N/A (UI lives in existing core components/store)                                                                                                  |
+| audit-log      | active   | `modules/audit-log/index.php` — persists `p2026_audit_log_event` payloads and serves audit REST routes              | `src/modules/audit-log/audit-log-viewer.js` — admin audit browser                                                                                 |
+| comment-editor | active   | `modules/comment-editor/index.php` — markdown render/sanitize and markdown source persistence for comments          | Core comment UI integration (`src/components/Comments.js`, `src/components/Comment.js`) via `src/modules/comment-editor/MarkdownCommentEditor.js` |
+| sidebar-shell  | context¹ | `modules/sidebar-shell/index.php` — fixed collapsible sidebar panel, widget area, settings tab + block editor admin | `src/modules/sidebar-shell/` — collapse/expand controller, `SidebarControls.js` (search + state filter), admin block editor                       |
 
 ¹ `sidebar-shell` defaults to **active** when the theme has no detected sidebar (`sidebar.php` or `parts/sidebar.html`); defaults to **inactive** otherwise. Can be overridden on the Modules settings page.
 
