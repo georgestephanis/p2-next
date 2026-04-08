@@ -55,15 +55,14 @@ export default function Comment( {
 	);
 
 	const currentUser = window.p2026Config?.currentUser;
+	const requireNameEmail =
+		! currentUser && !! window.p2026Config?.requireNameEmail;
+	const canReact =
+		!! window.p2026Config?.activeModules?.includes( 'reactions' ) &&
+		!! currentUser;
 	const canComment =
 		( window.p2026Config?.canComment ?? !! currentUser ) &&
 		canCreateComments;
-	const canReact =
-		!! currentUser ||
-		! window.p2026Config?.requireNameEmail ||
-		( window.p2026Config?.canComment ?? true );
-	const requireNameEmail =
-		! currentUser && !! window.p2026Config?.requireNameEmail;
 	const missingGuestIdentity =
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 	const canEditComment = !! comment.p2026CanEdit;

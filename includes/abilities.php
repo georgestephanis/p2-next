@@ -452,6 +452,10 @@ function p2026_can_update_comments( $comment_id = 0 ) {
 /**
  * Whether current user can create reactions.
  *
+ * Reactions require a logged-in user to avoid anonymous user_id=0 collisions
+ * where all guest reactions share the same identity and cannot be individually
+ * managed or removed.
+ *
  * @param int $post_id Optional post ID for object-level checks.
  * @return bool
  */
@@ -465,11 +469,7 @@ function p2026_can_create_reactions( $post_id = 0 ) {
 				return false;
 			}
 
-			if ( is_user_logged_in() ) {
-				return true;
-			}
-
-			return get_option( 'comment_registration' ) === '0';
+			return is_user_logged_in();
 		},
 		$input
 	);
@@ -478,13 +478,17 @@ function p2026_can_create_reactions( $post_id = 0 ) {
 /**
  * Whether current user can remove reactions.
  *
+ * Anonymous reactions are keyed to user ID 0, so guests cannot be safely
+ * authorized to remove only their own reactions without an additional
+ * guest-specific identity mechanism.
+ *
  * @return bool
  */
 function p2026_can_remove_reactions() {
 	return p2026_check_permission(
 		'p2026/reaction-remove',
 		static function () {
-			return is_user_logged_in() || get_option( 'comment_registration' ) === '0';
+			return is_user_logged_in();
 		}
 	);
 }

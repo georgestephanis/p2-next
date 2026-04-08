@@ -427,7 +427,9 @@ export const actions = {
 					actions.fetchReactionsForObject( objectType, objectId )
 				);
 				// Emit action hook for other modules to integrate
-				const { doAction } = await import( '@wordpress/hooks' );
+				const { doAction } = await import(
+					/* webpackChunkName: "wp-hooks" */ '@wordpress/hooks'
+				);
 				doAction( 'p2026.reaction.added', {
 					objectType,
 					objectId,
@@ -458,7 +460,9 @@ export const actions = {
 					actions.fetchReactionsForObject( objectType, objectId )
 				);
 				// Emit action hook for other modules to integrate
-				const { doAction } = await import( '@wordpress/hooks' );
+				const { doAction } = await import(
+					/* webpackChunkName: "wp-hooks" */ '@wordpress/hooks'
+				);
 				doAction( 'p2026.reaction.removed', {
 					objectType,
 					objectId,

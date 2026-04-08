@@ -35,7 +35,7 @@ export default function CommentReactionsWrapper( { commentId } ) {
 			userReaction={ userReaction }
 			isLoading={ loading }
 			error={ error }
-			canReact={ !! window.p2026Config?.canComment }
+			canReact={ !! window.p2026Config?.currentUser }
 			onToggleReaction={ toggleReaction }
 			availableEmoji={ config.emoji }
 		/>

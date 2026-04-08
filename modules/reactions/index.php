@@ -19,23 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 const P2026_REACTION_COMMENT_TYPE = 'p2026_reaction';
 const P2026_REACTIONS_OPTION      = 'p2026_reactions_config';
 
-/**
- * Register the custom comment type for reactions.
- *
- * Reactions are stored as comments with a custom type, allowing us to leverage
- * WordPress's existing comment storage and REST API while keeping reactions
- * semantically distinct from regular comments.
- */
-function p2026_reactions_register_comment_type() {
-	// Register custom comment type.
-	add_filter(
-		'get_comments_number_text',
-		'p2026_reactions_filter_comment_count',
-		10,
-		3
-	);
-}
-add_action( 'init', 'p2026_reactions_register_comment_type' );
+
 
 /**
  * Get reactions configuration.
@@ -99,12 +83,9 @@ function p2026_reactions_add(
 		return false;
 	}
 
-	// Check if user is allowed to react.
-	if ( ! $user_id && ! is_user_logged_in() ) {
-		$require_name_email = (bool) get_option( 'require_name_email' );
-		if ( $require_name_email ) {
-			return false;
-		}
+	// Reactions require a logged-in user to avoid anonymous user_id=0 collisions.
+	if ( ! $user_id || ! is_user_logged_in() ) {
+		return false;
 	}
 
 	// Verify emoji is allowed.
@@ -421,7 +402,6 @@ function p2026_reactions_rest_get( WP_REST_Request $request ) {
 	$object_type = $request->get_param( 'object_type' );
 
 	$reactions = p2026_reactions_get_for_object( $object_id, $object_type );
-	$counts    = p2026_reactions_count( $object_id, $object_type );
 
 	// Transform reactions to include user info.
 	$formatted = array();

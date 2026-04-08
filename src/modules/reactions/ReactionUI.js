@@ -30,18 +30,7 @@ export default function ReactionUI( {
 	const containerRef = useRef( null );
 	const pickerButtonRef = useRef( null );
 	const pickerPopoverRef = useRef( null );
-
-	// Debounce reaction toggling.
-	const debounceTimerRef = useRef( null );
-	const debouncedToggleReaction = useCallback(
-		( emoji ) => {
-			clearTimeout( debounceTimerRef.current );
-			debounceTimerRef.current = setTimeout( () => {
-				onToggleReaction( emoji );
-			}, 100 );
-		},
-		[ onToggleReaction ]
-	);
+	const reactionButtonRefs = useRef( {} );
 
 	// Sync external reactions to local display state.
 	useEffect( () => {
@@ -58,17 +47,17 @@ export default function ReactionUI( {
 
 	const handleAddReaction = useCallback(
 		( emoji ) => {
-			debouncedToggleReaction( emoji );
+			onToggleReaction( emoji );
 			handleClosePicker();
 		},
-		[ debouncedToggleReaction, handleClosePicker ]
+		[ onToggleReaction, handleClosePicker ]
 	);
 
 	const handleToggleReaction = useCallback(
 		( emoji ) => {
-			debouncedToggleReaction( emoji );
+			onToggleReaction( emoji );
 		},
-		[ debouncedToggleReaction ]
+		[ onToggleReaction ]
 	);
 
 	useEffect( () => {
@@ -113,7 +102,13 @@ export default function ReactionUI( {
 			<div className="p2026-reactions-container">
 				{ Object.entries( displayReactions ).map(
 					( [ emoji, reactionData ] ) => (
-						<div key={ emoji } className="p2026-reaction-wrapper">
+						<div
+							key={ emoji }
+							className="p2026-reaction-wrapper"
+							ref={ ( el ) => {
+								reactionButtonRefs.current[ emoji ] = el;
+							} }
+						>
 							<ReactionButton
 								emoji={ emoji }
 								count={ reactionData.count || 0 }
@@ -129,6 +124,9 @@ export default function ReactionUI( {
 									participants={ reactionData.users || [] }
 									isVisible={
 										visibleParticipantEmoji === emoji
+									}
+									anchorEl={
+										reactionButtonRefs.current[ emoji ]
 									}
 									onClose={ () =>
 										setVisibleParticipantEmoji( null )
