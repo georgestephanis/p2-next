@@ -239,6 +239,25 @@ body.p2026-sidebar-shell-visible {
 	color: #1f2328;
 }
 
+.p2026-sidebar-shell__widget .wp-block-latest-posts__post-date,
+.p2026-sidebar-shell__blocks .wp-block-latest-posts__post-date,
+.p2026-sidebar-shell__widget .wp-block-latest-comments__comment-date,
+.p2026-sidebar-shell__blocks .wp-block-latest-comments__comment-date {
+	display: block;
+	margin-top: 0.25rem;
+	color: #5a6773;
+	font-size: 0.78rem;
+	line-height: 1.3;
+}
+
+.p2026-sidebar-shell__widget .wp-block-latest-posts li > a,
+.p2026-sidebar-shell__blocks .wp-block-latest-posts li > a,
+.p2026-sidebar-shell__widget .wp-block-latest-comments__comment-meta,
+.p2026-sidebar-shell__blocks .wp-block-latest-comments__comment-meta {
+	display: block;
+	line-height: 1.4;
+}
+
 .p2026-sidebar-shell__title {
 	margin: 0 0 8px;
 	font-size: 0.95rem;

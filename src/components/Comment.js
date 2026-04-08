@@ -238,14 +238,17 @@ export default function Comment( {
 						</Button>
 					) }
 
-					{ canComment && canEditComment && ! replying && ! editing && (
-						<span
-							className="p2026-comment-action-sep"
-							aria-hidden="true"
-						>
-							{ '·' }
-						</span>
-					) }
+					{ canComment &&
+						canEditComment &&
+						! replying &&
+						! editing && (
+							<span
+								className="p2026-comment-action-sep"
+								aria-hidden="true"
+							>
+								{ '·' }
+							</span>
+						) }
 
 					{ canEditComment && ! editing && ! replying && (
 						<Button

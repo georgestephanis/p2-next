@@ -274,8 +274,7 @@ export default function PostEnhancement( {
 		commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
 	}
 
-	const commentCountSummary =
-		isCountLoading
+	const commentCountSummary = isCountLoading
 		? null
 		: commentCount > 0
 		? sprintf(
