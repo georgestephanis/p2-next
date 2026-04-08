@@ -46,11 +46,10 @@ These buckets are rough planning sizes, not delivery commitments.
 
 ### In Progress
 
--   [Reactions On Posts And Comments](./16-reactions.md) — Backend complete (custom comment type, REST API, admin settings); UI scaffold started.
-
 ### Shipped
 
 -   [Sidebar Shell And Layout](./02-sidebar-shell.md) ✓ shipped in `add/02-sidebar-shell`
+-   [Reactions On Posts And Comments](./16-reactions.md) ✓ shipped in `add/16-reactions`
 
 ### Architectural
 
@@ -75,7 +74,7 @@ These buckets are rough planning sizes, not delivery commitments.
 13. [Draft Auto-Save And Preview](./18-draft-autosave-preview.md)
 14. [Support Tags Via Hashtag](./15-tags-via-hashtag.md)
 15. [Glossary And Knowledge Base](./21-glossary-knowledge-base.md)
-16. [Reactions On Posts And Comments](./16-reactions.md)
+16. ~~[Reactions On Posts And Comments](./16-reactions.md)~~ ✓ shipped
 17. [Announcements](./17-announcements.md)
 18. [Keyboard Shortcuts](./19-keyboard-shortcuts.md)
 19. [Project Threads](./23-project-threads.md)

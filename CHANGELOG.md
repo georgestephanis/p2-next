@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+-   Added Reactions module (`modules/reactions/`) with full backend and frontend: emoji reactions on posts and comments, configurable modes (single 👍, curated set, or any emoji), aggregate counts, participant listings, and self-service removal.
+-   Added `includes/abilities.php` consolidating all Abilities API registration and permission helpers. New abilities: `p2026/comment-create`, `p2026/comment-update`, `p2026/reaction-create`, `p2026/reaction-remove`. New helpers: `p2026_can_create_comments()`, `p2026_can_update_comments()`, `p2026_can_create_reactions()`, `p2026_can_remove_reactions()`.
+-   Added `src/slots/reactions.js` — shared SlotFill registry (`PostFooterMetaSlot`, `PostFooterMetaFill`, `CommentFooterMetaSlot`, `CommentFooterMetaFill`) for cross-module UI injection into post and comment footers.
+-   Added Reactions Interactivity API store (`src/interactivity/reactions.js`) under namespace `p2026/reactions` for lightweight, Script-Module-compatible reactions state.
+-   Added `reactionsConfig` (emoji mode and allowed emoji) to `window.p2026Config` when the reactions module is active.
+-   Added Admin settings tab for Reactions configuration (mode selection, custom emoji list).
+
+### Changed
+
+-   Refactored `PostEnhancement.js` comment summary bar: moved post-footer meta (including reactions) into a `PostFooterMetaSlot` fill so reaction and future footer items compose without tight coupling.
+-   Improved comment count label in `PostEnhancement.js`: "Loading comments…" shown while loading, count summary shown when collapsed, "Hide discussion" shown when expanded.
+-   Simplified `Comment.js` `useEffect` dependency array for edit content sync to track the full `comment` object rather than individual fields.
+-   Reactions require a logged-in user (`is_user_logged_in()`); anonymous reaction creation is intentionally unsupported to avoid user_id=0 identity collisions.
+
 ## 0.4.0 - 2026-04-07
 
 ### Added
