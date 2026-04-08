@@ -10,24 +10,11 @@ import MarkdownCommentEditor from './MarkdownCommentEditor';
 addFilter(
 	'p2026.commentEditorComponent',
 	'p2026/comment-editor/component',
-	( DefaultComponent, context = {} ) => {
-		// Keep reply editor on mention textarea for now.
-		if ( context.scope === 'reply' ) {
-			return DefaultComponent;
-		}
-
-		return MarkdownCommentEditor;
-	}
+	() => MarkdownCommentEditor
 );
 
 addFilter(
 	'p2026.commentEditorFormat',
 	'p2026/comment-editor/format',
-	( format, context = {} ) => {
-		if ( context.scope === 'reply' ) {
-			return format;
-		}
-
-		return 'markdown';
-	}
+	() => 'markdown'
 );

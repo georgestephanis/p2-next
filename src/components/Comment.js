@@ -238,14 +238,14 @@ export default function Comment( {
 						</Button>
 					) }
 
-					{ canEditComment && ! editing && ! replying && (
-						<Button
-							variant="link"
-							onClick={ () => setEditing( true ) }
-						>
-							{ __( 'Edit', 'p2026' ) }
-						</Button>
-					) }
+				{ canComment && canEditComment && ! replying && ! editing && (
+					<span
+						className="p2026-comment-action-sep"
+						aria-hidden="true"
+					>
+						{ '·' }
+					</span>
+				) }
 
 					{ canComment && replying && ! editing && (
 						<div className="p2026-reply-form">
