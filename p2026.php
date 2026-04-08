@@ -4,7 +4,7 @@
  * Plugin URI:  https://github.com/georgestephanis/p2026
  * Update URI:  https://github.com/georgestephanis/p2026
  * Description: Modern P2/o2 replacement using the Block Editor and REST API.
- * Version:     0.3.0
+ * Version:     0.4.0
  * Author:      George Stephanis
  * License:     GPL-2.0-or-later
  * Text Domain: p2026
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'P2026_VERSION', '0.3.0' );
+define( 'P2026_VERSION', '0.4.0' );
 define( 'P2026_DIR', plugin_dir_path( __FILE__ ) );
 define( 'P2026_URL', plugin_dir_url( __FILE__ ) );
 

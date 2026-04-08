@@ -4,7 +4,7 @@
  *
  * Module Name:        Sidebar Shell
  * Module Description: Optional fallback sidebar shell for themes that do not expose a native sidebar.
- * Module Version:     0.1.0
+ * Module Version:     0.4.0
  *
  * @package P2026\Modules\SidebarShell
  */

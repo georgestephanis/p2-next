@@ -4,7 +4,7 @@
  *
  * Module Name:        Mentions
  * Module Description: Parses @username references in posts and comments, notifies mentioned users, and provides autocomplete in the editor.
- * Module Version:     0.3.0
+ * Module Version:     0.4.0
  *
  * Provides @username mention support:
  *   - REST endpoint for mention autocomplete (logged-in users only).

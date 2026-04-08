@@ -4,7 +4,7 @@
  *
  * Module Name:        Comment Editor
  * Module Description: Optional markdown WYSIWYG enhancements for frontend comment create/edit flows.
- * Module Version:     0.1.0
+ * Module Version:     0.4.0
  *
  * @package P2026\Modules\CommentEditor
  */

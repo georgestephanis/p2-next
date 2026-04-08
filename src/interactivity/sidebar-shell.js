@@ -25,7 +25,9 @@ function isManagedRoot( root ) {
 function getRootData( root ) {
 	const allowCollapse = root?.dataset?.allowCollapse !== '0';
 	const defaultOpen = root?.dataset?.defaultOpen !== '0';
-	const toggleButton = root?.querySelector?.( '.p2026-sidebar-shell__toggle' );
+	const toggleButton = root?.querySelector?.(
+		'.p2026-sidebar-shell__toggle'
+	);
 	const panel = root?.querySelector?.( '#p2026-sidebar-shell-panel' );
 
 	return {
@@ -53,7 +55,10 @@ function setExpanded( root, expanded ) {
 	);
 
 	if ( canToggle && toggleButton ) {
-		toggleButton.setAttribute( 'aria-expanded', expanded ? 'true' : 'false' );
+		toggleButton.setAttribute(
+			'aria-expanded',
+			expanded ? 'true' : 'false'
+		);
 	}
 
 	if ( canToggle ) {
@@ -132,7 +137,9 @@ interactivityStore( 'p2026/sidebar-shell', {
 			setExpanded( root, nextExpanded );
 
 			if ( nextExpanded ) {
-				window.requestAnimationFrame( () => focusFirstInsidePanel( root ) );
+				window.requestAnimationFrame( () =>
+					focusFirstInsidePanel( root )
+				);
 			}
 		} ),
 
