@@ -4,6 +4,7 @@
  * Used by PostEnhancement to display reactions on posts.
  */
 import { useState } from '@wordpress/element';
+import { useEffect } from '@wordpress/element';
 import { useReactions } from './hooks';
 import ReactionUI from './ReactionUI';
 
@@ -13,7 +14,7 @@ export default function PostReactionsWrapper( { postId } ) {
 	const [ readyToRender, setReadyToRender ] = useState( false );
 
 	// Delay render to ensure DOM is stable.
-	useState( () => {
+	useEffect( () => {
 		const timer = setTimeout( () => setReadyToRender( true ), 100 );
 		return () => clearTimeout( timer );
 	}, [] );

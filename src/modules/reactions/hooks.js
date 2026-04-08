@@ -3,7 +3,7 @@
  * Now integrated with @wordpress/data store for global state management
  * and cross-module integration.
  */
-import { useCallback } from '@wordpress/element';
+import { useCallback, useEffect } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { STORE_NAME } from '../../store';
 
@@ -41,6 +41,12 @@ export const useReactions = ( objectId, objectType = 'post' ) => {
 	const fetchReactions = useCallback( async () => {
 		await fetchReactionsForObject( objectType, objectId );
 	}, [ objectId, objectType, fetchReactionsForObject ] );
+
+	useEffect( () => {
+		if ( objectId ) {
+			fetchReactions();
+		}
+	}, [ objectId, objectType, fetchReactions ] );
 
 	// Add a reaction.
 	const handleAddReaction = useCallback(

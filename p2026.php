@@ -172,7 +172,7 @@ function p2026_enqueue_frontend() {
 				'requireNameEmail'    => $require_name_email,
 				'threadDepth'         => (int) get_option( 'thread_comments_depth', 5 ),
 				'activeModules'       => p2026_get_active_module_slugs(),
-				'reactionsConfig'     => p2026_module_is_active( 'reactions' ) ? p2026_reactions_get_config() : null,
+				'reactionsConfig'     => p2026_is_module_active( 'reactions' ) ? p2026_reactions_get_config() : null,
 			)
 		) . ';',
 		'before'

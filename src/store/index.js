@@ -412,23 +412,19 @@ export const actions = {
 	},
 
 	addReaction( objectType, objectId, emoji ) {
-		return async ( { dispatch, select } ) => {
+		return async ( { dispatch } ) => {
 			try {
-				const response = await apiFetch( {
+				await apiFetch( {
 					path: '/p2026/v1/reactions',
 					method: 'POST',
 					data: {
-						objectType,
-						objectId,
+						object_type: objectType,
+						object_id: objectId,
 						emoji,
 					},
 				} );
-				dispatch(
-					actions.setReactionsForObject(
-						objectType,
-						objectId,
-						response.reactions
-					)
+				await dispatch(
+					actions.fetchReactionsForObject( objectType, objectId )
 				);
 				// Emit action hook for other modules to integrate
 				const { doAction } = await import( '@wordpress/hooks' );
@@ -437,7 +433,7 @@ export const actions = {
 					objectId,
 					emoji,
 				} );
-				return response;
+				return true;
 			} catch ( error ) {
 				// eslint-disable-next-line no-console
 				console.error( 'Failed to add reaction:', error );
@@ -447,23 +443,19 @@ export const actions = {
 	},
 
 	removeReaction( objectType, objectId, emoji ) {
-		return async ( { dispatch, select } ) => {
+		return async ( { dispatch } ) => {
 			try {
-				const response = await apiFetch( {
+				await apiFetch( {
 					path: '/p2026/v1/reactions',
 					method: 'DELETE',
 					data: {
-						objectType,
-						objectId,
+						object_type: objectType,
+						object_id: objectId,
 						emoji,
 					},
 				} );
-				dispatch(
-					actions.setReactionsForObject(
-						objectType,
-						objectId,
-						response.reactions
-					)
+				await dispatch(
+					actions.fetchReactionsForObject( objectType, objectId )
 				);
 				// Emit action hook for other modules to integrate
 				const { doAction } = await import( '@wordpress/hooks' );
@@ -472,7 +464,7 @@ export const actions = {
 					objectId,
 					emoji,
 				} );
-				return response;
+				return true;
 			} catch ( error ) {
 				// eslint-disable-next-line no-console
 				console.error( 'Failed to remove reaction:', error );
@@ -485,13 +477,13 @@ export const actions = {
 		return async ( { dispatch } ) => {
 			try {
 				const response = await apiFetch( {
-					path: `/p2026/v1/reactions?objectType=${ encodeURIComponent( objectType ) }&objectId=${ objectId }`,
+					path: `/p2026/v1/reactions?object_type=${ encodeURIComponent( objectType ) }&object_id=${ objectId }`,
 				} );
 				dispatch(
 					actions.setReactionsForObject(
 						objectType,
 						objectId,
-						response.reactions
+						response
 					)
 				);
 			} catch ( error ) {

@@ -10,6 +10,7 @@ import {
 	getCommentEditorFormat,
 	renderCommentEditor,
 } from './comment-editor-registry';
+import { CommentFooterMetaSlot } from '../slots/reactions';
 
 function isMarkdownEmpty( markdown = '' ) {
 	return ! markdown || ! markdown.trim();
@@ -257,6 +258,22 @@ export default function Comment( {
 						>
 							{ __( 'Edit', 'p2026' ) }
 						</Button>
+					) }
+
+					{ ! replying && ! editing && (
+						<>
+							<span
+								className="p2026-comment-action-sep"
+								aria-hidden="true"
+							>
+								{ '·' }
+							</span>
+							<CommentFooterMetaSlot
+								fillProps={ {
+									commentId: comment.id,
+								} }
+							/>
+						</>
 					) }
 
 					{ canComment && replying && ! editing && (

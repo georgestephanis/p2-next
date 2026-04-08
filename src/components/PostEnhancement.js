@@ -28,6 +28,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comments from './Comments';
 import PostEditor from './PostEditor';
+import { PostFooterMetaSlot } from '../slots/reactions';
 
 const CONTENT_SELECTOR = '.wp-block-post-content, .entry-content';
 const TITLE_SELECTOR =
@@ -681,6 +682,9 @@ export default function PostEnhancement( {
 									  ) }
 							</span>
 						) }
+					</div>
+					<div className="p2026-comment-summary-meta">
+						<PostFooterMetaSlot fillProps={ { postId } } />
 					</div>
 					<button
 						type="button"

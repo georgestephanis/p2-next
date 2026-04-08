@@ -307,6 +307,7 @@ function p2026_render_settings_page() {
 				$render_hook = 'p2026_settings_render_tab_' . $active_tab;
 				if ( has_action( $render_hook ) ) {
 					do_action( $render_hook, $active_tab );
+					submit_button( __( 'Save Changes', 'p2026' ), 'primary', 'p2026_save_settings', false );
 				} else {
 					?>
 					<p><?php esc_html_e( 'This settings tab is not available.', 'p2026' ); ?></p>
