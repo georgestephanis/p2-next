@@ -215,7 +215,13 @@ export const actions = {
 		};
 	},
 
-	createComment( { postId, parentId = 0, content, authorData = {} } ) {
+	createComment( {
+		postId,
+		parentId = 0,
+		content,
+		authorData = {},
+		format = null,
+	} ) {
 		return async ( { dispatch } ) => {
 			dispatch( actions.setSavingComment( true ) );
 			try {
@@ -226,6 +232,7 @@ export const actions = {
 						post: postId,
 						parent: parentId,
 						content,
+						p2026_format: format,
 						...authorData,
 					},
 				} );
@@ -236,7 +243,7 @@ export const actions = {
 		};
 	},
 
-	updateComment( { postId, commentId, content } ) {
+	updateComment( { postId, commentId, content, format = null } ) {
 		return async ( { dispatch } ) => {
 			dispatch( actions.setSavingComment( true ) );
 			try {
@@ -245,6 +252,7 @@ export const actions = {
 					method: 'POST',
 					data: {
 						content,
+						p2026_format: format,
 					},
 				} );
 

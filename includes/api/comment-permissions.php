@@ -107,6 +107,11 @@ function p2026_register_comment_rest_fields() {
 					return '';
 				}
 
+				$markdown_source = get_comment_meta( $comment_id, '_p2026_markdown_source', true );
+				if ( is_string( $markdown_source ) && '' !== $markdown_source ) {
+					return $markdown_source;
+				}
+
 				$comment = get_comment( $comment_id );
 				if ( ! $comment instanceof WP_Comment ) {
 					return '';

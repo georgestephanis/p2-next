@@ -253,6 +253,9 @@ require_once P2026_DIR . 'includes/api/search.php';
 // Read/Unread state tracking — per-user last activity and unread counts.
 require_once P2026_DIR . 'includes/api/read-state.php';
 
+// Markdown comment rendering + source persistence for REST create/update.
+require_once P2026_DIR . 'includes/api/comments-markdown.php';
+
 // ---------------------------------------------------------------------------
 // Modules — self-contained feature extensions loaded from modules/*/index.php.
 // ---------------------------------------------------------------------------

@@ -5,8 +5,13 @@ import { useState, useCallback, useEffect } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button, TextControl } from '@wordpress/components';
 import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
+import MarkdownCommentEditor from './MarkdownCommentEditor';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
+
+function isMarkdownEmpty( markdown = '' ) {
+	return ! markdown || ! markdown.trim();
+}
 
 function renderedHtmlToText( html = '' ) {
 	if ( ! html ) {
@@ -110,7 +115,7 @@ export default function Comment( {
 		comment.author_avatar_urls?.[ 48 ];
 
 	const onEditSubmit = useCallback( async () => {
-		if ( ! canEditComment || ! editContent.trim() ) {
+		if ( ! canEditComment || isMarkdownEmpty( editContent ) ) {
 			return;
 		}
 
@@ -118,6 +123,7 @@ export default function Comment( {
 			postId,
 			commentId: comment.id,
 			content: editContent,
+			format: 'markdown',
 		} );
 
 		setEditing( false );
@@ -160,19 +166,19 @@ export default function Comment( {
 
 			{ editing && (
 				<div className="p2026-reply-form p2026-comment-edit-form">
-					<MentionTextareaControl
+					<MarkdownCommentEditor
 						label={ __( 'Edit comment', 'p2026' ) }
-						hideLabelFromVision
 						placeholder={ __( 'Edit your comment…', 'p2026' ) }
 						value={ editContent }
 						onChange={ setEditContent }
-						rows={ 4 }
 					/>
 					<div className="p2026-reply-actions">
 						<Button
 							variant="primary"
 							onClick={ onEditSubmit }
-							disabled={ isSaving || ! editContent.trim() }
+							disabled={
+								isSaving || isMarkdownEmpty( editContent )
+							}
 							isBusy={ isSaving }
 						>
 							{ isSaving

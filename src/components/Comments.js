@@ -94,6 +94,7 @@ export default function Comments( { postId, canCreateComments = true } ) {
 		await createComment( {
 			postId,
 			content,
+			format: 'markdown',
 			authorData,
 		} );
 
