@@ -116,7 +116,7 @@ function p2026_rest_pre_insert_comment_markdown( $prepared_comment, $request ) {
 	$raw_content = p2026_rest_comment_request_content_raw( $request );
 	$rendered    = p2026_render_comment_markdown( $raw_content );
 
-	$prepared_comment->comment_content = $rendered;
+	$prepared_comment['comment_content'] = $rendered;
 
 	return $prepared_comment;
 }
