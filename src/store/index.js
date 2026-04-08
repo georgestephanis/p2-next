@@ -23,6 +23,7 @@ const DEFAULT_STATE = {
 	},
 	notifications: [], // array of notification objects
 	unreadNotificationCount: 0, // count of unread notifications
+	reactions: {}, // { "${objectType}_${objectId}": { emoji: { count, users: [] } } }
 	ui: {
 		expandedPosts: [], // post IDs whose comment thread is visible
 		editingPost: null, // post ID currently being edited inline
@@ -109,6 +110,14 @@ export const actions = {
 
 	setUnreadNotificationCount( count ) {
 		return { type: 'SET_UNREAD_NOTIFICATION_COUNT', count };
+	},
+
+	setReactionsForObject( objectType, objectId, reactions ) {
+		return {
+			type: 'SET_REACTIONS_FOR_OBJECT',
+			key: `${ objectType }_${ objectId }`,
+			reactions,
+		};
 	},
 
 	// Async thunks -------------------------------------------------------
@@ -401,6 +410,96 @@ export const actions = {
 			}
 		};
 	},
+
+	addReaction( objectType, objectId, emoji ) {
+		return async ( { dispatch, select } ) => {
+			try {
+				const response = await apiFetch( {
+					path: '/p2026/v1/reactions',
+					method: 'POST',
+					data: {
+						objectType,
+						objectId,
+						emoji,
+					},
+				} );
+				dispatch(
+					actions.setReactionsForObject(
+						objectType,
+						objectId,
+						response.reactions
+					)
+				);
+				// Emit action hook for other modules to integrate
+				const { doAction } = await import( '@wordpress/hooks' );
+				doAction( 'p2026.reaction.added', {
+					objectType,
+					objectId,
+					emoji,
+				} );
+				return response;
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to add reaction:', error );
+				throw error;
+			}
+		};
+	},
+
+	removeReaction( objectType, objectId, emoji ) {
+		return async ( { dispatch, select } ) => {
+			try {
+				const response = await apiFetch( {
+					path: '/p2026/v1/reactions',
+					method: 'DELETE',
+					data: {
+						objectType,
+						objectId,
+						emoji,
+					},
+				} );
+				dispatch(
+					actions.setReactionsForObject(
+						objectType,
+						objectId,
+						response.reactions
+					)
+				);
+				// Emit action hook for other modules to integrate
+				const { doAction } = await import( '@wordpress/hooks' );
+				doAction( 'p2026.reaction.removed', {
+					objectType,
+					objectId,
+					emoji,
+				} );
+				return response;
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to remove reaction:', error );
+				throw error;
+			}
+		};
+	},
+
+	fetchReactionsForObject( objectType, objectId ) {
+		return async ( { dispatch } ) => {
+			try {
+				const response = await apiFetch( {
+					path: `/p2026/v1/reactions?objectType=${ encodeURIComponent( objectType ) }&objectId=${ objectId }`,
+				} );
+				dispatch(
+					actions.setReactionsForObject(
+						objectType,
+						objectId,
+						response.reactions
+					)
+				);
+			} catch ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Failed to fetch reactions:', error );
+			}
+		};
+	},
 };
 
 // ---------------------------------------------------------------------------
@@ -606,6 +705,15 @@ function reducer( state = DEFAULT_STATE, action ) {
 				unreadNotificationCount: action.count,
 			};
 
+		case 'SET_REACTIONS_FOR_OBJECT':
+			return {
+				...state,
+				reactions: {
+					...state.reactions,
+					[ action.key ]: action.reactions,
+				},
+			};
+
 		default:
 			return state;
 	}
@@ -646,6 +754,20 @@ export const selectors = {
 	getUnreadCount: ( state ) => state.readState?.unreadCount ?? 0,
 	getNotifications: ( state ) => state.notifications,
 	getUnreadNotificationCount: ( state ) => state.unreadNotificationCount,
+	getReactionsForObject: ( state, objectType, objectId ) => {
+		const key = `${ objectType }_${ objectId }`;
+		return state.reactions[ key ] ?? {};
+	},
+	getUserReactionForObject: ( state, objectType, objectId, userId ) => {
+		const key = `${ objectType }_${ objectId }`;
+		const reactions = state.reactions[ key ] ?? {};
+		for ( const [ emoji, data ] of Object.entries( reactions ) ) {
+			if ( data.users && data.users.includes( userId ) ) {
+				return emoji;
+			}
+		}
+		return null;
+	},
 };
 
 // ---------------------------------------------------------------------------
