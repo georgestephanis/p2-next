@@ -30,8 +30,8 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Get reactions for a specific object.
 		 *
-		 * @param {Object} state    Reactions state.
-		 * @param {string} objectKey Object identifier (e.g., "post_123" or "comment_456").
+		 * @param {Object} state     - Reactions state.
+		 * @param {string} objectKey - Object identifier (e.g., "post_123" or "comment_456").
 		 * @return {Object} Reactions grouped by emoji.
 		 */
 		getReactions: ( state, objectKey ) => {
@@ -41,8 +41,8 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Get user's reaction on an object.
 		 *
-		 * @param {Object} state    Reactions state.
-		 * @param {string} objectKey Object identifier.
+		 * @param {Object} state     - Reactions state.
+		 * @param {string} objectKey - Object identifier.
 		 * @return {string|null} Current user's emoji reaction, or null.
 		 */
 		getUserReaction: ( state, objectKey ) => {
@@ -52,9 +52,9 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Check if reactions are loading for an object.
 		 *
-		 * @param {Object} state    Reactions state.
-		 * @param {string} objectKey Object identifier.
-		 * @return {boolean}
+		 * @param {Object} state     - Reactions state.
+		 * @param {string} objectKey - Object identifier.
+		 * @return {boolean} True if loading, false otherwise.
 		 */
 		isLoading: ( state, objectKey ) => {
 			return state.loading[ objectKey ] === true;
@@ -63,9 +63,9 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Get error state for an object.
 		 *
-		 * @param {Object} state    Reactions state.
-		 * @param {string} objectKey Object identifier.
-		 * @return {Object|null}
+		 * @param {Object} state     - Reactions state.
+		 * @param {string} objectKey - Object identifier.
+		 * @return {Object|null} Error object if present, or null.
 		 */
 		getError: ( state, objectKey ) => {
 			return state.errors[ objectKey ] || null;
@@ -76,11 +76,10 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Fetch reactions for an object.
 		 *
-		 * @param {Object} context   Store context.
-		 * @param {Object} options   Options object.
-		 * @param {number} options.objectId   Post or comment ID.
-		 * @param {string} options.objectType 'post' or 'comment'.
-		 * @return {Promise}
+		 * @param {Object} options            - Options object.
+		 * @param {number} options.objectId   - Post or comment ID.
+		 * @param {string} options.objectType - 'post' or 'comment'.
+		 * @return {Promise} Resolves when reactions are fetched.
 		 */
 		async *fetchReactions( options ) {
 			const { objectId, objectType } = options;
@@ -97,10 +96,6 @@ interactivityStore( NAMESPACE, {
 				this.state.reactions[ objectKey ] = response;
 			} catch ( error ) {
 				this.state.errors[ objectKey ] = error;
-				console.error(
-					`Failed to fetch reactions for ${ objectKey }`,
-					error
-				);
 			} finally {
 				this.state.loading[ objectKey ] = false;
 			}
@@ -109,12 +104,11 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Add a reaction to an object.
 		 *
-		 * @param {Object} context   Store context.
-		 * @param {Object} options   Options object.
-		 * @param {number} options.objectId   Post or comment ID.
-		 * @param {string} options.objectType 'post' or 'comment'.
-		 * @param {string} options.emoji      Emoji to add.
-		 * @return {Promise}
+		 * @param {Object} options            - Options object.
+		 * @param {number} options.objectId   - Post or comment ID.
+		 * @param {string} options.objectType - 'post' or 'comment'.
+		 * @param {string} options.emoji      - Emoji to add.
+		 * @return {Promise} Resolves when reaction is added.
 		 */
 		async *addReaction( options ) {
 			const { objectId, objectType, emoji } = options;
@@ -141,10 +135,6 @@ interactivityStore( NAMESPACE, {
 				yield this.actions.fetchReactions( options );
 			} catch ( error ) {
 				this.state.errors[ objectKey ] = error;
-				console.error(
-					`Failed to add reaction for ${ objectKey }`,
-					error
-				);
 			} finally {
 				this.state.loading[ objectKey ] = false;
 			}
@@ -153,12 +143,11 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Remove a reaction from an object.
 		 *
-		 * @param {Object} context   Store context.
-		 * @param {Object} options   Options object.
-		 * @param {number} options.objectId   Post or comment ID.
-		 * @param {string} options.objectType 'post' or 'comment'.
-		 * @param {string} options.emoji      Emoji to remove.
-		 * @return {Promise}
+		 * @param {Object} options            - Options object.
+		 * @param {number} options.objectId   - Post or comment ID.
+		 * @param {string} options.objectType - 'post' or 'comment'.
+		 * @param {string} options.emoji      - Emoji to remove.
+		 * @return {Promise} Resolves when reaction is removed.
 		 */
 		async *removeReaction( options ) {
 			const { objectId, objectType, emoji } = options;
@@ -182,10 +171,6 @@ interactivityStore( NAMESPACE, {
 				yield this.actions.fetchReactions( options );
 			} catch ( error ) {
 				this.state.errors[ objectKey ] = error;
-				console.error(
-					`Failed to remove reaction for ${ objectKey }`,
-					error
-				);
 			} finally {
 				this.state.loading[ objectKey ] = false;
 			}
@@ -194,8 +179,7 @@ interactivityStore( NAMESPACE, {
 		/**
 		 * Clear error state for an object.
 		 *
-		 * @param {Object} context   Store context.
-		 * @param {string} objectKey Object identifier.
+		 * @param {string} objectKey - Object identifier.
 		 */
 		clearError( objectKey ) {
 			delete this.state.errors[ objectKey ];

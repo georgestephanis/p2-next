@@ -2,18 +2,15 @@
  * P2026 Reactions Module
  *
  * Frontend reactions UI, REST API integration, and state management.
- *
- * @package P2026\Modules\Reactions
  */
 
 import { useCallback, useState, useEffect } from '@wordpress/element';
-import { useDispatch, useSelect } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
 
 /**
  * Hook to manage reactions for a given post or comment.
  *
- * @param {number} objectId - Post or comment ID.
+ * @param {number} objectId   - Post or comment ID.
  * @param {string} objectType - 'post' or 'comment'.
  * @return {Object} reactions state and actions.
  */

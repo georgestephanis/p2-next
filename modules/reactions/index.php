@@ -128,14 +128,14 @@ function p2026_reactions_add(
 	// Create new reaction comment.
 	$comment_id = wp_insert_comment(
 		array(
-			'comment_post_ID'      => 'post' === $target_type ? $post_or_comment_id : get_comment_post_id( $post_or_comment_id ),
-			'comment_parent'       => 'comment' === $target_type ? $post_or_comment_id : 0,
-			'comment_type'         => P2026_REACTION_COMMENT_TYPE,
-			'comment_content'      => $emoji,
-			'user_id'              => $user_id,
-			'comment_date_gmt'     => current_time( 'mysql', true ),
-			'comment_approved'     => 1,
-			'comment_agent'        => 'p2026-reactions',
+			'comment_post_ID'  => 'post' === $target_type ? $post_or_comment_id : get_comment_post_id( $post_or_comment_id ),
+			'comment_parent'   => 'comment' === $target_type ? $post_or_comment_id : 0,
+			'comment_type'     => P2026_REACTION_COMMENT_TYPE,
+			'comment_content'  => $emoji,
+			'user_id'          => $user_id,
+			'comment_date_gmt' => current_time( 'mysql', true ),
+			'comment_approved' => 1,
+			'comment_agent'    => 'p2026-reactions',
 		)
 	);
 
@@ -404,7 +404,7 @@ function p2026_reactions_rest_add( WP_REST_Request $request ) {
 
 	return rest_ensure_response(
 		array(
-			'success' => true,
+			'success'    => true,
 			'comment_id' => $comment_id,
 		)
 	);
@@ -427,9 +427,9 @@ function p2026_reactions_rest_get( WP_REST_Request $request ) {
 	$formatted = array();
 	foreach ( $reactions as $emoji => $comments ) {
 		$formatted[ $emoji ] = array(
-			'emoji'  => $emoji,
-			'count'  => count( $comments ),
-			'users'  => array_map(
+			'emoji' => $emoji,
+			'count' => count( $comments ),
+			'users' => array_map(
 				fn ( $c ) => array(
 					'id'   => (int) $c->user_id,
 					'name' => $c->comment_author,
@@ -527,6 +527,8 @@ function p2026_reactions_render_settings_tab() {
 	<div class="p2026-settings-tab p2026-reactions-settings">
 		<h2><?php esc_html_e( 'Emoji Reactions Configuration', 'p2026' ); ?></h2>
 
+		<?php wp_nonce_field( 'p2026_reactions_settings', 'p2026_reactions_nonce' ); ?>
+
 		<table class="form-table">
 			<tr>
 				<th scope="row">
@@ -595,6 +597,12 @@ add_action( 'p2026_settings_render_tab_reactions', 'p2026_reactions_render_setti
  */
 function p2026_reactions_save_settings() {
 	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	// Verify nonce for security.
+	$nonce = isset( $_POST['p2026_reactions_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['p2026_reactions_nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'p2026_reactions_settings' ) ) {
 		return;
 	}
 
