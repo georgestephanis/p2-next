@@ -99,12 +99,6 @@ export default function ReactionUI( {
 		};
 	}, [ showPicker, handleClosePicker ] );
 
-	// Count total reactions.
-	const totalReactions = Object.values( displayReactions ).reduce(
-		( sum, reaction ) => sum + reaction.count,
-		0
-	);
-
 	if ( ! canReact ) {
 		return null;
 	}
@@ -117,42 +111,33 @@ export default function ReactionUI( {
 			data-object-type={ objectType }
 		>
 			<div className="p2026-reactions-container">
-				{ Object.entries( displayReactions ).map( (
-					[ emoji, reactionData ]
-				) => (
-					<div
-						key={ emoji }
-						className="p2026-reaction-wrapper"
-					>
-						<ReactionButton
-							emoji={ emoji }
-							count={ reactionData.count || 0 }
-							isActive={
-								userReaction === emoji
-							}
-							onToggle={ handleToggleReaction }
-							onShowParticipants={
-								setVisibleParticipantEmoji
-							}
-						/>
-						{ visibleParticipantEmoji === emoji && (
-							<ParticipantList
+				{ Object.entries( displayReactions ).map(
+					( [ emoji, reactionData ] ) => (
+						<div key={ emoji } className="p2026-reaction-wrapper">
+							<ReactionButton
 								emoji={ emoji }
-								participants={
-									reactionData.users || []
-								}
-								isVisible={
-									visibleParticipantEmoji === emoji
-								}
-								onClose={ () =>
-									setVisibleParticipantEmoji(
-										null
-									)
+								count={ reactionData.count || 0 }
+								isActive={ userReaction === emoji }
+								onToggle={ handleToggleReaction }
+								onShowParticipants={
+									setVisibleParticipantEmoji
 								}
 							/>
-						) }
-					</div>
-				) ) }
+							{ visibleParticipantEmoji === emoji && (
+								<ParticipantList
+									emoji={ emoji }
+									participants={ reactionData.users || [] }
+									isVisible={
+										visibleParticipantEmoji === emoji
+									}
+									onClose={ () =>
+										setVisibleParticipantEmoji( null )
+									}
+								/>
+							) }
+						</div>
+					)
+				) }
 
 				{ canReact && (
 					<div className="p2026-reaction-picker-wrapper">
@@ -162,10 +147,7 @@ export default function ReactionUI( {
 							className="p2026-add-reaction-button"
 							onClick={ handleTogglePicker }
 							disabled={ isLoading }
-							aria-label={ __(
-								'Add reaction',
-								'p2026'
-							) }
+							aria-label={ __( 'Add reaction', 'p2026' ) }
 							aria-pressed={ showPicker }
 							aria-expanded={ showPicker }
 						>
@@ -182,12 +164,8 @@ export default function ReactionUI( {
 							>
 								<div ref={ pickerPopoverRef }>
 									<ReactionPicker
-										availableEmoji={
-											availableEmoji
-										}
-										onSelect={
-											handleAddReaction
-										}
+										availableEmoji={ availableEmoji }
+										onSelect={ handleAddReaction }
 									/>
 								</div>
 							</Popover>
@@ -198,10 +176,7 @@ export default function ReactionUI( {
 
 			{ error && (
 				<div className="p2026-reaction-error">
-					{ __(
-						'Error managing reactions.',
-						'p2026'
-					) }
+					{ __( 'Error managing reactions.', 'p2026' ) }
 				</div>
 			) }
 		</div>

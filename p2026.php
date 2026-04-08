@@ -109,8 +109,8 @@ function p2026_enqueue_frontend() {
 	if ( ! file_exists( $asset_file ) ) {
 		return;
 	}
-	$asset = require $asset_file;
-	$interactivity_module_asset_file = P2026_DIR . 'build/interactivity.module.asset.php';
+	$asset                            = require $asset_file;
+	$interactivity_module_asset_file  = P2026_DIR . 'build/interactivity.module.asset.php';
 	$can_enqueue_interactivity_module = function_exists( 'wp_register_script_module' ) && function_exists( 'wp_enqueue_script_module' ) && file_exists( $interactivity_module_asset_file );
 
 	// Enqueue WordPress editor/components CSS that frontend components depend on.
@@ -160,19 +160,19 @@ function p2026_enqueue_frontend() {
 		'p2026-frontend',
 		'window.p2026Config = ' . wp_json_encode(
 			array(
-				'nonce'               => wp_create_nonce( 'wp_rest' ),
-				'restUrl'             => esc_url_raw( rest_url() ),
-				'siteTitle'           => get_bloginfo( 'name' ),
-				'isArchiveView'       => $is_archive_view,
-				'debugTelemetry'      => $debug_telemetry,
-				'currentUser'         => $user_data,
-				'canCreatePosts'      => $can_publish,
-				'canUpdatePosts'      => $can_update_posts,
-				'canComment'          => $can_comment,
-				'requireNameEmail'    => $require_name_email,
-				'threadDepth'         => (int) get_option( 'thread_comments_depth', 5 ),
-				'activeModules'       => p2026_get_active_module_slugs(),
-				'reactionsConfig'     => p2026_is_module_active( 'reactions' ) ? p2026_reactions_get_config() : null,
+				'nonce'            => wp_create_nonce( 'wp_rest' ),
+				'restUrl'          => esc_url_raw( rest_url() ),
+				'siteTitle'        => get_bloginfo( 'name' ),
+				'isArchiveView'    => $is_archive_view,
+				'debugTelemetry'   => $debug_telemetry,
+				'currentUser'      => $user_data,
+				'canCreatePosts'   => $can_publish,
+				'canUpdatePosts'   => $can_update_posts,
+				'canComment'       => $can_comment,
+				'requireNameEmail' => $require_name_email,
+				'threadDepth'      => (int) get_option( 'thread_comments_depth', 5 ),
+				'activeModules'    => p2026_get_active_module_slugs(),
+				'reactionsConfig'  => p2026_is_module_active( 'reactions' ) ? p2026_reactions_get_config() : null,
 			)
 		) . ';',
 		'before'

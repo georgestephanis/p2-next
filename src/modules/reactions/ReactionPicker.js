@@ -23,9 +23,7 @@ export default function ReactionPicker( {
 						type="button"
 						key={ emoji }
 						className="p2026-reaction-picker-item"
-						onClick={ () =>
-							handleEmojiSelect( emoji )
-						}
+						onClick={ () => handleEmojiSelect( emoji ) }
 						aria-label={ emoji }
 						title={ emoji }
 					>

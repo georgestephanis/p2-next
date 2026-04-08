@@ -15,28 +15,30 @@ import { STORE_NAME } from '../../store';
  * @return {Object} reactions state and actions.
  */
 export const useReactions = ( objectId, objectType = 'post' ) => {
-	const { addReaction, removeReaction, fetchReactionsForObject } = useDispatch(
-		STORE_NAME
-	);
+	const { addReaction, removeReaction, fetchReactionsForObject } =
+		useDispatch( STORE_NAME );
 	const [ optimisticState, setOptimisticState ] = useState( null );
 
-	const { reactions, userReaction } = useSelect( ( select ) => {
-		const reactionsData = select( STORE_NAME ).getReactionsForObject(
-			objectType,
-			objectId
-		);
-		const userId = window.p2026Config?.currentUser?.id ?? null;
-		const userReact = select( STORE_NAME ).getUserReactionForObject(
-			objectType,
-			objectId,
-			userId
-		);
+	const { reactions, userReaction } = useSelect(
+		( select ) => {
+			const reactionsData = select( STORE_NAME ).getReactionsForObject(
+				objectType,
+				objectId
+			);
+			const userId = window.p2026Config?.currentUser?.id ?? null;
+			const userReact = select( STORE_NAME ).getUserReactionForObject(
+				objectType,
+				objectId,
+				userId
+			);
 
-		return {
-			reactions: reactionsData,
-			userReaction: userReact,
-		};
-	}, [ objectId, objectType ] );
+			return {
+				reactions: reactionsData,
+				userReaction: userReact,
+			};
+		},
+		[ objectId, objectType ]
+	);
 
 	const effectiveReactions = optimisticState?.reactions ?? reactions;
 	const effectiveUserReaction =
@@ -77,8 +79,7 @@ export const useReactions = ( objectId, objectType = 'post' ) => {
 			if (
 				currentUser?.id &&
 				! nextUsers.some(
-					( user ) =>
-						Number( user?.id ) === Number( currentUser.id )
+					( user ) => Number( user?.id ) === Number( currentUser.id )
 				)
 			) {
 				nextUsers.push( {
@@ -133,8 +134,7 @@ export const useReactions = ( objectId, objectType = 'post' ) => {
 				const nextUsers = Array.isArray( existing.users )
 					? existing.users.filter(
 							( user ) =>
-								Number( user?.id ) !==
-								Number( currentUser?.id )
+								Number( user?.id ) !== Number( currentUser?.id )
 					  )
 					: [];
 
@@ -188,11 +188,7 @@ export const useReactions = ( objectId, objectType = 'post' ) => {
 			}
 			return handleAddReaction( emoji );
 		},
-		[
-			effectiveUserReaction,
-			handleAddReaction,
-			handleRemoveReaction,
-		]
+		[ effectiveUserReaction, handleAddReaction, handleRemoveReaction ]
 	);
 
 	return {

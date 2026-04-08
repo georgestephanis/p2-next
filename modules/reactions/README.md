@@ -153,37 +153,39 @@ Get the current reactions configuration. Returns { mode: string, emoji: string[]
 The reactions module uses a layered approach:
 
 1. **Hooks** (`src/modules/reactions/hooks.js`):
-   - `useReactions(objectId, objectType)` — Manages reactions state, fetching, and CRUD operations via REST API.
-   - Handles async state management, debouncing, and error handling.
+
+    - `useReactions(objectId, objectType)` — Manages reactions state, fetching, and CRUD operations via REST API.
+    - Handles async state management, debouncing, and error handling.
 
 2. **Components** (`src/modules/reactions/`):
-   - `ReactionUI.js` — Main container displaying reactions for a post or comment.
-   - `ReactionButton.js` — Individual emoji button with count and active state.
-   - `ReactionPicker.js` — Popover picker for selecting emoji to add.
-   - `ParticipantList.js` — Tooltip/popover showing users who reacted.
-   - `PostReactionsWrapper.js` — Wrapper mounting reactions on posts.
-   - `CommentReactionsWrapper.js` — Wrapper mounting reactions on comments.
+
+    - `ReactionUI.js` — Main container displaying reactions for a post or comment.
+    - `ReactionButton.js` — Individual emoji button with count and active state.
+    - `ReactionPicker.js` — Popover picker for selecting emoji to add.
+    - `ParticipantList.js` — Tooltip/popover showing users who reacted.
+    - `PostReactionsWrapper.js` — Wrapper mounting reactions on posts.
+    - `CommentReactionsWrapper.js` — Wrapper mounting reactions on comments.
 
 3. **Initialization** (`src/modules/reactions/index.js`):
-   - `initReactionsModule()` — Auto-discovers and mounts reaction UIs on all posts and comments.
-   - Runs on DOM ready and handles initial component mounting.
+    - `initReactionsModule()` — Auto-discovers and mounts reaction UIs on all posts and comments.
+    - Runs on DOM ready and handles initial component mounting.
 
 ### Features
 
-- **Config-aware rendering**: Respects `window.p2026Config.reactionsConfig` for emoji mode (single/curated/any).
-- **Debounced interactions**: Rapid clicks are debounced to prevent request flooding.
-- **Optimistic updates**: State updates before API response for snappier UX.
-- **Participant visibility**: Hover/focus on emoji count to show participant names.
-- **Accessibility**: Proper ARIA labels, keyboard navigation, and focus management.
-- **Responsive layout**: Flex-based layout adapts to screen size and reaction count.
+-   **Config-aware rendering**: Respects `window.p2026Config.reactionsConfig` for emoji mode (single/curated/any).
+-   **Debounced interactions**: Rapid clicks are debounced to prevent request flooding.
+-   **Optimistic updates**: State updates before API response for snappier UX.
+-   **Participant visibility**: Hover/focus on emoji count to show participant names.
+-   **Accessibility**: Proper ARIA labels, keyboard navigation, and focus management.
+-   **Responsive layout**: Flex-based layout adapts to screen size and reaction count.
 
 ### Styling
 
 All styles in SCSS format with sensible defaults:
 
-- `_reaction-ui.scss` — Button containers, counts, picker trigger.
-- `_reaction-picker.scss` — Emoji picker grid.
-- `_participant-list.scss` — Participant tooltip styling.
+-   `_reaction-ui.scss` — Button containers, counts, picker trigger.
+-   `_reaction-picker.scss` — Emoji picker grid.
+-   `_participant-list.scss` — Participant tooltip styling.
 
 Easily customizable via CSS overrides. Built with CSS custom properties for theming.
 
@@ -191,15 +193,16 @@ Easily customizable via CSS overrides. Built with CSS custom properties for them
 
 The frontend automatically reads:
 
-- `reactionsConfig` — Backend config object with `mode` and `emoji` array.
-- `currentUser` — Current user info (to gate permissions).
-- `canComment` — Whether user can leave reactions.
-- `requireNameEmail` — Whether anonymous reactions require name/email.
+-   `reactionsConfig` — Backend config object with `mode` and `emoji` array.
+-   `currentUser` — Current user info (to gate permissions).
+-   `canComment` — Whether user can leave reactions.
+-   `requireNameEmail` — Whether anonymous reactions require name/email.
 
 Example in theme:
+
 ```javascript
-if (window.p2026Config?.reactionsConfig?.mode === 'any') {
-  // Any emoji allowed
+if ( window.p2026Config?.reactionsConfig?.mode === 'any' ) {
+	// Any emoji allowed
 }
 ```
 

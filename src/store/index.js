@@ -477,7 +477,9 @@ export const actions = {
 		return async ( { dispatch } ) => {
 			try {
 				const response = await apiFetch( {
-					path: `/p2026/v1/reactions?object_type=${ encodeURIComponent( objectType ) }&object_id=${ objectId }`,
+					path: `/p2026/v1/reactions?object_type=${ encodeURIComponent(
+						objectType
+					) }&object_id=${ objectId }`,
 				} );
 				dispatch(
 					actions.setReactionsForObject(
@@ -759,7 +761,9 @@ export const selectors = {
 		for ( const [ emoji, data ] of Object.entries( reactions ) ) {
 			if (
 				Array.isArray( data.users ) &&
-				data.users.some( ( user ) => Number( user?.id ) === Number( userId ) )
+				data.users.some(
+					( user ) => Number( user?.id ) === Number( userId )
+				)
 			) {
 				return emoji;
 			}

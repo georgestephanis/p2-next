@@ -3,8 +3,7 @@
  *
  * Used by Comment component to display reactions on comments.
  */
-import { useState } from '@wordpress/element';
-import { useEffect } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { useReactions } from './hooks';
 import ReactionUI from './ReactionUI';
 

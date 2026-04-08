@@ -21,21 +21,9 @@ import './_reaction-picker.scss';
 import './_participant-list.scss';
 
 /**
- * Get reactions configuration from server.
- *
- * @return {Object} Configuration with mode and available emoji.
- */
-function getReactionsConfig() {
-	return window.p2026Config?.reactionsConfig || {
-		mode: 'single',
-		emoji: [ '👍' ],
-	};
-}
-
-/**
  * Check if user can react (has permission).
  *
- * @return {boolean}
+ * @return {boolean} True when the current visitor is allowed to react.
  */
 function canUserReact() {
 	return (
@@ -51,7 +39,6 @@ function canUserReact() {
  * Called by the main frontend module bootstrap.
  */
 export const initReactionsModule = () => {
-	const config = getReactionsConfig();
 	const canReact = canUserReact();
 
 	if ( ! canReact ) {
@@ -83,15 +70,11 @@ export const initReactionsModule = () => {
 			// Mount React component.
 			try {
 				const root = createRoot( reactionsContainer );
-				root.render(
-					<PostReactionsWrapper postId={ postId } />
-				);
+				root.render( <PostReactionsWrapper postId={ postId } /> );
 			} catch ( err ) {
 				if ( window.p2026Config?.debugTelemetry ) {
-					console.error(
-						'Failed to mount post reactions',
-						err
-					);
+					// eslint-disable-next-line no-console
+					console.error( 'Failed to mount post reactions', err );
 				}
 			}
 		} );
@@ -121,16 +104,12 @@ export const initReactionsModule = () => {
 			try {
 				const root = createRoot( reactionsContainer );
 				root.render(
-					<CommentReactionsWrapper
-						commentId={ commentId }
-					/>
+					<CommentReactionsWrapper commentId={ commentId } />
 				);
 			} catch ( err ) {
 				if ( window.p2026Config?.debugTelemetry ) {
-					console.error(
-						'Failed to mount comment reactions',
-						err
-					);
+					// eslint-disable-next-line no-console
+					console.error( 'Failed to mount comment reactions', err );
 				}
 			}
 		} );

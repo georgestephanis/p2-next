@@ -275,14 +275,18 @@ export default function PostEnhancement( {
 		commentLabel = `${ commentCount } ${ __( 'comments', 'p2026' ) }`;
 	}
 
-	const commentCountSummary = isCountLoading
-		? null
-		: commentCount > 0
-		? sprintf(
+	let commentCountSummary = null;
+	if ( ! isCountLoading ) {
+		if ( commentCount > 0 ) {
+			commentCountSummary = sprintf(
+				/* translators: %d: number of comments on the post. */
 				_n( '%d comment', '%d comments', commentCount, 'p2026' ),
 				commentCount
-		  )
-		: __( 'No comments yet', 'p2026' );
+			);
+		} else {
+			commentCountSummary = __( 'No comments yet', 'p2026' );
+		}
+	}
 
 	const contributorPreview = useMemo( () => {
 		if ( comments.length > 0 ) {
@@ -658,7 +662,9 @@ export default function PostEnhancement( {
 													<img
 														key={ contributor.id }
 														className="p2026-comment-summary-avatar"
-														src={ contributor.avatar }
+														src={
+															contributor.avatar
+														}
 														alt=""
 														width={ 24 }
 														height={ 24 }
@@ -669,7 +675,8 @@ export default function PostEnhancement( {
 									<span className="p2026-comment-summary-names">
 										{ contributorPreview
 											.map(
-												( contributor ) => contributor.name
+												( contributor ) =>
+													contributor.name
 											)
 											.join( ', ' ) }
 									</span>

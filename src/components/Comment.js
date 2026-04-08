@@ -84,12 +84,7 @@ export default function Comment( {
 		if ( ! editing ) {
 			setEditContent( getEditableContent( comment ) );
 		}
-	}, [
-		editing,
-		comment.id,
-		comment.p2026EditableContent,
-		comment.content?.rendered,
-	] );
+	}, [ editing, comment ] );
 
 	const onReplySubmit = useCallback( async () => {
 		if ( ! replyContent.trim() || missingGuestIdentity ) {

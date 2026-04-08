@@ -22,10 +22,7 @@ export default function ReactionButton( {
 		}
 	}, [ emoji, onToggle ] );
 
-	const buttonClasses = [
-		'p2026-reaction-button',
-		isActive && 'is-active',
-	]
+	const buttonClasses = [ 'p2026-reaction-button', isActive && 'is-active' ]
 		.filter( Boolean )
 		.join( ' ' );
 

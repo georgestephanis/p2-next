@@ -1,6 +1,4 @@
-import {
-	PostFooterMetaFill,
-} from '../../slots/reactions';
+import { PostFooterMetaFill } from '../../slots/reactions';
 import PostReactionsWrapper from './PostReactionsWrapper';
 
 export default function ReactionSlotFills() {

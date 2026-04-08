@@ -23,7 +23,7 @@ import {
 } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { Button } from '@wordpress/components';
-import { __, sprintf, _n } from '@wordpress/i18n';
+import { sprintf, _n } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import { startPolling } from '../api';
 import { setupPostToolbar } from '../enhancer';
