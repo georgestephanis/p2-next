@@ -537,9 +537,15 @@ details[open].p2026-menu-wrap .p2026-menu-trigger {
 		.components-base-control__field,
 		.components-text-control__input,
 		.components-textarea-control__input,
-		.p2026-mention-textarea-wrap {
+		.p2026-mention-textarea-wrap,
+		.p2026-markdown-comment-editor,
+		.p2026-markdown-comment-editor .w-md-editor {
 			width: 100%;
 			max-width: none;
+		}
+
+		.p2026-markdown-comment-editor .w-md-editor {
+			border-color: #d6dee8;
 		}
 
 		.components-textarea-control__input {

@@ -7,7 +7,11 @@ import { Button, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { STORE_NAME } from '../store';
 import Comment from './Comment';
-import MentionTextareaControl from '../modules/mentions/MentionTextareaControl';
+import MarkdownCommentEditor from './MarkdownCommentEditor';
+
+function isMarkdownEmpty( markdown = '' ) {
+	return ! markdown || ! markdown.trim();
+}
 
 /**
  * Nest flat comment array into a tree by parent ID.
@@ -75,7 +79,7 @@ export default function Comments( { postId, canCreateComments = true } ) {
 		requireNameEmail && ( ! guestName.trim() || ! guestEmail.trim() );
 
 	const onCommentSubmit = useCallback( async () => {
-		if ( ! canComment || ! content.trim() || missingGuestIdentity ) {
+		if ( ! canComment || isMarkdownEmpty( content ) || missingGuestIdentity ) {
 			return;
 		}
 
@@ -143,13 +147,10 @@ export default function Comments( { postId, canCreateComments = true } ) {
 							/>
 						</>
 					) }
-					<MentionTextareaControl
-						label={ __( 'Comment', 'p2026' ) }
-						hideLabelFromVision
+					<MarkdownCommentEditor
 						placeholder={ __( 'Write a comment…', 'p2026' ) }
 						value={ content }
 						onChange={ setContent }
-						rows={ 4 }
 					/>
 					<div className="p2026-reply-actions">
 						<Button
@@ -157,7 +158,7 @@ export default function Comments( { postId, canCreateComments = true } ) {
 							onClick={ onCommentSubmit }
 							disabled={
 								isSaving ||
-								! content.trim() ||
+								isMarkdownEmpty( content ) ||
 								missingGuestIdentity
 							}
 							isBusy={ isSaving }
