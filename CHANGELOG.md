@@ -4,12 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.4.0 - 2026-04-07
+
 ### Added
 
 -   Added a shared frontend Interactivity API layer under `src/interactivity/` for reusable store namespaces and directive host wiring.
 -   Added `src/utils/on-dom-ready.js` to standardize DOM-ready-safe module/bootstrap initialization.
 -   Added a Script Module interactivity entrypoint (`build/interactivity.module.js`) and module asset metadata (`build/interactivity.module.asset.php`).
 -   Added a classic-to-module interactivity bridge (`src/interactivity/client-bridge.js`) and script-module bootstrap entry (`src/interactivity/module-entry.js`).
+-   Added and expanded the Sidebar Shell module for themes without native sidebar support, including configurable default content and collapse/visibility settings.
+-   Added markdown-capable comment editing flows in the Comment Editor module for both new and existing comments.
 
 ### Changed
 
@@ -19,6 +23,12 @@ All notable changes to this project will be documented in this file.
 -   Moved interactivity runtime loading from classic script dependencies to WordPress Script Modules API registration/enqueue flow.
 -   Updated classic frontend callers to use bridge exports instead of importing interactivity implementation modules directly.
 -   Updated architecture and contributor documentation to describe the new JS hierarchy, interactivity placement rules, naming conventions, and bootstrap conventions.
+-   Updated build tooling and package metadata for the `0.4.0` release line.
+
+### Fixed
+
+-   Improved sidebar shell accessibility and behavior around focus management, no-JS fallback behavior, and persisted collapse state handling.
+-   Fixed comment editing and toolbar edge cases, including null/zero comment identifier handling and edit-action visibility.
 
 ## 0.3.0 - 2026-04-03
 

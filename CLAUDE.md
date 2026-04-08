@@ -2,6 +2,8 @@
 
 This file documents the current architecture and contribution conventions for the p2026 plugin.
 
+This document reflects the 0.4.0 release line.
+
 ## What This Plugin Is
 
 p2026 modernizes P2/o2-style collaboration by layering React and Block Editor UX on top of theme-rendered loops.

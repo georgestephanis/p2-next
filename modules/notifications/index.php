@@ -4,7 +4,7 @@
  *
  * Module Name:        Notifications
  * Module Description: Persistent notifications dock for mentions and comment replies.
- * Module Version:     0.2.0
+ * Module Version:     0.4.0
  *
  * Provides a notification system:
  *   - REST endpoints for fetching and managing notifications.

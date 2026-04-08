@@ -2,7 +2,7 @@
 
 This plugin adds real-time P2/o2-style collaboration features by progressively enhancing theme-rendered post lists.
 
-This document reflects the 0.3.0 release line.
+This document reflects the 0.4.0 release line.
 
 ## Core Ideas
 

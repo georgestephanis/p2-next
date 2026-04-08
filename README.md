@@ -2,7 +2,7 @@
 
 A modern WordPress plugin that adds P2/o2-style team collaboration features by progressively enhancing theme-rendered post lists using React, the Block Editor, and the WordPress REST API.
 
-Current release: 0.3.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
+Current release: 0.4.0. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 [![Try in WordPress Playground](https://img.shields.io/badge/Try%20in-WordPress%20Playground-3858e9?logo=wordpress)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/georgestephanis/p2026/HEAD/.github/blueprint.json)
 
@@ -94,7 +94,7 @@ Build output goes to `build/`. Do not hand-edit files there.
 
 ## Releases
 
--   Current stable release: `0.3.0`
+-   Current stable release: `0.4.0`
 -   Initial release baseline: `0.1.0` maps to commit `dbf2205587f73c66e3d63a46449ff64b39dc2a2f`
 -   Release notes: [CHANGELOG.md](CHANGELOG.md)
 
@@ -148,6 +148,7 @@ Current modules:
 -   `post-state` — Normal/Unresolved/Resolved workflow state + REST endpoint
 -   `audit-log` — audit event persistence backend (file or internal CPT)
 -   `comment-editor` — markdown WYSIWYG comment compose/edit enhancements with server-side markdown rendering
+-   `sidebar-shell` — optional fixed, collapsible sidebar shell with search/feed tools integration for themes without a native sidebar
 
 ### Module Matrix
 
@@ -159,6 +160,7 @@ Current modules:
 | `post-state`     | `modules/post-state/index.php`     | Core UI integration (`src/components/PostEnhancement.js`)                       | `POST /p2026/v1/posts/{id}/state`                                                                                |
 | `audit-log`      | `modules/audit-log/index.php`      | `src/modules/audit-log/audit-log-viewer.js`                                     | `GET /p2026/v1/audit-log/days`, `GET /p2026/v1/audit-log/entries`                                                |
 | `comment-editor` | `modules/comment-editor/index.php` | Core UI integration (`src/components/Comments.js`, `src/components/Comment.js`) | Extends `POST /wp/v2/comments` via `p2026_format=markdown` processing                                            |
+| `sidebar-shell`  | `modules/sidebar-shell/index.php`  | `src/modules/sidebar-shell/index.js`, `src/modules/sidebar-shell/SidebarControls.js` | No dedicated REST routes (theme/layout shell + settings-backed rendering)                                         |
 
 ## Key Files
 
